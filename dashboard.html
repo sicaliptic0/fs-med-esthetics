@@ -18,6 +18,7 @@
         .btn-gold { background-color: #B59A6D; color: white; transition: 0.3s; }
         .btn-gold:hover { background-color: #9E865E; }
         .booking-field { width: 100%; box-sizing: border-box; max-width: 100%; min-height: 56px; }
+        #book-date.booking-field { display: block; min-width: 0; width: 100%; max-width: 100%; -webkit-appearance: none; appearance: none; }
         .booking-scroll { -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; }
         #book-treatments-dropdown { -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; }
         
@@ -120,11 +121,11 @@
                             <p class="mt-3 text-[10px] uppercase tracking-widest opacity-60" data-en="All consultations are currently priced at $0." data-es="Todas las consultas actualmente tienen un precio de $0.">All consultations are currently priced at $0.</p>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div>
+                            <div class="min-w-0">
                                 <label class="block uppercase text-[10px] tracking-widest text-[#B59A6D] font-bold mb-4" data-en="2. Select Date" data-es="2. Selecciona una Fecha">2. Select Date</label>
                                 <input type="date" id="book-date" class="booking-field p-4 border border-[#E9E0D2] outline-none focus:border-[#B59A6D] bg-[#FCFAF7] text-sm text-[#5D534A]" required>
                             </div>
-                            <div>
+                            <div class="min-w-0">
                                 <label class="block uppercase text-[10px] tracking-widest text-[#B59A6D] font-bold mb-4" data-en="3. Preferred Time" data-es="3. Horario Preferido">3. Preferred Time</label>
                                 <select id="book-time" class="booking-field p-4 border border-[#E9E0D2] outline-none focus:border-[#B59A6D] bg-[#FCFAF7] text-sm text-[#5D534A]" required>
                                     <option value="" disabled selected data-en="Choose a time..." data-es="Elige una hora...">Choose a time...</option>

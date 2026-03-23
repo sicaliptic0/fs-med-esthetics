@@ -109,7 +109,7 @@
                                 <label class="text-[9px] uppercase tracking-widest text-[#B59A6D] font-bold">Procedimiento realizado</label>
                                 <span id="soap-procedures-selected" class="text-[10px] uppercase tracking-widest opacity-60 font-semibold">0 selected</span>
                             </div>
-                            <select id="soap-procedures-select" multiple size="7" class="w-full p-3 border border-[#e9e0d2] outline-none focus:border-[#b59a6d] bg-white text-sm text-[#5d534a] rounded-lg"></select>
+                            <div id="soap-procedures-list" class="w-full p-3 border border-[#e9e0d2] bg-white text-sm text-[#5d534a] rounded-lg max-h-56 overflow-y-auto overflow-x-hidden space-y-3"></div>
                         </div>
                         <div class="grid grid-cols-2 gap-4">
                             <textarea id="soap-s" placeholder="Subjective (S) - Patient concerns, updates" class="h-32 resize-none"></textarea>
@@ -266,14 +266,12 @@
         }
 
         function getSelectedSoapProcedureIds() {
-            const select = document.getElementById('soap-procedures-select');
-            if (!select) return [];
-            return Array.from(select.selectedOptions).map(opt => opt.value);
+            return Array.from(document.querySelectorAll('input.soap-procedure-checkbox:checked')).map(cb => cb.value);
         }
 
-        function renderSoapProceduresSelectOptions() {
-            const select = document.getElementById('soap-procedures-select');
-            if (!select) return;
+        function renderSoapProceduresChecklist() {
+            const container = document.getElementById('soap-procedures-list');
+            if (!container) return;
 
             const grouped = {};
             TREATMENT_OPTIONS.forEach(o => {
@@ -281,20 +279,35 @@
                 grouped[o.category].push(o);
             });
 
-            select.innerHTML = '';
+            container.innerHTML = '';
             TREATMENT_CATEGORIES.forEach(cat => {
                 const options = grouped[cat.id] || [];
                 if (!options.length) return;
 
-                const optgroup = document.createElement('optgroup');
-                optgroup.label = cat.title;
+                const section = document.createElement('div');
+                section.className = 'space-y-2';
+
+                const title = document.createElement('div');
+                title.className = 'text-[10px] uppercase tracking-widest opacity-60 font-semibold text-[#B59A6D]';
+                title.innerText = cat.title;
+                section.appendChild(title);
+
                 options.forEach(t => {
-                    const opt = document.createElement('option');
-                    opt.value = t.id;
-                    opt.textContent = `${t.label} - ${t.price}`;
-                    optgroup.appendChild(opt);
+                    const row = document.createElement('label');
+                    row.className = 'flex items-start gap-3 cursor-pointer select-none w-full';
+                    row.innerHTML = `
+                        <input type="checkbox" class="soap-procedure-checkbox mt-1 accent-[#B59A6D]" value="${t.id}">
+                        <div class="flex-1 min-w-0 w-full">
+                            <div class="flex items-start justify-between gap-3 w-full">
+                                <span class="text-sm text-[#5D534A] font-light leading-snug break-words pr-2">${t.label}</span>
+                                <span class="text-[10px] uppercase tracking-widest opacity-60 font-semibold whitespace-nowrap shrink-0">${t.price}</span>
+                            </div>
+                        </div>
+                    `;
+                    section.appendChild(row);
                 });
-                select.appendChild(optgroup);
+
+                container.appendChild(section);
             });
         }
 
@@ -331,7 +344,7 @@
 
         // Render dropdown options immediately (this script is at the end of the body).
         renderTreatmentsDropdownOptions('admin-book-treatments-options', 'admin-book-treatment-checkbox');
-        renderSoapProceduresSelectOptions();
+        renderSoapProceduresChecklist();
         syncAdminTreatmentsSelectedSummary();
         syncSoapProceduresSelectedSummary();
 
@@ -339,8 +352,9 @@
         document.querySelectorAll('input.admin-book-treatment-checkbox').forEach(cb => {
             cb.addEventListener('change', syncAdminTreatmentsSelectedSummary);
         });
-        const soapProceduresSelect = document.getElementById('soap-procedures-select');
-        if (soapProceduresSelect) soapProceduresSelect.addEventListener('change', syncSoapProceduresSelectedSummary);
+        document.querySelectorAll('input.soap-procedure-checkbox').forEach(cb => {
+            cb.addEventListener('change', syncSoapProceduresSelectedSummary);
+        });
 
         // Close dropdowns when clicking outside.
         document.addEventListener('click', (e) => {
@@ -472,12 +486,9 @@
                             ? rawProcIds.replace(/[{}"]/g, '').split(',').map(s => s.trim()).filter(Boolean)
                             : []);
 
-                    const select = document.getElementById('soap-procedures-select');
-                    if (select) {
-                        Array.from(select.options).forEach(opt => {
-                            opt.selected = procIds.includes(opt.value);
-                        });
-                    }
+                    document.querySelectorAll('input.soap-procedure-checkbox').forEach(cb => {
+                        cb.checked = procIds.includes(cb.value);
+                    });
                     syncSoapProceduresSelectedSummary();
                 } else {
                     document.getElementById('form-title').innerText = "New Clinical Entry";
@@ -491,8 +502,7 @@
                     document.getElementById('soap-time').value = localISOTime.split('T')[1].substring(0, 5);
 
                     // Clear multi-select procedures realized
-                    const select = document.getElementById('soap-procedures-select');
-                    if (select) Array.from(select.options).forEach(opt => opt.selected = false);
+                    document.querySelectorAll('input.soap-procedure-checkbox').forEach(cb => cb.checked = false);
                     syncSoapProceduresSelectedSummary();
                 }
             }
