@@ -72,15 +72,23 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="bg-white border-l-4 border-[#B59A6D] p-6 shadow-sm rounded-r-lg">
                         <h3 class="uppercase text-[10px] tracking-widest text-[#B59A6D] font-bold mb-2" data-en="Follow-up Reminder" data-es="Recordatorio de Seguimiento">Follow-up Reminder</h3>
-                        <p class="text-sm font-light opacity-80 mb-4" data-en="It has been 4 months since your treatment. Perfect time for a touch-up." data-es="Han pasado 4 meses desde tu tratamiento. Momento ideal para un retoque.">It has been 4 months since your treatment. Perfect time for a touch-up.</p>
-                        <button onclick="switchView('booking-view', document.querySelectorAll('.nav-item')[1])" class="btn-gold px-6 py-3 uppercase text-[10px] tracking-widest" data-en="Schedule Now" data-es="Agendar Ahora">Schedule Now</button>
+                        <p id="followup-message" class="text-sm font-light opacity-80 mb-4">...</p>
+                        <button id="followup-cta" onclick="switchView('booking-view', document.querySelectorAll('.nav-item')[1])" class="btn-gold px-6 py-3 uppercase text-[10px] tracking-widest" data-en="Schedule Now" data-es="Agendar Ahora">Schedule Now</button>
                     </div>
                     <div class="bg-white p-6 rounded-xl border border-[#E9E0D2] shadow-sm">
                         <h3 class="uppercase text-[10px] tracking-widest text-[#B59A6D] font-bold mb-4" data-en="Your Next Visit" data-es="Tu Próxima Cita">Your Next Visit</h3>
                         <div class="space-y-2 text-sm opacity-80">
-                            <p>📅 April 15, 2026</p>
-                            <p>🕒 10:30 AM</p>
-                            <p>⚕️ Dr. Samuel Galviz</p>
+                            <p>📅 <span id="next-visit-date">—</span></p>
+                            <p>🕒 <span id="next-visit-time">—</span></p>
+                            <p>⚕️ <span id="next-visit-provider">Dr. Samuel Galviz</span></p>
+                            <p class="pt-2">
+                                <span class="block text-[10px] uppercase tracking-widest opacity-60 font-semibold" data-en="Treatment" data-es="Tratamiento">Treatment</span>
+                                <span id="next-visit-treatments" class="block mt-1">—</span>
+                            </p>
+                        </div>
+                        <div id="upcoming-list-container" class="mt-5 pt-4 border-t border-[#E9E0D2]">
+                            <p class="text-[10px] uppercase tracking-widest opacity-60 font-semibold mb-2" data-en="All Scheduled Appointments" data-es="Todas las Citas Agendadas">All Scheduled Appointments</p>
+                            <div id="upcoming-list" class="space-y-2 text-xs opacity-80"></div>
                         </div>
                     </div>
                 </div>
@@ -94,14 +102,20 @@
                 <div class="bg-white border border-[#E9E0D2] rounded-xl shadow-sm p-8 md:p-12">
                     <form id="booking-form" class="space-y-8" onsubmit="handleBooking(event)">
                         <div>
-                            <label class="block uppercase text-[10px] tracking-widest text-[#B59A6D] font-bold mb-4" data-en="1. Select Procedure" data-es="1. Seleccionar Procedimiento">1. Select Procedure</label>
-                            <select id="book-service" class="w-full p-4 border border-[#E9E0D2] outline-none focus:border-[#B59A6D] bg-[#FCFAF7] text-sm text-[#5D534A]" required>
-                                <option value="" disabled selected data-en="Choose a treatment..." data-es="Elige un tratamiento...">Choose a treatment...</option>
-                                <option value="botox" data-en="Facial Neurotoxins (Botox)" data-es="Neurotoxinas Faciales (Botox)">Facial Neurotoxins (Botox)</option>
-                                <option value="fillers" data-en="Dermal Fillers" data-es="Rellenos Dérmicos">Dermal Fillers</option>
-                                <option value="prp" data-en="PRP Restoration" data-es="Restauración PRP">PRP Restoration</option>
-                                <option value="consult" data-en="General Assessment" data-es="Valoración General">General Assessment</option>
-                            </select>
+                            <label class="block uppercase text-[10px] tracking-widest text-[#B59A6D] font-bold mb-4" data-en="1. Select Treatments (Multi-Select)" data-es="1. Seleccionar Tratamientos (Multi-Selección)">1. Select Treatments (Multi-Select)</label>
+
+                            <div class="relative">
+                                <button id="book-treatments-btn" type="button" onclick="toggleTreatmentsDropdown()" class="w-full p-4 border border-[#E9E0D2] outline-none focus:border-[#B59A6D] bg-[#FCFAF7] text-sm text-[#5D534A] text-left rounded-lg">
+                                    <div class="flex items-center justify-between gap-4">
+                                        <span id="book-treatments-btn-label" class="font-light" data-en="Choose treatments" data-es="Elige tratamientos">Choose treatments</span>
+                                        <span id="book-treatments-selected" class="text-[10px] uppercase tracking-widest opacity-60 font-semibold">0 selected</span>
+                                    </div>
+                                </button>
+                                <div id="book-treatments-dropdown" class="hidden absolute left-0 right-0 mt-2 bg-white border border-[#E9E0D2] rounded-xl shadow-2xl max-h-72 overflow-y-auto p-4 z-[60]">
+                                    <div id="book-treatments-options" class="space-y-6"></div>
+                                </div>
+                            </div>
+                            <p class="mt-3 text-[10px] uppercase tracking-widest opacity-60" data-en="All consultations are currently priced at $0." data-es="Todas las consultas actualmente tienen un precio de $0.">All consultations are currently priced at $0.</p>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div>
@@ -152,6 +166,307 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFram1ybnFrb2lwZGx0YXV3ZXViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1MTkyMjgsImV4cCI6MjA4OTA5NTIyOH0.EGqgJ9RNY9vYfuVeeEcGoMu_cIaygRq0hnyT-iE7zTw';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        // --- Treatments (portfolio + booking) ---
+        // Guardamos IDs para poder mostrar labels según idioma.
+        const TREATMENT_OPTIONS = [
+            { id: 'general_consultation', category: 'consultation', en: 'General Consultation', es: 'Consulta General', price: '$0' },
+
+            { id: 'upper_face_rejuvenation', category: 'neuromodulators', en: 'Upper Face Rejuvenation', es: 'Rejuvenecimiento de la Parte Superior', price: '$14 / unit' },
+            { id: 'masseter_reduction_bruxism', category: 'neuromodulators', en: 'Masseter Reduction (Bruxism)', es: 'Reducción del Masetero (Bruxismo)', price: '$600' },
+            { id: 'gummy_smile_correction', category: 'neuromodulators', en: 'Gummy Smile Correction', es: 'Corrección de Sonrisa Gingival', price: '$150' },
+            { id: 'nasal_profiling', category: 'neuromodulators', en: 'Nasal Profiling', es: 'Perfilado Nasal', price: '$200' },
+            { id: 'hyperhidrosis_treatment', category: 'neuromodulators', en: 'Hyperhidrosis Treatment', es: 'Tratamiento de Hiperhidrosis', price: '$1,000' },
+
+            { id: 'lip_augmentation', category: 'fillers', en: 'Lip Augmentation', es: 'Aumento de Labios', price: '$700' },
+            { id: 'facial_harmonization', category: 'fillers', en: 'Facial Harmonization', es: 'Armonización Facial', price: 'From $1,500' },
+            { id: 'jawline_masculinization', category: 'fillers', en: 'Jawline Masculinization', es: 'Masculinización de la Mandíbula', price: 'From $1,200' },
+            { id: 'facial_feminization', category: 'fillers', en: 'Facial Feminization', es: 'Feminización Facial', price: 'From $1,200' },
+
+            { id: 'sculptra', category: 'biostimulators', en: 'Sculptra (Poly-L-Lactic Acid)', es: 'Sculptra (Acido Polilactico)', price: '$800 / vial' },
+            { id: 'radiesse', category: 'biostimulators', en: 'Radiesse (Calcium Hydroxylapatite)', es: 'Radiesse (Hidroxiapatita de Calcio)', price: '$800 / syringe' },
+
+            { id: 'exosomes_therapy_direct_injection', category: 'lasers', en: 'Exosomes Therapy (Direct Injection)', es: 'Terapia con Exosomas (Inyección Directa)', price: '$600' },
+            { id: 'microneedling_exosomes', category: 'lasers', en: 'Microneedling + Exosomes', es: 'Microneedling + Exosomas', price: '$800' },
+            { id: 'salmon_pdrn_direct_injection', category: 'lasers', en: 'Salmon PDRN (Direct Injection)', es: 'Salmon PDRN (Inyección Directa)', price: '$450' },
+            { id: 'microneedling_salmon_pdrn', category: 'lasers', en: 'Microneedling + Salmon PDRN', es: 'Microneedling + Salmon PDRN', price: '$650' },
+            { id: 'nctf_skin_boosting', category: 'lasers', en: 'NCTF Skin Boosting', es: 'Impulso de la Piel con NCTF', price: '$500' },
+            { id: 'fractional_co2_laser_resurfacing', category: 'lasers', en: 'Fractional CO2 Laser Resurfacing', es: 'Resurfacing con Láser CO2 Fraccionado', price: '$1,200' },
+            { id: 'facial_cleansing', category: 'lasers', en: 'Facial Cleansing', es: 'Limpieza Facial', price: '$120' },
+        ];
+
+        const TREATMENT_CATEGORIES = [
+            { id: 'consultation', en: 'Consultations', es: 'Consultas' },
+            { id: 'neuromodulators', en: 'Neuromodulators (Botox)', es: 'Neuromoduladores (Botox)' },
+            { id: 'fillers', en: 'Dermal Fillers (Hyaluronic Acid)', es: 'Rellenos Dérmicos (Acido Hialurónico)' },
+            { id: 'biostimulators', en: 'Biostimulators (Collagen Inducers)', es: 'Biostimuladores (Inductores de Colágeno)' },
+            { id: 'lasers', en: 'Regenerative Aesthetics & Lasers', es: 'Estética Regenerativa y Láseres' },
+        ];
+
+        function getTreatmentById(id) {
+            return TREATMENT_OPTIONS.find(o => o.id === id);
+        }
+
+        function getSelectedTreatmentIds() {
+            return Array.from(document.querySelectorAll('input.book-treatment-checkbox:checked')).map(cb => cb.value);
+        }
+
+        function formatTreatments(ids, lang) {
+            const safeIds = Array.isArray(ids) ? ids : [];
+            const labels = safeIds
+                .map(id => {
+                    const t = getTreatmentById(id);
+                    if (!t) return null;
+                    return lang === 'en' ? t.en : t.es;
+                })
+                .filter(Boolean);
+            return labels.join(', ');
+        }
+
+        let nextAppointment = null;
+        let upcomingAppointments = [];
+        let followUpDaysSince = null;
+
+        function translateServiceTypeFallback(value) {
+            const map = {
+                consult: { en: 'General Consultation', es: 'Consulta General' },
+                botox: { en: 'Neuromodulators (Botox)', es: 'Neuromoduladores (Botox)' },
+                fillers: { en: 'Dermal Fillers', es: 'Rellenos Dérmicos' },
+                prp: { en: 'PRP Restoration', es: 'Restauración PRP' }
+            };
+            const safe = String(value || '').trim();
+            const found = map[safe.toLowerCase()];
+            if (found) return currentLang === 'en' ? found.en : found.es;
+            return safe || '—';
+        }
+
+        function syncNextVisitDisplay() {
+            const dateEl = document.getElementById('next-visit-date');
+            const timeEl = document.getElementById('next-visit-time');
+            const treatmentsEl = document.getElementById('next-visit-treatments');
+            const listEl = document.getElementById('upcoming-list');
+
+            if (!dateEl || !timeEl || !treatmentsEl || !listEl) return;
+
+            if (!nextAppointment) {
+                dateEl.innerText = '—';
+                timeEl.innerText = '—';
+                treatmentsEl.innerText = currentLang === 'en' ? 'No scheduled appointments' : 'No tienes citas agendadas';
+            } else {
+                dateEl.innerText = formatDate(nextAppointment.appointment_date);
+                timeEl.innerText = formatTime(nextAppointment.appointment_time);
+
+                const ids = nextAppointment.service_type_ids;
+                if (Array.isArray(ids) && ids.length) {
+                    treatmentsEl.innerText = formatTreatments(ids, currentLang);
+                } else if (nextAppointment.service_type) {
+                    treatmentsEl.innerText = translateServiceTypeFallback(nextAppointment.service_type);
+                } else {
+                    treatmentsEl.innerText = '—';
+                }
+            }
+
+            if (!upcomingAppointments.length) {
+                listEl.innerHTML = `<p class="opacity-60">${currentLang === 'en' ? 'No scheduled appointments.' : 'No tienes citas agendadas.'}</p>`;
+            } else {
+                listEl.innerHTML = upcomingAppointments.map(appt => {
+                    let treatmentText = '—';
+                    if (Array.isArray(appt.service_type_ids) && appt.service_type_ids.length) {
+                        treatmentText = formatTreatments(appt.service_type_ids, currentLang);
+                    } else if (appt.service_type) {
+                        treatmentText = translateServiceTypeFallback(appt.service_type);
+                    }
+                    return `
+                        <div class="p-3 bg-[#FCFAF7] border border-[#E9E0D2] rounded-lg">
+                            <div class="font-semibold text-[#5D534A]">${formatDate(appt.appointment_date)} · ${formatTime(appt.appointment_time)}</div>
+                            <div class="opacity-70 mt-1">${treatmentText}</div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        function syncFollowUpReminderDisplay() {
+            const msgEl = document.getElementById('followup-message');
+            const ctaEl = document.getElementById('followup-cta');
+            if (!msgEl || !ctaEl) return;
+
+            if (followUpDaysSince == null) {
+                msgEl.innerText = currentLang === 'en'
+                    ? "You do not have previous clinical visits yet. Book your first consultation to start your treatment plan."
+                    : "Aún no tienes consultas clínicas previas. Agenda tu primera consulta para iniciar tu plan de tratamiento.";
+                ctaEl.classList.remove('hidden');
+                return;
+            }
+
+            if (followUpDaysSince < 14) {
+                const daysLeft = 14 - followUpDaysSince;
+                msgEl.innerText = currentLang === 'en'
+                    ? `Your last treatment was ${followUpDaysSince} day(s) ago. Recommended follow-up in about ${daysLeft} day(s).`
+                    : `Tu último tratamiento fue hace ${followUpDaysSince} día(s). Seguimiento recomendado en aproximadamente ${daysLeft} día(s).`;
+                ctaEl.classList.add('hidden');
+                return;
+            }
+
+            const weeks = Math.floor(followUpDaysSince / 7);
+            msgEl.innerText = currentLang === 'en'
+                ? `It has been ${weeks} week(s) since your treatment. Perfect time for a touch-up.`
+                : `Han pasado ${weeks} semana(s) desde tu tratamiento. Momento ideal para un retoque.`;
+            ctaEl.classList.remove('hidden');
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '—';
+            const d = new Date(dateStr + 'T00:00:00');
+            if (Number.isNaN(d.getTime())) return dateStr;
+            return d.toLocaleDateString(currentLang === 'en' ? 'en-US' : 'es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+        }
+
+        function formatTime(timeStr) {
+            if (!timeStr) return '—';
+            const t = new Date('1970-01-01T' + timeStr + ':00');
+            if (Number.isNaN(t.getTime())) return timeStr;
+            return t.toLocaleTimeString(currentLang === 'en' ? 'en-US' : 'es-ES', { hour: 'numeric', minute: '2-digit' });
+        }
+
+        async function loadAppointmentsOverview() {
+            const { data: { user }, error: authError } = await _supabase.auth.getUser();
+            if (authError || !user) {
+                nextAppointment = null;
+                upcomingAppointments = [];
+                syncNextVisitDisplay();
+                followUpDaysSince = null;
+                syncFollowUpReminderDisplay();
+                return;
+            }
+
+            const { data, error } = await _supabase
+                .from('appointments')
+                .select('appointment_date, appointment_time, status, service_type_ids, service_type')
+                .eq('patient_id', user.id)
+                .neq('status', 'cancelled')
+                .order('appointment_date', { ascending: true })
+                .order('appointment_time', { ascending: true });
+
+            if (error) {
+                console.error('Load next appointment error:', error);
+                nextAppointment = null;
+                upcomingAppointments = [];
+                syncNextVisitDisplay();
+            } else {
+                const now = new Date();
+                upcomingAppointments = (data || []).filter(appt => {
+                    if (!appt.appointment_date || !appt.appointment_time) return false;
+                    const dt = new Date(appt.appointment_date + 'T' + appt.appointment_time);
+                    return !Number.isNaN(dt.getTime()) && dt >= now;
+                });
+                nextAppointment = upcomingAppointments.length ? upcomingAppointments[0] : null;
+                syncNextVisitDisplay();
+            }
+
+            // Follow-up from latest SOAP note date
+            const { data: latestSoap, error: soapError } = await _supabase
+                .from('clinical_history')
+                .select('visit_date')
+                .eq('patient_id', user.id)
+                .order('visit_date', { ascending: false })
+                .limit(1);
+
+            if (soapError || !latestSoap || !latestSoap.length || !latestSoap[0].visit_date) {
+                followUpDaysSince = null;
+                syncFollowUpReminderDisplay();
+                return;
+            }
+
+            const lastVisit = new Date(latestSoap[0].visit_date + 'T00:00:00');
+            const nowDate = new Date();
+            const diffMs = nowDate.getTime() - lastVisit.getTime();
+            followUpDaysSince = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+            syncFollowUpReminderDisplay();
+        }
+
+        // --- Booking dropdown (multi-select) ---
+        function renderTreatmentDropdownOptions() {
+            const container = document.getElementById('book-treatments-options');
+            if (!container) return;
+
+            function escapeAttr(value) {
+                return String(value ?? '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            }
+
+            const grouped = {};
+            TREATMENT_OPTIONS.forEach(o => {
+                if (!grouped[o.category]) grouped[o.category] = [];
+                grouped[o.category].push(o);
+            });
+
+            container.innerHTML = '';
+            TREATMENT_CATEGORIES.forEach(cat => {
+                const options = grouped[cat.id] || [];
+                if (!options.length) return;
+
+                const section = document.createElement('div');
+                section.className = 'space-y-3';
+
+                const header = document.createElement('div');
+                header.className = 'text-[10px] uppercase tracking-widest opacity-60 font-semibold text-[#B59A6D]';
+                header.innerHTML = `<span data-en="${escapeAttr(cat.en)}" data-es="${escapeAttr(cat.es)}">${cat.en}</span>`;
+                section.appendChild(header);
+
+                const list = document.createElement('div');
+                list.className = 'space-y-2';
+
+                options.forEach(t => {
+                    const row = document.createElement('label');
+                    row.className = 'flex items-start gap-3 cursor-pointer select-none';
+
+                    row.innerHTML = `
+                        <input type="checkbox" class="book-treatment-checkbox mt-1 accent-[#B59A6D]" value="${t.id}">
+                        <div class="flex-1">
+                            <div class="flex items-baseline justify-between gap-4">
+                                <span class="text-sm text-[#5D534A] font-light" data-en="${escapeAttr(t.en)}" data-es="${escapeAttr(t.es)}">${t.en}</span>
+                                <span class="text-[10px] uppercase tracking-widest opacity-60 font-semibold whitespace-nowrap">${t.price}</span>
+                            </div>
+                        </div>
+                    `;
+
+                    list.appendChild(row);
+                });
+
+                section.appendChild(list);
+                container.appendChild(section);
+            });
+        }
+
+        function closeTreatmentsDropdown() {
+            const dropdown = document.getElementById('book-treatments-dropdown');
+            if (dropdown) dropdown.classList.add('hidden');
+        }
+
+        function toggleTreatmentsDropdown() {
+            const dropdown = document.getElementById('book-treatments-dropdown');
+            if (!dropdown) return;
+            dropdown.classList.toggle('hidden');
+        }
+
+        function syncTreatmentsSelectedSummary() {
+            const selectedIds = getSelectedTreatmentIds();
+            const count = selectedIds.length;
+            const selectedEl = document.getElementById('book-treatments-selected');
+            if (selectedEl) {
+                if (currentLang === 'en') selectedEl.innerText = `${count} selected`;
+                else selectedEl.innerText = `${count} seleccionados`;
+            }
+        }
+
+        function closeAllDropdowns() {
+            closeTreatmentsDropdown();
+        }
+
         // 2. DASHBOARD LOGIC
         function switchView(viewId, navElement) {
             document.getElementById('dashboard-view').classList.add('hidden');
@@ -164,6 +479,8 @@
             }
 
             if (isMobile()) closeMobileMenu();
+
+            closeAllDropdowns();
         }
 
         // 2.5 MOBILE MENU LOGIC
@@ -218,6 +535,9 @@
             currentLang = currentLang === 'en' ? 'es' : 'en';
             localStorage.setItem('preferredLang', currentLang);
             updateLanguage();
+            syncTreatmentsSelectedSummary();
+            syncNextVisitDisplay();
+            syncFollowUpReminderDisplay();
         }
 
         // 4. MODAL LOGIC
@@ -346,9 +666,23 @@
                 return;
             }
 
+            const selectedTreatmentIds = getSelectedTreatmentIds();
+            if (selectedTreatmentIds.length === 0) {
+                alert(currentLang === 'en' ? "Please select at least one treatment." : "Por favor selecciona al menos un tratamiento.");
+                submitBtn.innerText = originalText;
+                submitBtn.disabled = false;
+                closeTreatmentsDropdown();
+                return;
+            }
+
+            const selectedTreatmentLabelsEn = selectedTreatmentIds
+                .map(id => getTreatmentById(id)?.en)
+                .filter(Boolean);
+
             const { error: dbError } = await _supabase.from('appointments').insert([{
                 patient_id: user.id,
-                service_type: document.getElementById('book-service').value,
+                service_type: selectedTreatmentLabelsEn.join(', '),
+                service_type_ids: selectedTreatmentIds,
                 appointment_date: date,
                 appointment_time: time,
                 status: 'pending'
@@ -359,6 +693,9 @@
             } else {
                 showSuccessModal(); // New Aesthetic Feedback
                 event.target.reset();
+                syncTreatmentsSelectedSummary();
+                closeTreatmentsDropdown();
+                await loadAppointmentsOverview();
             }
 
             submitBtn.innerText = originalText;
@@ -367,7 +704,26 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             updateLanguage();
+            renderTreatmentDropdownOptions();
+            syncTreatmentsSelectedSummary();
+
+            // Update summary when selecting treatments
+            document.querySelectorAll('input.book-treatment-checkbox').forEach(cb => {
+                cb.addEventListener('change', syncTreatmentsSelectedSummary);
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                const dropdown = document.getElementById('book-treatments-dropdown');
+                const btn = document.getElementById('book-treatments-btn');
+                if (!dropdown || !btn) return;
+                if (dropdown.classList.contains('hidden')) return;
+                if (dropdown.contains(e.target) || btn.contains(e.target)) return;
+                closeTreatmentsDropdown();
+            });
+
             loadPatientProfile();
+            loadAppointmentsOverview();
             document.getElementById('book-date').addEventListener('change', updateAvailableTimes);
         });
     </script>
