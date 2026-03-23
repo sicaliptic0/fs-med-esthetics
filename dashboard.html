@@ -150,12 +150,12 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // 1. CONFIGURATION (Using your existing Supabase keys)
+        // 1. CONFIGURATION
         const SUPABASE_URL = 'https://qkjmrnqkoipdltauweub.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFram1ybnFrb2lwZGx0YXV3ZXViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1MTkyMjgsImV4cCI6MjA4OTA5NTIyOH0.EGqgJ9RNY9vYfuVeeEcGoMu_cIaygRq0hnyT-iE7zTw';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // 2. DASHBOARD LOGIC: Switching Tabs
+        // 2. DASHBOARD LOGIC
         function switchView(viewId, navElement) {
             document.getElementById('dashboard-view').classList.add('hidden');
             document.getElementById('booking-view').classList.add('hidden');
@@ -167,7 +167,7 @@
             }
         }
 
-        // 3. LOCALIZATION LOGIC: Language Toggle
+        // 3. LOCALIZATION
         let currentLang = localStorage.getItem('preferredLang') || 'en';
         function updateLanguage() {
             document.querySelectorAll('[data-en]').forEach(el => {
@@ -181,64 +181,106 @@
             updateLanguage();
         }
 
-        // 4. LOGOUT LOGIC
+        // 4. LOGOUT
         async function logout() {
             await _supabase.auth.signOut();
             window.location.href = 'index.html';
         }
 
-        // 5. ASYNC BOOKING LOGIC (The new database connection)
+        // 5. DYNAMIC TIME FILTERING (Hide booked slots)
+        async function updateAvailableTimes() {
+            const selectedDate = document.getElementById('book-date').value;
+            const timeSelect = document.getElementById('book-time');
+            const options = timeSelect.options;
+
+            if (!selectedDate) return;
+
+            // Fetch already booked times for this date
+            const { data: bookedSlots, error } = await _supabase
+                .from('appointments')
+                .select('appointment_time')
+                .eq('appointment_date', selectedDate)
+                .neq('status', 'cancelled'); // Don't count cancelled appointments
+
+            const takenTimes = bookedSlots.map(slot => slot.appointment_time.substring(0, 5));
+
+            // Loop through options and hide/disable taken ones
+            for (let i = 0; i < options.length; i++) {
+                if (options[i].value === "") continue; // Skip the placeholder
+
+                if (takenTimes.includes(options[i].value)) {
+                    options[i].disabled = true;
+                    options[i].style.display = "none"; // Hides it in most browsers
+                    options[i].innerText += currentLang === 'en' ? " (Booked)" : " (Ocupado)";
+                } else {
+                    options[i].disabled = false;
+                    options[i].style.display = "block";
+                    options[i].innerText = options[i].value.includes("AM") || options[i].value.includes("PM") 
+                        ? options[i].value 
+                        : options[i].value + (parseInt(options[i].value) < 12 ? " AM" : " PM");
+                }
+            }
+        }
+
+        // 6. ASYNC BOOKING LOGIC
         async function handleBooking(event) {
             event.preventDefault();
-
-            // UI Feedback: Disable button
             const submitBtn = event.target.querySelector('button[type="submit"]');
             const originalText = submitBtn.innerText;
+            
+            const date = document.getElementById('book-date').value;
+            const time = document.getElementById('book-time').value;
+
             submitBtn.innerText = currentLang === 'en' ? "Processing..." : "Procesando...";
             submitBtn.disabled = true;
 
-            // Get current logged-in patient
-            const { data: { user }, error: authError } = await _supabase.auth.getUser();
+            // Final Conflict Check (Safety Triage)
+            const { data: conflict } = await _supabase
+                .from('appointments')
+                .select('id')
+                .eq('appointment_date', date)
+                .eq('appointment_time', time)
+                .neq('status', 'cancelled')
+                .limit(1);
 
-            if (authError || !user) {
-                alert(currentLang === 'en' ? "Please log in to schedule." : "Por favor inicia sesión para agendar.");
-                window.location.href = 'index.html';
+            if (conflict && conflict.length > 0) {
+                alert(currentLang === 'en' ? "This slot was just taken. Please choose another." : "Este horario se acaba de ocupar. Por favor elija otro.");
+                await updateAvailableTimes();
+                submitBtn.innerText = originalText;
+                submitBtn.disabled = false;
                 return;
             }
 
-            // Package Clinical Data
+            const { data: { user } } = await _supabase.auth.getUser();
+
             const appointmentData = {
                 patient_id: user.id,
                 service_type: document.getElementById('book-service').value,
-                appointment_date: document.getElementById('book-date').value,
-                appointment_time: document.getElementById('book-time').value,
+                appointment_date: date,
+                appointment_time: time,
                 status: 'pending'
             };
 
-            // Insert into the 'appointments' table you just created
-            const { error: dbError } = await _supabase
-                .from('appointments')
-                .insert([appointmentData]);
+            const { error: dbError } = await _supabase.from('appointments').insert([appointmentData]);
 
             if (dbError) {
-                console.error("Clinical Database Error:", dbError.message);
                 alert(currentLang === 'en' ? "Error saving appointment." : "Error al guardar la cita.");
             } else {
-                const successMsg = currentLang === 'en' 
-                    ? `Request received. We will contact you soon.` 
-                    : `Solicitud recibida. Nos contactaremos pronto.`;
-                
-                alert(successMsg);
+                alert(currentLang === 'en' ? "Request received. We will contact you soon." : "Solicitud recibida. Nos contactaremos pronto.");
                 event.target.reset();
                 switchView('dashboard-view', document.querySelectorAll('.nav-item')[0]);
             }
 
-            // Restore UI
             submitBtn.innerText = originalText;
             submitBtn.disabled = false;
         }
 
-        document.addEventListener('DOMContentLoaded', updateLanguage);
+        // Initialization & Event Listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            updateLanguage();
+            // Trigger time check when date changes
+            document.getElementById('book-date').addEventListener('change', updateAvailableTimes);
+        });
     </script>
 </body>
 </html>
