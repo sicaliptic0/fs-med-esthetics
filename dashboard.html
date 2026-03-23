@@ -11,6 +11,7 @@
         h1, h2, h3, h4 { font-family: 'Cormorant Garamond', serif; }
         .logo-font { font-family: 'Montserrat', sans-serif; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; }
         .sidebar { background-color: #ffffff; border-right: 1px solid #E9E0D2; }
+        #sidebar .nav-item { color: #5D534A; }
         .nav-item { cursor: pointer; transition: all 0.3s; }
         .nav-item:hover { background-color: #FCFAF7; color: #B59A6D; }
         .active-nav { background-color: #FCFAF7; color: #B59A6D; border-right: 3px solid #B59A6D; }
@@ -23,7 +24,9 @@
 </head>
 <body class="flex h-screen overflow-hidden relative">
 
-    <aside id="sidebar" class="w-64 sidebar flex flex-col hidden absolute md:relative md:flex h-full z-50 shadow-2xl md:shadow-none bg-white">
+    <div id="mobile-overlay" class="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 hidden md:hidden" onclick="closeMobileMenu()"></div>
+
+    <aside id="sidebar" class="w-64 sidebar flex flex-col fixed top-0 left-0 h-screen z-50 shadow-2xl md:shadow-none bg-white -translate-x-full pointer-events-none transition-transform duration-300 ease-in-out md:static md:h-full md:translate-x-0 md:pointer-events-auto md:flex">
         <div class="p-6 text-center border-b border-[#E9E0D2] flex justify-between items-center md:block">
             <h1 class="logo-font text-sm md:text-base tracking-widest text-[#B59A6D]">FS PORTAL</h1>
             <button onclick="toggleMobileMenu()" class="md:hidden text-xl opacity-50 hover:opacity-100">&times;</button>
@@ -64,7 +67,7 @@
             </div>
         </header>
 
-        <div class="flex-1 overflow-y-auto p-6 md:p-12">
+        <div class="flex-1 min-h-0 overflow-y-auto p-6 md:p-12">
             <div id="dashboard-view" class="space-y-8 block">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="bg-white border-l-4 border-[#B59A6D] p-6 shadow-sm rounded-r-lg">
@@ -159,16 +162,49 @@
                 document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active-nav'));
                 navElement.classList.add('active-nav');
             }
-        }
-        // 2.5 MOBILE MENU LOGIC
-        function toggleMobileMenu() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('hidden');
+
+            if (isMobile()) closeMobileMenu();
         }
 
-        if (window.innerWidth < 768) {
-                document.getElementById('sidebar').classList.add('hidden');
-            }
+        // 2.5 MOBILE MENU LOGIC
+        function isMobile() {
+            return window.matchMedia('(max-width: 767px)').matches;
+        }
+
+        function openMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+
+            if (!sidebar || !overlay) return;
+            sidebar.classList.remove('-translate-x-full', 'pointer-events-none');
+            sidebar.classList.add('translate-x-0', 'pointer-events-auto');
+            overlay.classList.remove('hidden');
+        }
+
+        function closeMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+
+            if (!sidebar || !overlay) return;
+            sidebar.classList.add('-translate-x-full', 'pointer-events-none');
+            sidebar.classList.remove('translate-x-0', 'pointer-events-auto');
+            overlay.classList.add('hidden');
+        }
+
+        function toggleMobileMenu() {
+            if (!isMobile()) return;
+            const sidebar = document.getElementById('sidebar');
+            if (!sidebar) return;
+
+            const isOpen = sidebar.classList.contains('translate-x-0');
+            if (isOpen) closeMobileMenu();
+            else openMobileMenu();
+        }
+
+        // Ensure correct initial state on mobile/desktop.
+        document.addEventListener('DOMContentLoaded', () => {
+            if (isMobile()) closeMobileMenu();
+        });
         
         // 3. LOCALIZATION
         let currentLang = localStorage.getItem('preferredLang') || 'en';
@@ -243,19 +279,32 @@
             const { data: { user }, error: authError } = await _supabase.auth.getUser();
             
             if (user) {
+                // Fallback: usar datos guardados en la sesión (user_metadata) si no existe fila en `profiles`.
+                const metaFirst = user.user_metadata?.first_name || '';
+                const metaLast = user.user_metadata?.last_name || '';
+                const metaFullName = (metaFirst + ' ' + metaLast).trim();
+                if (metaFullName) {
+                    document.getElementById('user-name').innerText = metaFullName;
+                    const initial = (metaFirst || metaLast || 'P').charAt(0).toUpperCase();
+                    document.getElementById('user-avatar').src = `https://ui-avatars.com/api/?name=${initial}&background=E9E0D2&color=5D534A`;
+                }
+
                 // 2. Fetch their specific first name from the profiles table
                 const { data: profile, error: dbError } = await _supabase
                     .from('profiles')
-                    .select('first_name')
+                    .select('first_name, last_name')
                     .eq('id', user.id)
                     .single();
 
                 // 3. Update the HTML if the name exists
-                if (profile && profile.first_name) {
-                    document.getElementById('user-name').innerText = profile.first_name;
+                if (profile && (profile.first_name || profile.last_name)) {
+                    const first = profile.first_name || '';
+                    const last = profile.last_name || '';
+                    const fullName = (first + ' ' + last).trim();
+                    document.getElementById('user-name').innerText = fullName || 'Patient';
                     
                     // Bonus: Update the Avatar letter automatically
-                    const initial = profile.first_name.charAt(0).toUpperCase();
+                    const initial = (profile.first_name || profile.last_name || 'P').charAt(0).toUpperCase();
                     document.getElementById('user-avatar').src = `https://ui-avatars.com/api/?name=${initial}&background=E9E0D2&color=5D534A`;
                 }
             }
@@ -318,6 +367,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             updateLanguage();
+            loadPatientProfile();
             document.getElementById('book-date').addEventListener('change', updateAvailableTimes);
         });
     </script>
