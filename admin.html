@@ -113,7 +113,7 @@
 
         async function checkAdmin() {
             const { data: { user } } = await _supabase.auth.getUser();
-            const admins = ['samuel.galviz@gmail.com', 'freddy@email.com'];
+            const admins = ['samuel.galviz@gmail.com', 'freddyjosevp@email.com'];
             if (!user || !admins.includes(user.email)) { window.location.href = 'index.html'; return; }
             fetchPatients();
         }
