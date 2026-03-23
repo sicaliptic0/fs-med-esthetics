@@ -478,6 +478,21 @@
                 }
 
                 if (!tosCheck) return alert(currentLang === 'en' ? "Please agree to the Terms of Service." : "Por favor acepta los Términos de Servicio.");
+            
+                if (result.error) {
+        alert("Error: " + result.error.message);
+    } else {
+        // PROFESSIONAL UPDATE:
+        alert(currentLang === 'en' 
+            ? "Account created! Please check your email to verify your identity before logging in." 
+            : "¡Cuenta creada! Por favor, revise su correo para verificar su identidad antes de iniciar sesión.");
+        
+        // Instead of redirecting to dashboard immediately, 
+        // close the modal or keep them on the index page.
+        document.getElementById('auth-modal').classList.add('hidden');
+    }
+
+                
             }
 
             // UI: Estado de Carga

@@ -16,6 +16,9 @@
         .active-nav { background-color: #FCFAF7; color: #B59A6D; border-right: 3px solid #B59A6D; }
         .btn-gold { background-color: #B59A6D; color: white; transition: 0.3s; }
         .btn-gold:hover { background-color: #9E865E; }
+        
+        /* Smooth transition for modal */
+        #success-content { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden relative">
@@ -43,7 +46,6 @@
     </aside>
 
     <main class="flex-1 flex flex-col overflow-hidden bg-[#FCFAF7]">
-        
         <header class="h-20 bg-white border-b border-[#E9E0D2] flex items-center justify-between px-6 md:px-12">
             <button class="md:hidden text-2xl">☰</button>
             <h2 class="text-xl md:text-2xl italic font-light">
@@ -61,40 +63,19 @@
         </header>
 
         <div class="flex-1 overflow-y-auto p-6 md:p-12">
-
             <div id="dashboard-view" class="space-y-8 block">
-                
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="bg-white border-l-4 border-[#B59A6D] p-6 shadow-sm rounded-r-lg">
                         <h3 class="uppercase text-[10px] tracking-widest text-[#B59A6D] font-bold mb-2" data-en="Follow-up Reminder" data-es="Recordatorio de Seguimiento">Follow-up Reminder</h3>
                         <p class="text-sm font-light opacity-80 mb-4" data-en="It has been 4 months since your treatment. Perfect time for a touch-up." data-es="Han pasado 4 meses desde tu tratamiento. Momento ideal para un retoque.">It has been 4 months since your treatment. Perfect time for a touch-up.</p>
                         <button onclick="switchView('booking-view', document.querySelectorAll('.nav-item')[1])" class="btn-gold px-6 py-3 uppercase text-[10px] tracking-widest" data-en="Schedule Now" data-es="Agendar Ahora">Schedule Now</button>
                     </div>
-
                     <div class="bg-white p-6 rounded-xl border border-[#E9E0D2] shadow-sm">
                         <h3 class="uppercase text-[10px] tracking-widest text-[#B59A6D] font-bold mb-4" data-en="Your Next Visit" data-es="Tu Próxima Cita">Your Next Visit</h3>
                         <div class="space-y-2 text-sm opacity-80">
                             <p>📅 April 15, 2026</p>
                             <p>🕒 10:30 AM</p>
                             <p>⚕️ Dr. Samuel Galviz</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div class="bg-[#5D534A] text-[#FCFAF7] p-8 rounded-xl shadow-lg relative overflow-hidden">
-                        <h3 class="uppercase text-[10px] tracking-widest text-[#B59A6D] font-bold mb-6" data-en="Loyalty Points" data-es="Puntos de Lealtad">Loyalty Points</h3>
-                        <p class="text-4xl font-light">450 <span class="text-sm opacity-60">Points</span></p>
-                        <div class="w-full bg-white/10 h-1.5 rounded-full mt-4">
-                            <div class="bg-[#B59A6D] h-full w-[75%] rounded-full"></div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white p-8 rounded-xl border border-[#E9E0D2] shadow-sm">
-                        <h3 class="uppercase text-[10px] tracking-widest text-[#B59A6D] font-bold mb-6" data-en="Daily Routine" data-es="Rutina Diaria">Daily Routine</h3>
-                        <div class="space-y-4 text-sm opacity-80">
-                            <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" class="accent-[#B59A6D]"> ☀️ AM: Vitamin C</label>
-                            <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" class="accent-[#B59A6D]"> 🌙 PM: Retinol</label>
                         </div>
                     </div>
                 </div>
@@ -105,10 +86,8 @@
                     <h2 class="text-4xl text-[#5D534A]" data-en="Schedule Your Treatment" data-es="Agenda tu Tratamiento">Schedule Your Treatment</h2>
                     <p class="font-light opacity-70 mt-2" data-en="Select your service, date, and preferred time." data-es="Selecciona tu servicio, fecha y hora preferida.">Select your service, date, and preferred time.</p>
                 </div>
-            
                 <div class="bg-white border border-[#E9E0D2] rounded-xl shadow-sm p-8 md:p-12">
                     <form id="booking-form" class="space-y-8" onsubmit="handleBooking(event)">
-                        
                         <div>
                             <label class="block uppercase text-[10px] tracking-widest text-[#B59A6D] font-bold mb-4" data-en="1. Select Procedure" data-es="1. Seleccionar Procedimiento">1. Select Procedure</label>
                             <select id="book-service" class="w-full p-4 border border-[#E9E0D2] outline-none focus:border-[#B59A6D] bg-[#FCFAF7] text-sm text-[#5D534A]" required>
@@ -119,7 +98,6 @@
                                 <option value="consult" data-en="General Assessment" data-es="Valoración General">General Assessment</option>
                             </select>
                         </div>
-            
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div>
                                 <label class="block uppercase text-[10px] tracking-widest text-[#B59A6D] font-bold mb-4" data-en="2. Select Date" data-es="2. Selecciona una Fecha">2. Select Date</label>
@@ -136,17 +114,31 @@
                                 </select>
                             </div>
                         </div>
-            
                         <button type="submit" class="w-full bg-[#B59A6D] text-white py-5 uppercase text-xs tracking-widest font-bold hover:bg-[#9E865E] transition shadow-md">
                             <span data-en="Request Appointment" data-es="Solicitar Cita">Request Appointment</span>
                         </button>
-                        <p class="text-center text-[10px] opacity-50 mt-4" data-en="* You will receive a confirmation email once your appointment is validated." data-es="* Recibirás un correo de confirmación una vez validada tu cita.">* You will receive a confirmation email once your appointment is validated.</p>
                     </form>
                 </div>
             </div>
-
         </div>
     </main>
+
+    <div id="success-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-6">
+        <div class="bg-white p-10 md:p-12 max-w-sm w-full rounded-2xl shadow-2xl text-center transform scale-95 opacity-0" id="success-content">
+            <div class="w-16 h-16 bg-[#F7F3ED] rounded-full flex items-center justify-center mx-auto mb-6">
+                <span class="text-[#B59A6D] text-3xl">✓</span>
+            </div>
+            <h3 class="text-2xl italic mb-4 text-[#5D534A]" data-en="Booking Received" data-es="Cita Recibida">Booking Received</h3>
+            <p class="text-sm font-light opacity-70 mb-8 leading-relaxed" 
+               data-en="Your clinical request has been saved. We will vet the details and contact you shortly." 
+               data-es="Su solicitud clínica ha sido guardada. Validaremos los detalles y nos contactaremos pronto.">
+               Your clinical request has been saved. We will vet the details and contact you shortly.
+            </p>
+            <button onclick="closeSuccessModal()" class="btn-gold w-full py-4 uppercase text-[10px] tracking-widest font-bold">
+                <span data-en="Continue" data-es="Continuar">Continue</span>
+            </button>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
@@ -181,13 +173,34 @@
             updateLanguage();
         }
 
-        // 4. LOGOUT
+        // 4. MODAL LOGIC
+        function showSuccessModal() {
+            const modal = document.getElementById('success-modal');
+            const content = document.getElementById('success-content');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                content.classList.remove('scale-95', 'opacity-0');
+                content.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function closeSuccessModal() {
+            const modal = document.getElementById('success-modal');
+            const content = document.getElementById('success-content');
+            content.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                switchView('dashboard-view', document.querySelectorAll('.nav-item')[0]);
+            }, 300);
+        }
+
+        // 5. LOGOUT
         async function logout() {
             await _supabase.auth.signOut();
             window.location.href = 'index.html';
         }
 
-        // 5. DYNAMIC TIME FILTERING (Hide booked slots)
+        // 6. DYNAMIC TIME FILTERING
         async function updateAvailableTimes() {
             const selectedDate = document.getElementById('book-date').value;
             const timeSelect = document.getElementById('book-time');
@@ -195,34 +208,27 @@
 
             if (!selectedDate) return;
 
-            // Fetch already booked times for this date
-            const { data: bookedSlots, error } = await _supabase
+            const { data: bookedSlots } = await _supabase
                 .from('appointments')
                 .select('appointment_time')
                 .eq('appointment_date', selectedDate)
-                .neq('status', 'cancelled'); // Don't count cancelled appointments
+                .neq('status', 'cancelled');
 
             const takenTimes = bookedSlots.map(slot => slot.appointment_time.substring(0, 5));
 
-            // Loop through options and hide/disable taken ones
             for (let i = 0; i < options.length; i++) {
-                if (options[i].value === "") continue; // Skip the placeholder
-
+                if (options[i].value === "") continue;
                 if (takenTimes.includes(options[i].value)) {
                     options[i].disabled = true;
-                    options[i].style.display = "none"; // Hides it in most browsers
-                    options[i].innerText += currentLang === 'en' ? " (Booked)" : " (Ocupado)";
+                    options[i].style.display = "none";
                 } else {
                     options[i].disabled = false;
                     options[i].style.display = "block";
-                    options[i].innerText = options[i].value.includes("AM") || options[i].value.includes("PM") 
-                        ? options[i].value 
-                        : options[i].value + (parseInt(options[i].value) < 12 ? " AM" : " PM");
                 }
             }
         }
 
-        // 6. ASYNC BOOKING LOGIC
+        // 7. ASYNC BOOKING LOGIC
         async function handleBooking(event) {
             event.preventDefault();
             const submitBtn = event.target.querySelector('button[type="submit"]');
@@ -234,7 +240,7 @@
             submitBtn.innerText = currentLang === 'en' ? "Processing..." : "Procesando...";
             submitBtn.disabled = true;
 
-            // Final Conflict Check (Safety Triage)
+            // Conflict Check
             const { data: conflict } = await _supabase
                 .from('appointments')
                 .select('id')
@@ -244,7 +250,7 @@
                 .limit(1);
 
             if (conflict && conflict.length > 0) {
-                alert(currentLang === 'en' ? "This slot was just taken. Please choose another." : "Este horario se acaba de ocupar. Por favor elija otro.");
+                alert(currentLang === 'en' ? "This slot was just taken." : "Horario ocupado.");
                 await updateAvailableTimes();
                 submitBtn.innerText = originalText;
                 submitBtn.disabled = false;
@@ -253,32 +259,27 @@
 
             const { data: { user } } = await _supabase.auth.getUser();
 
-            const appointmentData = {
+            const { error: dbError } = await _supabase.from('appointments').insert([{
                 patient_id: user.id,
                 service_type: document.getElementById('book-service').value,
                 appointment_date: date,
                 appointment_time: time,
                 status: 'pending'
-            };
-
-            const { error: dbError } = await _supabase.from('appointments').insert([appointmentData]);
+            }]);
 
             if (dbError) {
-                alert(currentLang === 'en' ? "Error saving appointment." : "Error al guardar la cita.");
+                alert("Error saving appointment.");
             } else {
-                alert(currentLang === 'en' ? "Request received. We will contact you soon." : "Solicitud recibida. Nos contactaremos pronto.");
+                showSuccessModal(); // New Aesthetic Feedback
                 event.target.reset();
-                switchView('dashboard-view', document.querySelectorAll('.nav-item')[0]);
             }
 
             submitBtn.innerText = originalText;
             submitBtn.disabled = false;
         }
 
-        // Initialization & Event Listeners
         document.addEventListener('DOMContentLoaded', () => {
             updateLanguage();
-            // Trigger time check when date changes
             document.getElementById('book-date').addEventListener('change', updateAvailableTimes);
         });
     </script>
