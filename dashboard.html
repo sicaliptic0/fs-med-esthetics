@@ -681,6 +681,36 @@
                 }
             }
         }
+
+        async function ensurePatientProfileExists(user) {
+            if (!user?.id) return false;
+
+            const { data: existingProfile, error: findErr } = await _supabase
+                .from('profiles')
+                .select('id')
+                .eq('id', user.id)
+                .maybeSingle();
+
+            if (!findErr && existingProfile?.id) return true;
+
+            const firstName = String(user.user_metadata?.first_name || 'Patient').trim() || 'Patient';
+            const lastName = String(user.user_metadata?.last_name || '').trim();
+            const fallbackProfile = {
+                id: user.id,
+                first_name: firstName,
+                last_name: lastName
+            };
+
+            const { error: insertErr } = await _supabase
+                .from('profiles')
+                .upsert(fallbackProfile, { onConflict: 'id' });
+
+            if (insertErr) {
+                console.error('Could not ensure profile row exists:', insertErr);
+                return false;
+            }
+            return true;
+        }
         // 7. ASYNC BOOKING LOGIC
         async function handleBooking(event) {
             event.preventDefault();
@@ -725,6 +755,16 @@
                 return;
             }
 
+            const profileReady = await ensurePatientProfileExists(user);
+            if (!profileReady) {
+                alert(currentLang === 'en'
+                    ? "Could not prepare your patient profile. Please contact support."
+                    : "No se pudo preparar tu perfil de paciente. Contacta soporte.");
+                submitBtn.innerText = originalText;
+                submitBtn.disabled = false;
+                return;
+            }
+
             const selectedTreatmentIds = getSelectedTreatmentIds();
             if (selectedTreatmentIds.length === 0) {
                 alert(currentLang === 'en' ? "Please select at least one treatment." : "Por favor selecciona al menos un tratamiento.");
@@ -748,7 +788,7 @@
             }]);
 
             if (dbError) {
-                alert("Error saving appointment.");
+                alert((currentLang === 'en' ? "Error saving appointment: " : "Error guardando la cita: ") + dbError.message);
             } else {
                 const patientName = (document.getElementById('user-name')?.innerText || '').trim() || 'Patient';
                 const status = 'pending';
