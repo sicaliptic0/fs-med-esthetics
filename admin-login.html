@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login | FS Med-Esthetics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body class="bg-[#FCFAF7] h-screen flex items-center justify-center font-['Outfit']">
+
+    <div class="w-full max-w-md p-10 bg-white rounded-2xl shadow-xl border border-[#E9E0D2]">
+        <div class="text-center mb-10">
+            <h1 class="text-[#B59A6D] text-xs uppercase tracking-[0.2em] font-bold mb-2">Internal Access Only</h1>
+            <h2 class="text-3xl italic font-serif text-[#5D534A]">Provider Login</h2>
+        </div>
+
+        <form id="admin-login-form" class="space-y-6">
+            <div>
+                <label class="block text-[10px] uppercase tracking-widest opacity-40 mb-2">Staff Email</label>
+                <input type="email" id="admin-email" required class="w-full p-4 bg-[#FCFAF7] border border-[#E9E0D2] outline-none focus:border-[#B59A6D] text-sm">
+            </div>
+            <div>
+                <label class="block text-[10px] uppercase tracking-widest opacity-40 mb-2">Secret Password</label>
+                <input type="password" id="admin-password" required class="w-full p-4 bg-[#FCFAF7] border border-[#E9E0D2] outline-none focus:border-[#B59A6D] text-sm">
+            </div>
+            <button type="submit" class="w-full bg-[#5D534A] text-white py-4 uppercase text-[10px] tracking-widest font-bold hover:bg-[#B59A6D] transition duration-300 shadow-md">
+                Authenticate Access
+            </button>
+        </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://qkjmrnqkoipdltauweub.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFram1ybnFrb2lwZGx0YXV3ZXViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1MTkyMjgsImV4cCI6MjA4OTA5NTIyOH0.EGqgJ9RNY9vYfuVeeEcGoMu_cIaygRq0hnyT-iE7zTw';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        document.getElementById('admin-login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('admin-email').value;
+            const password = document.getElementById('admin-password').value;
+
+            const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
+
+            if (error) {
+                alert("Unauthorized: " + error.message);
+            } else {
+                // The critical part: Redirect to ADMIN.HTML instead of DASHBOARD.HTML
+                window.location.href = 'admin.html';
+            }
+        });
+    </script>
+</body>
+</html>

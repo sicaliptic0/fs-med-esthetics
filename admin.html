@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clinical Admin | FS Med-Esthetics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Outfit', sans-serif; background-color: #fcfaf7; color: #5d534a; }
+        h1, h2, h3 { font-family: 'Cormorant Garamond', serif; }
+        .admin-sidebar { background-color: #ffffff; border-right: 1px solid #e9e0d2; }
+        .status-badge { font-size: 9px; padding: 2px 8px; border-radius: 99px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: bold; }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+    <aside class="w-64 admin-sidebar flex flex-col p-6">
+        <h1 class="text-[#b59a6d] text-xl tracking-widest font-bold mb-10 text-center">FS ADMIN</h1>
+        <nav class="flex-1 space-y-2">
+            <a href="#" class="block px-4 py-3 bg-[#fcfaf7] text-[#b59a6d] border-r-4 border-[#b59a6d] text-[10px] uppercase tracking-widest font-bold">Patients</a>
+            <a href="#" class="block px-4 py-3 hover:bg-gray-50 text-[10px] uppercase tracking-widest opacity-60">Appointments</a>
+            <a href="#" class="block px-4 py-3 hover:bg-gray-50 text-[10px] uppercase tracking-widest opacity-60">Inventory</a>
+        </nav>
+        <button onclick="logout()" class="text-[10px] uppercase tracking-widest opacity-40 hover:opacity-100 transition">Logout</button>
+    </aside>
+
+    <main class="flex-1 flex flex-col overflow-hidden">
+        <header class="h-20 bg-white border-b border-[#e9e0d2] flex items-center justify-between px-12">
+            <h2 class="text-2xl italic">Patient Database</h2>
+            <div class="flex items-center gap-4">
+                <span class="text-[10px] uppercase tracking-widest opacity-40">Active Provider:</span>
+                <span class="text-sm font-medium">Dr. Samuel Galviz</span>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-12">
+            <div class="bg-white rounded-xl shadow-sm border border-[#e9e0d2] overflow-hidden">
+                <table class="w-full text-left">
+                    <thead class="bg-gray-50 text-[10px] uppercase tracking-widest opacity-60">
+                        <tr>
+                            <th class="p-6">Patient Name</th>
+                            <th class="p-6">DOB</th>
+                            <th class="p-6">Sex</th>
+                            <th class="p-6">Phone</th>
+                            <th class="p-6">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="patient-table-body" class="text-sm">
+                        <tr>
+                            <td colspan="5" class="p-10 text-center opacity-40 italic">Loading patient records...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <div id="soap-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+        <div class="bg-white w-full max-w-2xl p-10 rounded-2xl shadow-2xl overflow-y-auto max-h-[90vh]">
+            <div class="flex justify-between items-center mb-8">
+                <h3 class="text-3xl italic">New Clinical Visit: <span id="target-patient">--</span></h3>
+                <button onclick="closeSoapNote()" class="opacity-40 hover:opacity-100">✕</button>
+            </div>
+            
+            <form id="soap-form" class="space-y-6">
+                <div class="grid grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-[10px] uppercase font-bold text-[#b59a6d] mb-2">Subjective (S)</label>
+                        <textarea id="soap-s" class="w-full p-4 bg-gray-50 border border-gray-100 h-32 text-sm outline-none focus:border-[#b59a6d]" placeholder="Patient's concerns..."></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] uppercase font-bold text-[#b59a6d] mb-2">Objective (O)</label>
+                        <textarea id="soap-o" class="w-full p-4 bg-gray-50 border border-gray-100 h-32 text-sm outline-none focus:border-[#b59a6d]" placeholder="Clinical findings..."></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] uppercase font-bold text-[#b59a6d] mb-2">Assessment (A)</label>
+                        <textarea id="soap-a" class="w-full p-4 bg-gray-50 border border-gray-100 h-32 text-sm outline-none focus:border-[#b59a6d]" placeholder="Diagnosis/Conclusion..."></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] uppercase font-bold text-[#b59a6d] mb-2">Plan (P)</label>
+                        <textarea id="soap-p" class="w-full p-4 bg-gray-50 border border-gray-100 h-32 text-sm outline-none focus:border-[#b59a6d]" placeholder="Next steps/Treatment..."></textarea>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-[#b59a6d] text-white py-4 uppercase text-[10px] tracking-widest font-bold hover:bg-[#9e865e] transition">Save to History</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="edit-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+        <div class="bg-white w-full max-w-md p-10 rounded-2xl shadow-2xl">
+            <h3 class="text-3xl italic mb-6">Modify Patient Record</h3>
+            <form id="edit-form" class="space-y-4">
+                <input type="hidden" id="edit-patient-id">
+                <div>
+                    <label class="block text-[10px] uppercase font-bold text-[#B59A6D] mb-1">Phone Number</label>
+                    <input type="text" id="edit-phone" class="w-full p-3 bg-gray-50 border border-gray-100 text-sm outline-none focus:border-[#B59A6D]">
+                </div>
+                <div>
+                    <label class="block text-[10px] uppercase font-bold text-[#B59A6D] mb-1">Clinical Notes Summary</label>
+                    <textarea id="edit-notes" class="w-full p-3 bg-gray-50 border border-gray-100 h-32 text-sm outline-none focus:border-[#B59A6D]"></textarea>
+                </div>
+                <div class="flex gap-4 mt-6">
+                    <button type="button" onclick="closeEditModal()" class="flex-1 py-3 text-[10px] uppercase tracking-widest opacity-50 hover:opacity-100">Cancel</button>
+                    <button type="submit" class="flex-1 bg-[#B59A6D] text-white py-3 uppercase text-[10px] tracking-widest font-bold hover:bg-[#9E865E] transition">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // 1. CONFIGURATION
+        const SUPABASE_URL = 'https://qkjmrnqkoipdltauweub.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFram1ybnFrb2lwZGx0YXV3ZXViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1MTkyMjgsImV4cCI6MjA4OTA5NTIyOH0.EGqgJ9RNY9vYfuVeeEcGoMu_cIaygRq0hnyT-iE7zTw';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    
+        // 2. SECURITY CHECK
+        async function checkAdmin() {
+            const { data: { user } } = await _supabase.auth.getUser();
+            const admins = ['samuel.galviz@gmail.com', 'freddy@email.com'];
+            
+            if (!user || !admins.includes(user.email)) {
+                window.location.href = 'index.html';
+                return;
+            }
+            // If they are admin, fetch the data
+            await fetchPatients();
+        }
+    
+        // 3. DATA RETRIEVAL
+async function fetchPatients() {
+    // IMPORTANT: Added 'id' to the select statement
+    const { data: patients, error } = await _supabase
+        .from('profiles')
+        .select('id, first_name, last_name, dob, sex, phone') 
+        .order('last_name', { ascending: true });
+
+    if (error) {
+        console.error("Database Error:", error.message);
+        return;
+    }
+    renderPatientTable(patients);
+}
+
+// 4. UI RENDERING
+function renderPatientTable(patients) {
+    const tableBody = document.getElementById('patient-table-body');
+    tableBody.innerHTML = ''; 
+
+    if (patients.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="5" class="p-10 text-center">No patients found.</td></tr>';
+        return;
+    }
+
+    patients.forEach(patient => {
+        const row = document.createElement('tr');
+        row.className = "border-t border-gray-50 hover:bg-gray-50 transition";
+        
+        row.innerHTML = `
+            <td class="p-6 font-medium">${patient.last_name}, ${patient.first_name}</td>
+            <td class="p-6">${patient.dob}</td>
+            <td class="p-6 capitalize">${patient.sex}</td>
+            <td class="p-6">${patient.phone || 'No Phone'}</td>
+            <td class="p-6 flex gap-4">
+                <button onclick="openSoapNote('${patient.first_name} ${patient.last_name}')" 
+                        class="text-[#b59a6d] font-bold text-[10px] uppercase hover:underline">
+                    Add Note
+                </button>
+                <button onclick="openEditModal('${patient.id}')" 
+                        class="text-blue-600 font-bold text-[10px] uppercase hover:underline">
+                    Modify
+                </button>
+            </td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
+    
+        // 5. UI MODALS & UTILS
+        function openSoapNote(patientName) {
+            document.getElementById('target-patient').innerText = patientName;
+            document.getElementById('soap-modal').classList.remove('hidden');
+        }
+    
+        function closeSoapNote() {
+            document.getElementById('soap-modal').classList.add('hidden');
+        }
+    
+        async function logout() {
+            await _supabase.auth.signOut();
+            window.location.href = 'index.html';
+        }
+    
+        // Initialize
+        window.onload = checkAdmin;
+
+        // A. Open Modal and Fill Data
+async function openEditModal(patientId) {
+    document.getElementById('edit-patient-id').value = patientId;
+    
+    // Fetch the current data for this specific patient
+    const { data, error } = await _supabase
+        .from('profiles')
+        .select('phone, clinical_notes')
+        .eq('id', patientId)
+        .single();
+
+    if (data) {
+        document.getElementById('edit-phone').value = data.phone || '';
+        document.getElementById('edit-notes').value = data.clinical_notes || '';
+        document.getElementById('edit-modal').classList.remove('hidden');
+    }
+}
+
+// B. Save Changes to Supabase
+document.getElementById('edit-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('edit-patient-id').value;
+    const phone = document.getElementById('edit-phone').value;
+    const notes = document.getElementById('edit-notes').value;
+
+    const { error } = await _supabase
+        .from('profiles')
+        .update({ phone: phone, clinical_notes: notes })
+        .eq('id', id);
+
+    if (error) {
+        alert("Error updating record: " + error.message);
+    } else {
+        alert("Record updated successfully.");
+        closeEditModal();
+        fetchPatients(); // Refresh the list
+    }
+});
+
+function closeEditModal() {
+    document.getElementById('edit-modal').classList.add('hidden');
+}
+    </script>
+</body>
+</html>

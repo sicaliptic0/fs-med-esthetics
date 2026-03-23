@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Portal | FS Med-Esthetics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Outfit:wght@300;400;500&family=Montserrat:wght@600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Outfit', sans-serif; background-color: #FCFAF7; color: #5D534A; }
+        h1, h2, h3, h4 { font-family: 'Cormorant Garamond', serif; }
+        .logo-font { font-family: 'Montserrat', sans-serif; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; }
+        .sidebar { background-color: #ffffff; border-right: 1px solid #E9E0D2; }
+        .nav-item { cursor: pointer; transition: all 0.3s; }
+        .nav-item:hover { background-color: #FCFAF7; color: #B59A6D; }
+        .active-nav { background-color: #FCFAF7; color: #B59A6D; border-right: 3px solid #B59A6D; }
+        .btn-gold { background-color: #B59A6D; color: white; transition: 0.3s; }
+        .btn-gold:hover { background-color: #9E865E; }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden relative">
+
+    <aside class="w-20 md:w-64 sidebar flex flex-col hidden md:flex z-10">
+        <div class="p-6 text-center border-b border-[#E9E0D2]">
+            <h1 class="logo-font text-sm md:text-base tracking-widest text-[#B59A6D]">FS PORTAL</h1>
+        </div>
+        <nav class="flex-1 mt-6 space-y-1">
+            <a onclick="switchView('dashboard-view', this)" class="nav-item active-nav flex items-center px-6 py-4">
+                <span class="mr-4 text-xl">🏠</span>
+                <span class="hidden md:block uppercase text-[10px] tracking-widest font-bold" data-en="Dashboard" data-es="Resumen">Dashboard</span>
+            </a>
+            <a onclick="switchView('booking-view', this)" class="nav-item flex items-center px-6 py-4">
+                <span class="mr-4 text-xl">📅</span>
+                <span class="hidden md:block uppercase text-[10px] tracking-widest font-bold" data-en="Book Now" data-es="Agendar Cita">Book Now</span>
+            </a>
+        </nav>
+        <div class="p-6 border-t border-[#E9E0D2]">
+            <button onclick="logout()" class="flex items-center text-[10px] uppercase tracking-widest opacity-60 hover:text-[#B59A6D] transition">
+                <span class="mr-3 text-lg">🚪</span>
+                <span class="hidden md:block" data-en="Logout" data-es="Cerrar Sesión">Logout</span>
+            </button>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col overflow-hidden bg-[#FCFAF7]">
+        
+        <header class="h-20 bg-white border-b border-[#E9E0D2] flex items-center justify-between px-6 md:px-12">
+            <button class="md:hidden text-2xl">☰</button>
+            <h2 class="text-xl md:text-2xl italic font-light">
+                <span data-en="Welcome," data-es="Bienvenido,">Welcome,</span> 
+                <span id="user-name" class="font-medium not-italic">Patient</span>
+            </h2>
+            <div class="flex items-center gap-6">
+                <button onclick="toggleLanguage()" class="text-[10px] uppercase tracking-widest font-bold opacity-60 hover:opacity-100 transition border-b border-[#B59A6D]">
+                    <span id="lang-label">ESP</span>
+                </button>
+                <div class="w-8 h-8 rounded-full bg-[#E9E0D2] overflow-hidden border border-[#B59A6D]">
+                    <img id="user-avatar" src="https://ui-avatars.com/api/?name=P" alt="Avatar">
+                </div>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-6 md:p-12">
+
+            <div id="dashboard-view" class="space-y-8 block">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white border-l-4 border-[#B59A6D] p-6 shadow-sm rounded-r-lg">
+                        <h3 class="uppercase text-[10px] tracking-widest text-[#B59A6D] font-bold mb-2" data-en="Follow-up Reminder" data-es="Recordatorio de Seguimiento">Follow-up Reminder</h3>
+                        <p class="text-sm font-light opacity-80 mb-4" data-en="It has been 4 months since your treatment. Perfect time for a touch-up." data-es="Han pasado 4 meses desde tu tratamiento. Momento ideal para un retoque.">It has been 4 months since your treatment. Perfect time for a touch-up.</p>
+                        <button onclick="switchView('booking-view', document.querySelectorAll('.nav-item')[1])" class="btn-gold px-6 py-3 uppercase text-[10px] tracking-widest" data-en="Schedule Now" data-es="Agendar Ahora">Schedule Now</button>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl border border-[#E9E0D2] shadow-sm">
+                        <h3 class="uppercase text-[10px] tracking-widest text-[#B59A6D] font-bold mb-4" data-en="Your Next Visit" data-es="Tu Próxima Cita">Your Next Visit</h3>
+                        <div class="space-y-2 text-sm opacity-80">
+                            <p>📅 April 15, 2026</p>
+                            <p>🕒 10:30 AM</p>
+                            <p>⚕️ Dr. Samuel Galviz</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="bg-[#5D534A] text-[#FCFAF7] p-8 rounded-xl shadow-lg relative overflow-hidden">
+                        <h3 class="uppercase text-[10px] tracking-widest text-[#B59A6D] font-bold mb-6" data-en="Loyalty Points" data-es="Puntos de Lealtad">Loyalty Points</h3>
+                        <p class="text-4xl font-light">450 <span class="text-sm opacity-60">Points</span></p>
+                        <div class="w-full bg-white/10 h-1.5 rounded-full mt-4">
+                            <div class="bg-[#B59A6D] h-full w-[75%] rounded-full"></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-8 rounded-xl border border-[#E9E0D2] shadow-sm">
+                        <h3 class="uppercase text-[10px] tracking-widest text-[#B59A6D] font-bold mb-6" data-en="Daily Routine" data-es="Rutina Diaria">Daily Routine</h3>
+                        <div class="space-y-4 text-sm opacity-80">
+                            <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" class="accent-[#B59A6D]"> ☀️ AM: Vitamin C</label>
+                            <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" class="accent-[#B59A6D]"> 🌙 PM: Retinol</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="booking-view" class="hidden max-w-4xl mx-auto">
+                <div class="text-center mb-10">
+                    <h2 class="text-4xl text-[#5D534A]" data-en="Schedule Your Treatment" data-es="Agenda tu Tratamiento">Schedule Your Treatment</h2>
+                    <p class="font-light opacity-70 mt-2" data-en="Select your service, date, and preferred time." data-es="Selecciona tu servicio, fecha y hora preferida.">Select your service, date, and preferred time.</p>
+                </div>
+            
+                <div class="bg-white border border-[#E9E0D2] rounded-xl shadow-sm p-8 md:p-12">
+                    <form id="booking-form" class="space-y-8" onsubmit="handleBooking(event)">
+                        
+                        <div>
+                            <label class="block uppercase text-[10px] tracking-widest text-[#B59A6D] font-bold mb-4" data-en="1. Select Procedure" data-es="1. Seleccionar Procedimiento">1. Select Procedure</label>
+                            <select id="book-service" class="w-full p-4 border border-[#E9E0D2] outline-none focus:border-[#B59A6D] bg-[#FCFAF7] text-sm text-[#5D534A]" required>
+                                <option value="" disabled selected data-en="Choose a treatment..." data-es="Elige un tratamiento...">Choose a treatment...</option>
+                                <option value="botox" data-en="Facial Neurotoxins (Botox)" data-es="Neurotoxinas Faciales (Botox)">Facial Neurotoxins (Botox)</option>
+                                <option value="fillers" data-en="Dermal Fillers" data-es="Rellenos Dérmicos">Dermal Fillers</option>
+                                <option value="prp" data-en="PRP Restoration" data-es="Restauración PRP">PRP Restoration</option>
+                                <option value="consult" data-en="General Assessment" data-es="Valoración General">General Assessment</option>
+                            </select>
+                        </div>
+            
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div>
+                                <label class="block uppercase text-[10px] tracking-widest text-[#B59A6D] font-bold mb-4" data-en="2. Select Date" data-es="2. Selecciona una Fecha">2. Select Date</label>
+                                <input type="date" id="book-date" class="w-full p-4 border border-[#E9E0D2] outline-none focus:border-[#B59A6D] bg-[#FCFAF7] text-sm text-[#5D534A]" required>
+                            </div>
+                            <div>
+                                <label class="block uppercase text-[10px] tracking-widest text-[#B59A6D] font-bold mb-4" data-en="3. Preferred Time" data-es="3. Horario Preferido">3. Preferred Time</label>
+                                <select id="book-time" class="w-full p-4 border border-[#E9E0D2] outline-none focus:border-[#B59A6D] bg-[#FCFAF7] text-sm text-[#5D534A]" required>
+                                    <option value="" disabled selected data-en="Choose a time..." data-es="Elige una hora...">Choose a time...</option>
+                                    <option value="10:00">10:00 AM</option>
+                                    <option value="11:30">11:30 AM</option>
+                                    <option value="14:00">02:00 PM</option>
+                                    <option value="16:00">04:00 PM</option>
+                                </select>
+                            </div>
+                        </div>
+            
+                        <button type="submit" class="w-full bg-[#B59A6D] text-white py-5 uppercase text-xs tracking-widest font-bold hover:bg-[#9E865E] transition shadow-md">
+                            <span data-en="Request Appointment" data-es="Solicitar Cita">Request Appointment</span>
+                        </button>
+                        <p class="text-center text-[10px] opacity-50 mt-4" data-en="* You will receive a confirmation email once your appointment is validated." data-es="* Recibirás un correo de confirmación una vez validada tu cita.">* You will receive a confirmation email once your appointment is validated.</p>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // 1. DASHBOARD LOGIC: Switching Tabs
+        function switchView(viewId, navElement) {
+            document.getElementById('dashboard-view').classList.add('hidden');
+            document.getElementById('booking-view').classList.add('hidden');
+            document.getElementById(viewId).classList.remove('hidden');
+
+            if(navElement) {
+                document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active-nav'));
+                navElement.classList.add('active-nav');
+            }
+        }
+
+        // 2. LOCALIZATION LOGIC: Language Toggle
+        let currentLang = localStorage.getItem('preferredLang') || 'en';
+        function updateLanguage() {
+            document.querySelectorAll('[data-en]').forEach(el => {
+                el.innerText = currentLang === 'en' ? el.getAttribute('data-en') : el.getAttribute('data-es');
+            });
+            document.getElementById('lang-label').innerText = currentLang === 'en' ? 'ESP' : 'ENG';
+        }
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'es' : 'en';
+            localStorage.setItem('preferredLang', currentLang);
+            updateLanguage();
+        }
+
+        // 3. LOGOUT LOGIC
+        function logout() {
+            // Add Supabase signout here
+            window.location.href = 'index.html';
+        }
+
+        document.addEventListener('DOMContentLoaded', updateLanguage);
+
+        function handleBooking(event) {
+        event.preventDefault();
+        const service = document.getElementById('book-service').value;
+        const date = document.getElementById('book-date').value;
+        const time = document.getElementById('book-time').value;
+
+        alert(`Appointment requested for ${service} on ${date} at ${time}. We will contact you soon.`);
+        
+        // Return to dashboard after booking
+        switchView('dashboard-view', document.querySelectorAll('.nav-item')[0]);
+    }
+    </script>
+</body>
+</html>
