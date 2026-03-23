@@ -93,11 +93,14 @@ serve(async (req) => {
 
     if (!eventType || !patientId) return jsonResponse({ error: "Missing event_type or patient_id" }, 400);
 
-    const { data: authUser, error: authErr } = await adminClient.auth.admin.getUserById(patientId);
-    if (authErr || !authUser?.user?.email) {
-      return jsonResponse({ error: "Could not resolve patient email" }, 400);
+    let patientEmail = "";
+    if (eventType === "appointment_status_update") {
+      const { data: authUser, error: authErr } = await adminClient.auth.admin.getUserById(patientId);
+      if (authErr || !authUser?.user?.email) {
+        return jsonResponse({ error: "Could not resolve patient email" }, 400);
+      }
+      patientEmail = authUser.user.email;
     }
-    const patientEmail = authUser.user.email;
 
     const detailLines = [
       `<strong>Patient:</strong> ${patientName}`,
@@ -109,25 +112,18 @@ serve(async (req) => {
     ];
 
     if (eventType === "new_booking") {
-      const htmlPatient = renderBilingualEmail({
-        titleEn: "Appointment request received",
-        titleEs: "Solicitud de cita recibida",
-        bodyEn: "Your booking was received successfully. We will review and confirm it soon.",
-        bodyEs: "Tu solicitud de cita fue recibida correctamente. La revisaremos y confirmaremos pronto.",
+      if (!staffEmail) {
+        return jsonResponse({ error: "BOOKING_ALERT_EMAIL is not configured" }, 500);
+      }
+
+      const htmlStaff = renderBilingualEmail({
+        titleEn: "New patient booking request",
+        titleEs: "Nueva solicitud de cita de paciente",
+        bodyEn: "A new appointment request is pending review in admin dashboard.",
+        bodyEs: "Hay una nueva solicitud de cita pendiente de revisión en el panel admin.",
         details: detailLines,
       });
-      await sendEmail(resendApiKey, fromEmail, [patientEmail], "FS Med-Esthetics | Booking Received", htmlPatient);
-
-      if (staffEmail) {
-        const htmlStaff = renderBilingualEmail({
-          titleEn: "New patient booking request",
-          titleEs: "Nueva solicitud de cita de paciente",
-          bodyEn: "A new appointment request is pending review in admin dashboard.",
-          bodyEs: "Hay una nueva solicitud de cita pendiente de revisión en el panel admin.",
-          details: detailLines,
-        });
-        await sendEmail(resendApiKey, fromEmail, [staffEmail], "New Booking Request | FS Med-Esthetics", htmlStaff);
-      }
+      await sendEmail(resendApiKey, fromEmail, [staffEmail], "New Booking Request | FS Med-Esthetics", htmlStaff);
     }
 
     if (eventType === "appointment_status_update") {
