@@ -607,7 +607,7 @@
 
         // --- APPOINTMENTS FETCHING ---
         async function fetchAppointments() {
-            const { data, error } = await _supabase.from('appointments').select('*, profiles(first_name, last_name, email)').order('appointment_date', { ascending: false });
+            const { data, error } = await _supabase.from('appointments').select('*, profiles(first_name, last_name)').order('appointment_date', { ascending: false });
             if (error) { console.error("Fetch Appts Error:", error); return; }
             
             document.getElementById('appointment-table-body').innerHTML = data.map(appt => `
