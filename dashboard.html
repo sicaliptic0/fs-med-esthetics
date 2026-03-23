@@ -17,6 +17,9 @@
         .active-nav { background-color: #FCFAF7; color: #B59A6D; border-right: 3px solid #B59A6D; }
         .btn-gold { background-color: #B59A6D; color: white; transition: 0.3s; }
         .btn-gold:hover { background-color: #9E865E; }
+        .booking-field { width: 100%; box-sizing: border-box; max-width: 100%; min-height: 56px; }
+        .booking-scroll { -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; }
+        #book-treatments-dropdown { -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; }
         
         /* Smooth transition for modal */
         #success-content { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
@@ -34,17 +37,17 @@
         <nav class="flex-1 mt-6 space-y-1">
             <a onclick="switchView('dashboard-view', this)" class="nav-item active-nav flex items-center px-6 py-4">
                 <span class="mr-4 text-xl">🏠</span>
-                <span class="hidden md:block uppercase text-[10px] tracking-widest font-bold" data-en="Dashboard" data-es="Resumen">Dashboard</span>
+                <span class="block uppercase text-[10px] tracking-widest font-bold" data-en="Dashboard" data-es="Resumen">Dashboard</span>
             </a>
             <a onclick="switchView('booking-view', this)" class="nav-item flex items-center px-6 py-4">
                 <span class="mr-4 text-xl">📅</span>
-                <span class="hidden md:block uppercase text-[10px] tracking-widest font-bold" data-en="Book Now" data-es="Agendar Cita">Book Now</span>
+                <span class="block uppercase text-[10px] tracking-widest font-bold" data-en="Book Now" data-es="Agendar Cita">Book Now</span>
             </a>
         </nav>
         <div class="p-6 border-t border-[#E9E0D2]">
             <button onclick="logout()" class="flex items-center text-[10px] uppercase tracking-widest opacity-60 hover:text-[#B59A6D] transition">
                 <span class="mr-3 text-lg">🚪</span>
-                <span class="hidden md:block" data-en="Logout" data-es="Cerrar Sesión">Logout</span>
+                <span class="block" data-en="Logout" data-es="Cerrar Sesión">Logout</span>
             </button>
         </div>
     </aside>
@@ -67,7 +70,7 @@
             </div>
         </header>
 
-        <div class="flex-1 min-h-0 overflow-y-auto p-6 md:p-12">
+        <div class="flex-1 min-h-0 overflow-y-auto booking-scroll p-6 md:p-12 pb-24">
             <div id="dashboard-view" class="space-y-8 block">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="bg-white border-l-4 border-[#B59A6D] p-6 shadow-sm rounded-r-lg">
@@ -105,7 +108,7 @@
                             <label class="block uppercase text-[10px] tracking-widest text-[#B59A6D] font-bold mb-4" data-en="1. Select Treatments (Multi-Select)" data-es="1. Seleccionar Tratamientos (Multi-Selección)">1. Select Treatments (Multi-Select)</label>
 
                             <div class="relative">
-                                <button id="book-treatments-btn" type="button" onclick="toggleTreatmentsDropdown()" class="w-full p-4 border border-[#E9E0D2] outline-none focus:border-[#B59A6D] bg-[#FCFAF7] text-sm text-[#5D534A] text-left rounded-lg">
+                                <button id="book-treatments-btn" type="button" onclick="toggleTreatmentsDropdown()" class="booking-field p-4 border border-[#E9E0D2] outline-none focus:border-[#B59A6D] bg-[#FCFAF7] text-sm text-[#5D534A] text-left rounded-lg">
                                     <div class="flex items-center justify-between gap-4">
                                         <span id="book-treatments-btn-label" class="font-light" data-en="Choose treatments" data-es="Elige tratamientos">Choose treatments</span>
                                         <span id="book-treatments-selected" class="text-[10px] uppercase tracking-widest opacity-60 font-semibold">0 selected</span>
@@ -120,11 +123,11 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div>
                                 <label class="block uppercase text-[10px] tracking-widest text-[#B59A6D] font-bold mb-4" data-en="2. Select Date" data-es="2. Selecciona una Fecha">2. Select Date</label>
-                                <input type="date" id="book-date" class="w-full p-4 border border-[#E9E0D2] outline-none focus:border-[#B59A6D] bg-[#FCFAF7] text-sm text-[#5D534A]" required>
+                                <input type="date" id="book-date" class="booking-field p-4 border border-[#E9E0D2] outline-none focus:border-[#B59A6D] bg-[#FCFAF7] text-sm text-[#5D534A]" required>
                             </div>
                             <div>
                                 <label class="block uppercase text-[10px] tracking-widest text-[#B59A6D] font-bold mb-4" data-en="3. Preferred Time" data-es="3. Horario Preferido">3. Preferred Time</label>
-                                <select id="book-time" class="w-full p-4 border border-[#E9E0D2] outline-none focus:border-[#B59A6D] bg-[#FCFAF7] text-sm text-[#5D534A]" required>
+                                <select id="book-time" class="booking-field p-4 border border-[#E9E0D2] outline-none focus:border-[#B59A6D] bg-[#FCFAF7] text-sm text-[#5D534A]" required>
                                     <option value="" disabled selected data-en="Choose a time..." data-es="Elige una hora...">Choose a time...</option>
                                     <option value="10:00">10:00 AM</option>
                                     <option value="11:30">11:30 AM</option>
@@ -405,8 +408,21 @@
                 .eq('patient_id', user.id);
 
             if (error) {
-                alert(currentLang === 'en' ? "Could not delete appointment." : "No se pudo eliminar la cita.");
-                return;
+                // Fallback for restrictive RLS policies: soft-delete by status.
+                const { error: updateError } = await _supabase
+                    .from('appointments')
+                    .update({ status: 'cancelled' })
+                    .eq('id', appointmentId)
+                    .eq('patient_id', user.id);
+
+                if (updateError) {
+                    alert(
+                        currentLang === 'en'
+                            ? `Could not delete appointment: ${updateError.message}`
+                            : `No se pudo eliminar la cita: ${updateError.message}`
+                    );
+                    return;
+                }
             }
 
             await loadAppointmentsOverview();
