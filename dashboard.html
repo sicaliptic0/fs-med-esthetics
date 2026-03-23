@@ -404,16 +404,14 @@
             const { error } = await _supabase
                 .from('appointments')
                 .delete()
-                .eq('id', appointmentId)
-                .eq('patient_id', user.id);
+                .eq('id', appointmentId);
 
             if (error) {
                 // Fallback for restrictive RLS policies: soft-delete by status.
                 const { error: updateError } = await _supabase
                     .from('appointments')
                     .update({ status: 'cancelled' })
-                    .eq('id', appointmentId)
-                    .eq('patient_id', user.id);
+                    .eq('id', appointmentId);
 
                 if (updateError) {
                     alert(

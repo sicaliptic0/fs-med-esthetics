@@ -113,7 +113,7 @@
                                 <button id="soap-procedures-btn" type="button" onclick="toggleSoapProceduresDropdown()" class="w-full text-left p-3 border border-[#e9e0d2] outline-none focus:border-[#b59a6d] bg-[#FCFAF7] text-sm text-[#5d534a] rounded-lg">
                                     Select procedures (multi)
                                 </button>
-                                <div id="soap-procedures-dropdown" class="hidden absolute left-0 right-0 mt-2 bg-white border border-[#e9e0d2] rounded-xl shadow-2xl max-h-72 overflow-y-auto p-4 z-[90]">
+                                <div id="soap-procedures-dropdown" class="hidden absolute left-0 right-0 mt-2 bg-white border border-[#e9e0d2] rounded-xl shadow-2xl max-h-72 overflow-y-auto overflow-x-hidden p-4 z-[90]">
                                     <div id="soap-procedures-options" class="space-y-6"></div>
                                 </div>
                             </div>
@@ -146,7 +146,7 @@
                             <span id="admin-book-treatments-selected" class="text-[10px] uppercase tracking-widest opacity-60 font-semibold">0 selected</span>
                         </div>
                     </button>
-                    <div id="admin-book-treatments-dropdown" class="hidden absolute left-0 right-0 mt-2 bg-white border border-[#e9e0d2] rounded-xl shadow-2xl max-h-72 overflow-y-auto p-4 z-[80]">
+                    <div id="admin-book-treatments-dropdown" class="hidden absolute left-0 right-0 mt-2 bg-white border border-[#e9e0d2] rounded-xl shadow-2xl max-h-72 overflow-y-auto overflow-x-hidden p-4 z-[80]">
                         <div id="admin-book-treatments-options" class="space-y-6"></div>
                     </div>
                 </div>
@@ -249,13 +249,15 @@
 
                 options.forEach(t => {
                     const row = document.createElement('label');
-                    row.className = 'flex items-start gap-3 cursor-pointer select-none';
+                    row.className = 'flex items-start gap-3 cursor-pointer select-none w-full';
 
                     row.innerHTML = `
                         <input type="checkbox" class="${checkboxClass} mt-1 accent-[#B59A6D]" value="${t.id}">
-                        <div class="flex-1 min-w-0 grid grid-cols-[1fr_auto] items-start gap-x-4">
-                            <span class="text-sm text-[#5D534A] font-light leading-snug">${t.label}</span>
-                            <span class="text-[10px] uppercase tracking-widest opacity-60 font-semibold whitespace-nowrap self-start">${t.price}</span>
+                        <div class="flex-1 min-w-0 w-full">
+                            <div class="flex items-start justify-between gap-3 w-full">
+                                <span class="text-sm text-[#5D534A] font-light leading-snug break-words pr-2">${t.label}</span>
+                                <span class="text-[10px] uppercase tracking-widest opacity-60 font-semibold whitespace-nowrap shrink-0">${t.price}</span>
+                            </div>
                         </div>
                     `;
                     list.appendChild(row);
