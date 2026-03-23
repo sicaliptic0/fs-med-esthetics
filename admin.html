@@ -80,10 +80,11 @@
                     <button id="add-note-btn" onclick="toggleSoapForm(true)" class="bg-[#b59a6d] text-white px-6 py-2 text-[10px] uppercase tracking-widest font-bold rounded-full">Add New Encounter</button>
                 </div>
                 <div id="notes-container" class="flex-1 overflow-y-auto pr-4 space-y-6"></div>
+                
                 <div id="soap-form-container" class="hidden absolute inset-0 bg-white p-10 flex flex-col z-10 rounded-2xl">
                     <div class="flex justify-between items-center mb-6">
                         <h4 class="text-xl italic" id="form-title">New Clinical Entry</h4>
-                        <button onclick="toggleSoapForm(false)" class="text-[10px] uppercase underline opacity-40">Cancel</button>
+                        <button onclick="toggleSoapForm(false)" class="text-[10px] uppercase underline opacity-40">Cancel / Back</button>
                     </div>
                     <form id="soap-form" class="space-y-4">
                         <input type="hidden" id="edit-note-id">
@@ -98,7 +99,7 @@
                             <textarea id="soap-p" placeholder="Plan (P)" class="h-32"></textarea>
                         </div>
                         <textarea id="soap-sugg" placeholder="Suggestions" class="h-20"></textarea>
-                        <button type="submit" class="w-full bg-[#5d534a] text-white py-4 uppercase text-[10px] tracking-widest font-bold">Save Record</button>
+                        <button type="submit" class="w-full bg-[#5d534a] text-white py-4 uppercase text-[10px] tracking-widest font-bold">Save Clinical Record</button>
                     </form>
                 </div>
             </div>
@@ -122,12 +123,14 @@
         }
 
         function switchAdminView(viewId, element) {
-            document.querySelectorAll('main > div').forEach(v => v.classList.add('hidden'));
+            document.getElementById('patients-view').classList.add('hidden');
+            document.getElementById('appointments-view').classList.add('hidden');
             document.getElementById(viewId).classList.remove('hidden');
+            
             document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active-link'));
             element.classList.add('active-link');
-            
-            // CRITICAL FIX: Trigger fetch when switching tabs
+            document.getElementById('view-title').innerText = viewId === 'patients-view' ? 'Patient Database' : 'Appointment Queue';
+
             if(viewId === 'appointments-view') fetchAppointments();
             else fetchPatients();
         }
@@ -135,8 +138,7 @@
         // 2. PATIENT DATA
         async function fetchPatients() {
             const { data, error } = await _supabase.from('profiles').select('*').order('last_name');
-            if (error) console.error(error);
-            renderPatientTable(data || []);
+            if (!error) renderPatientTable(data);
         }
 
         function renderPatientTable(patients) {
@@ -145,22 +147,21 @@
                     <td class="p-6 font-medium">${p.last_name}, ${p.first_name}</td>
                     <td class="p-6 text-xs">${p.dob}</td>
                     <td class="p-6 text-xs">${p.phone || '-'}</td>
-                    <td class="p-6"><button onclick="openHistory('${p.id}', '${p.first_name} ${p.last_name}')" class="text-[#b59a6d] font-bold text-[10px] uppercase">History (SOAP)</button></td>
+                    <td class="p-6"><button onclick="openHistory('${p.id}', '${p.first_name} ${p.last_name}')" class="text-[#b59a6d] font-bold text-[10px] uppercase underline">History (SOAP)</button></td>
                 </tr>
             `).join('');
         }
 
-        // 3. APPOINTMENT DATA (RESTORED)
+        // 3. APPOINTMENTS Logic
         async function fetchAppointments() {
             const { data, error } = await _supabase.from('appointments').select('*, profiles(first_name, last_name)').order('appointment_date', { ascending: false });
-            if (error) console.error(error);
-            renderAppointmentsTable(data || []);
+            if (!error) renderAppointmentsTable(data);
         }
 
         function renderAppointmentsTable(appointments) {
             document.getElementById('appointment-table-body').innerHTML = appointments.map(appt => `
                 <tr class="border-t border-gray-50">
-                    <td class="p-6 font-medium">${appt.profiles?.last_name || 'Unknown'}, ${appt.profiles?.first_name || ''}</td>
+                    <td class="p-6 font-medium">${appt.profiles?.last_name || 'N/A'}, ${appt.profiles?.first_name || ''}</td>
                     <td class="p-6 uppercase text-[9px] tracking-widest">${appt.service_type}</td>
                     <td class="p-6 text-xs">${appt.appointment_date} @ ${appt.appointment_time}</td>
                     <td class="p-6"><span class="status-badge status-${appt.status}">${appt.status}</span></td>
@@ -176,7 +177,7 @@
             fetchAppointments();
         }
 
-        // 4. HISTORY & SOAP LOGIC
+        // 4. SOAP & HISTORY Logic
         async function openHistory(patientId, name) {
             currentPatientId = patientId;
             document.getElementById('history-patient-name').innerText = name;
@@ -189,6 +190,7 @@
             container.classList.toggle('hidden', !show);
             if(show) {
                 if(note) {
+                    document.getElementById('form-title').innerText = "Modify Clinical Encounter";
                     document.getElementById('edit-note-id').value = note.id;
                     document.getElementById('soap-date').value = note.visit_date;
                     document.getElementById('soap-time').value = note.visit_time || '';
@@ -198,6 +200,7 @@
                     document.getElementById('soap-p').value = note.plan || '';
                     document.getElementById('soap-sugg').value = note.suggestions || '';
                 } else {
+                    document.getElementById('form-title').innerText = "New Clinical Entry";
                     document.getElementById('soap-form').reset();
                     document.getElementById('edit-note-id').value = "";
                     const now = new Date();
@@ -210,12 +213,12 @@
         async function loadNotes() {
             const { data } = await _supabase.from('clinical_history').select('*').eq('patient_id', currentPatientId).order('visit_date', { ascending: false });
             const container = document.getElementById('notes-container');
-            if (!data || data.length === 0) { container.innerHTML = '<p class="text-center opacity-30 mt-10">No records found.</p>'; return; }
+            if (!data || data.length === 0) { container.innerHTML = '<p class="text-center opacity-30 mt-10">No clinical records found.</p>'; return; }
             container.innerHTML = data.map(n => `
                 <div class="p-6 bg-white border border-[#e9e0d2] rounded-xl shadow-sm relative group">
                     <div class="flex justify-between items-start mb-4">
                         <span class="text-[10px] font-bold uppercase tracking-widest text-[#b59a6d]">Encounter: ${n.visit_date} @ ${n.visit_time || 'N/A'}</span>
-                        <div class="flex gap-2">
+                        <div class="flex gap-3">
                             <button onclick='editNote(${JSON.stringify(n)})' class="text-[9px] uppercase font-bold text-blue-500 underline">Modify</button>
                             <button onclick='deleteNote("${n.id}")' class="text-[9px] uppercase font-bold text-red-400 underline">Delete</button>
                         </div>
@@ -233,7 +236,7 @@
         window.editNote = (note) => { toggleSoapForm(true, note); };
 
         async function deleteNote(id) {
-            if (confirm("Permanently delete this record?")) {
+            if (confirm("Permanently delete this clinical record?")) {
                 await _supabase.from('clinical_history').delete().eq('id', id);
                 loadNotes();
             }
