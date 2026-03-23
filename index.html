@@ -347,11 +347,11 @@
             <h2 class="text-3xl font-light mb-2 text-[#5D534A] text-center uppercase tracking-widest" data-en="Contact Us" data-es="Contáctanos">Contact Us</h2>
             <p class="text-center text-[10px] uppercase tracking-widest opacity-40 mb-8" data-en="Send us a message" data-es="Envíenos un mensaje">Send us a message</p>
             
-            <form class="space-y-4" onsubmit="event.preventDefault(); alert('Mensaje enviado. Le responderemos a su correo pronto.'); document.getElementById('contact-modal').classList.add('hidden');">
-                <input type="text" placeholder="Name" required class="w-full p-4 border border-[#E9E0D2] outline-none focus:border-[#B59A6D] bg-[#FCFAF7] text-sm">
-                <input type="email" placeholder="Email" required class="w-full p-4 border border-[#E9E0D2] outline-none focus:border-[#B59A6D] bg-[#FCFAF7] text-sm">
-                <textarea placeholder="Message" rows="4" required class="w-full p-4 border border-[#E9E0D2] outline-none focus:border-[#B59A6D] bg-[#FCFAF7] text-sm"></textarea>
-                <button type="submit" class="btn-gold w-full py-4 uppercase text-xs tracking-widest transition hover:opacity-90" data-en="Send Message" data-es="Enviar Mensaje">Send Message</button>
+            <form id="contact-form" class="space-y-4">
+                <input type="text" id="contact-name" placeholder="Name" required class="w-full p-4 border border-[#E9E0D2] outline-none focus:border-[#B59A6D] bg-[#FCFAF7] text-sm">
+                <input type="email" id="contact-email" placeholder="Email" required class="w-full p-4 border border-[#E9E0D2] outline-none focus:border-[#B59A6D] bg-[#FCFAF7] text-sm">
+                <textarea id="contact-message" placeholder="Message" rows="4" required class="w-full p-4 border border-[#E9E0D2] outline-none focus:border-[#B59A6D] bg-[#FCFAF7] text-sm"></textarea>
+                <button id="contact-submit" type="submit" class="btn-gold w-full py-4 uppercase text-xs tracking-widest transition hover:opacity-90" data-en="Send Message" data-es="Enviar Mensaje">Send Message</button>
             </form>
         </div>
     </div>
@@ -507,6 +507,48 @@
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let isSignUp = false;
+
+        // 2.5 CONTACT FORM (Edge Function, no page redirect)
+        document.getElementById('contact-form').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const submitBtn = document.getElementById('contact-submit');
+            const originalText = submitBtn.innerText;
+
+            const name = document.getElementById('contact-name').value.trim();
+            const email = document.getElementById('contact-email').value.trim();
+            const message = document.getElementById('contact-message').value.trim();
+
+            if (!name || !email || !message) {
+                alert(currentLang === 'en' ? "Please complete all contact fields." : "Por favor completa todos los campos de contacto.");
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.innerText = currentLang === 'en' ? "Sending..." : "Enviando...";
+
+            try {
+                const { error } = await _supabase.functions.invoke('send-contact-message', {
+                    body: {
+                        name,
+                        email,
+                        message,
+                        source: 'index_contact_modal'
+                    }
+                });
+
+                if (error) {
+                    alert((currentLang === 'en' ? "Could not send message: " : "No se pudo enviar el mensaje: ") + error.message);
+                    return;
+                }
+
+                alert(currentLang === 'en' ? "Message sent successfully. We will reply soon." : "Mensaje enviado correctamente. Te responderemos pronto.");
+                event.target.reset();
+                document.getElementById('contact-modal').classList.add('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerText = originalText;
+            }
+        });
 
         // 3. CAMBIAR ENTRE LOGIN Y REGISTRO
         function toggleAuthMode() {

@@ -21,6 +21,11 @@
         #book-date.booking-field { display: block; min-width: 0; min-inline-size: 0; width: 100% !important; max-width: 100%; -webkit-appearance: none; appearance: none; }
         .booking-scroll { -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; }
         #book-treatments-dropdown { -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; }
+        .status-pill { font-size: 9px; padding: 3px 10px; border-radius: 999px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.08em; }
+        .status-pending { background: #FEF3C7; color: #92400E; }
+        .status-confirmed { background: #D1FAE5; color: #065F46; }
+        .status-cancelled { background: #FEE2E2; color: #991B1B; }
+        .status-modified { background: #FFEDD5; color: #9A3412; }
         
         /* Smooth transition for modal */
         #success-content { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
@@ -84,6 +89,7 @@
                         <div class="space-y-2 text-sm opacity-80">
                             <p>📅 <span id="next-visit-date">—</span></p>
                             <p>🕒 <span id="next-visit-time">—</span></p>
+                            <p><span id="next-visit-status-pill" class="status-pill status-pending">pending</span></p>
                             <p class="pt-2">
                                 <span class="block text-[10px] uppercase tracking-widest opacity-60 font-semibold" data-en="Treatment" data-es="Tratamiento">Treatment</span>
                                 <span id="next-visit-treatments" class="block mt-1">—</span>
@@ -247,16 +253,22 @@
             const timeEl = document.getElementById('next-visit-time');
             const treatmentsEl = document.getElementById('next-visit-treatments');
             const listEl = document.getElementById('upcoming-list');
+            const nextStatusEl = document.getElementById('next-visit-status-pill');
 
-            if (!dateEl || !timeEl || !treatmentsEl || !listEl) return;
+            if (!dateEl || !timeEl || !treatmentsEl || !listEl || !nextStatusEl) return;
 
             if (!nextAppointment) {
                 dateEl.innerText = '—';
                 timeEl.innerText = '—';
                 treatmentsEl.innerText = currentLang === 'en' ? 'No scheduled appointments' : 'No tienes citas agendadas';
+                nextStatusEl.className = 'status-pill status-cancelled';
+                nextStatusEl.innerText = currentLang === 'en' ? 'none' : 'sin cita';
             } else {
                 dateEl.innerText = formatDate(nextAppointment.appointment_date);
                 timeEl.innerText = formatTime(nextAppointment.appointment_time);
+                const st = String(nextAppointment.status || 'pending').toLowerCase();
+                nextStatusEl.className = `status-pill status-${st}`;
+                nextStatusEl.innerText = st;
 
                 const ids = nextAppointment.service_type_ids;
                 if (Array.isArray(ids) && ids.length) {
@@ -284,6 +296,7 @@
                                 <div class="font-semibold text-[#5D534A]">${formatDate(appt.appointment_date)} · ${formatTime(appt.appointment_time)}</div>
                                 <button onclick="cancelMyAppointment('${appt.id}')" class="text-[10px] uppercase tracking-widest text-red-500 hover:text-red-700 font-semibold" data-en="Cancel" data-es="Cancelar">Cancel</button>
                             </div>
+                            <div class="mt-2"><span class="status-pill status-${String(appt.status || 'pending').toLowerCase()}">${String(appt.status || 'pending')}</span></div>
                             <div class="opacity-70 mt-1">${treatmentText}</div>
                         </div>
                     `;
@@ -349,7 +362,6 @@
                 .from('appointments')
                 .select('id, appointment_date, appointment_time, status, service_type_ids, service_type')
                 .eq('patient_id', user.id)
-                .neq('status', 'cancelled')
                 .order('appointment_date', { ascending: true })
                 .order('appointment_time', { ascending: true });
 
@@ -365,7 +377,7 @@
                     const dt = new Date(appt.appointment_date + 'T' + appt.appointment_time);
                     return !Number.isNaN(dt.getTime()) && dt >= now;
                 });
-                nextAppointment = upcomingAppointments.length ? upcomingAppointments[0] : null;
+                nextAppointment = upcomingAppointments.find(a => String(a.status || '').toLowerCase() !== 'cancelled') || null;
                 syncNextVisitDisplay();
             }
 
@@ -738,6 +750,23 @@
             if (dbError) {
                 alert("Error saving appointment.");
             } else {
+                const patientName = (document.getElementById('user-name')?.innerText || '').trim() || 'Patient';
+                const status = 'pending';
+                const { error: notifyErr } = await _supabase.functions.invoke('notify-appointment-event', {
+                    body: {
+                        event_type: 'new_booking',
+                        patient_id: user.id,
+                        patient_name: patientName,
+                        appointment_date: date,
+                        appointment_time: time,
+                        status: status,
+                        treatments: selectedTreatmentLabelsEn
+                    }
+                });
+                if (notifyErr) {
+                    console.error('Booking email notification error:', notifyErr.message);
+                }
+
                 showSuccessModal(); // New Aesthetic Feedback
                 event.target.reset();
                 syncTreatmentsSelectedSummary();
