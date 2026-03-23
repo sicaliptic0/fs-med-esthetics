@@ -23,9 +23,10 @@
 </head>
 <body class="flex h-screen overflow-hidden relative">
 
-    <aside class="w-20 md:w-64 sidebar flex flex-col hidden md:flex z-10">
-        <div class="p-6 text-center border-b border-[#E9E0D2]">
+    <aside id="sidebar" class="w-64 sidebar flex flex-col hidden absolute md:relative md:flex h-full z-50 shadow-2xl md:shadow-none bg-white">
+        <div class="p-6 text-center border-b border-[#E9E0D2] flex justify-between items-center md:block">
             <h1 class="logo-font text-sm md:text-base tracking-widest text-[#B59A6D]">FS PORTAL</h1>
+            <button onclick="toggleMobileMenu()" class="md:hidden text-xl opacity-50 hover:opacity-100">&times;</button>
         </div>
         <nav class="flex-1 mt-6 space-y-1">
             <a onclick="switchView('dashboard-view', this)" class="nav-item active-nav flex items-center px-6 py-4">
@@ -47,7 +48,8 @@
 
     <main class="flex-1 flex flex-col overflow-hidden bg-[#FCFAF7]">
         <header class="h-20 bg-white border-b border-[#E9E0D2] flex items-center justify-between px-6 md:px-12">
-            <button class="md:hidden text-2xl">☰</button>
+            <button onclick="toggleMobileMenu()" class="md:hidden text-2xl opacity-70 hover:opacity-100 transition focus:outline-none">☰</button>
+            
             <h2 class="text-xl md:text-2xl italic font-light">
                 <span data-en="Welcome," data-es="Bienvenido,">Welcome,</span> 
                 <span id="user-name" class="font-medium not-italic">Patient</span>
@@ -158,7 +160,16 @@
                 navElement.classList.add('active-nav');
             }
         }
+        // 2.5 MOBILE MENU LOGIC
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('hidden');
+        }
 
+        if (window.innerWidth < 768) {
+                document.getElementById('sidebar').classList.add('hidden');
+            }
+        
         // 3. LOCALIZATION
         let currentLang = localStorage.getItem('preferredLang') || 'en';
         function updateLanguage() {
@@ -227,7 +238,28 @@
                 }
             }
         }
+        async function loadPatientProfile() {
+            // 1. Verify who is currently logged in
+            const { data: { user }, error: authError } = await _supabase.auth.getUser();
+            
+            if (user) {
+                // 2. Fetch their specific first name from the profiles table
+                const { data: profile, error: dbError } = await _supabase
+                    .from('profiles')
+                    .select('first_name')
+                    .eq('id', user.id)
+                    .single();
 
+                // 3. Update the HTML if the name exists
+                if (profile && profile.first_name) {
+                    document.getElementById('user-name').innerText = profile.first_name;
+                    
+                    // Bonus: Update the Avatar letter automatically
+                    const initial = profile.first_name.charAt(0).toUpperCase();
+                    document.getElementById('user-avatar').src = `https://ui-avatars.com/api/?name=${initial}&background=E9E0D2&color=5D534A`;
+                }
+            }
+        }
         // 7. ASYNC BOOKING LOGIC
         async function handleBooking(event) {
             event.preventDefault();
