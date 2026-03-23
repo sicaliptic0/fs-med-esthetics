@@ -18,7 +18,7 @@
         .btn-gold { background-color: #B59A6D; color: white; transition: 0.3s; }
         .btn-gold:hover { background-color: #9E865E; }
         .booking-field { width: 100%; box-sizing: border-box; max-width: 100%; min-height: 56px; }
-        #book-date.booking-field { display: block; min-width: 0; width: 100%; max-width: 100%; -webkit-appearance: none; appearance: none; }
+        #book-date.booking-field { display: block; min-width: 0; min-inline-size: 0; width: 100% !important; max-width: 100%; -webkit-appearance: none; appearance: none; }
         .booking-scroll { -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; }
         #book-treatments-dropdown { -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; }
         
@@ -121,9 +121,9 @@
                             <p class="mt-3 text-[10px] uppercase tracking-widest opacity-60" data-en="All consultations are currently priced at $0." data-es="Todas las consultas actualmente tienen un precio de $0.">All consultations are currently priced at $0.</p>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div class="min-w-0">
+                            <div class="min-w-0 overflow-hidden">
                                 <label class="block uppercase text-[10px] tracking-widest text-[#B59A6D] font-bold mb-4" data-en="2. Select Date" data-es="2. Selecciona una Fecha">2. Select Date</label>
-                                <input type="date" id="book-date" class="booking-field p-4 border border-[#E9E0D2] outline-none focus:border-[#B59A6D] bg-[#FCFAF7] text-sm text-[#5D534A]" required>
+                                <input type="date" id="book-date" class="booking-field p-4 border border-[#E9E0D2] outline-none focus:border-[#B59A6D] bg-[#FCFAF7] text-sm text-[#5D534A]" style="width:100%;max-width:100%;" required>
                             </div>
                             <div class="min-w-0">
                                 <label class="block uppercase text-[10px] tracking-widest text-[#B59A6D] font-bold mb-4" data-en="3. Preferred Time" data-es="3. Horario Preferido">3. Preferred Time</label>
@@ -677,6 +677,13 @@
             
             const date = document.getElementById('book-date').value;
             const time = document.getElementById('book-time').value;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const selectedDateObj = date ? new Date(date + 'T00:00:00') : null;
+            if (!selectedDateObj || selectedDateObj < today) {
+                alert(currentLang === 'en' ? "Please choose today or a future date." : "Selecciona hoy o una fecha futura.");
+                return;
+            }
 
             submitBtn.innerText = currentLang === 'en' ? "Processing..." : "Procesando...";
             submitBtn.disabled = true;
@@ -746,6 +753,11 @@
             updateLanguage();
             renderTreatmentDropdownOptions();
             syncTreatmentsSelectedSummary();
+            const bookDateInput = document.getElementById('book-date');
+            if (bookDateInput) {
+                const todayISO = new Date().toISOString().split('T')[0];
+                bookDateInput.min = todayISO;
+            }
 
             // Update summary when selecting treatments
             document.querySelectorAll('input.book-treatment-checkbox').forEach(cb => {

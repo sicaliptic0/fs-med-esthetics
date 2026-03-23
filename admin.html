@@ -16,6 +16,7 @@
         .status-pending { background-color: #FEF3C7; color: #92400E; }
         .status-confirmed { background-color: #D1FAE5; color: #065F46; }
         input:not([type="checkbox"]):not([type="radio"]), textarea, select { border: 1px solid #e9e0d2; background: #fff; padding: 10px; border-radius: 8px; outline-color: #b59a6d; width: 100%; font-size: 14px; }
+        .photo-thumb { width: 82px; height: 82px; object-fit: cover; border-radius: 10px; border: 1px solid #e9e0d2; cursor: pointer; }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden">
@@ -111,6 +112,28 @@
                             </div>
                             <div id="soap-procedures-list" class="w-full p-3 border border-[#e9e0d2] bg-white text-sm text-[#5d534a] rounded-lg max-h-56 overflow-y-auto overflow-x-hidden space-y-3"></div>
                         </div>
+
+                        <div class="bg-[#FCFAF7] border border-[#E9E0D2] p-4 rounded-lg space-y-4">
+                            <p class="text-[9px] uppercase tracking-widest text-[#B59A6D] font-bold">Clinical Photo Evidence (optional)</p>
+
+                            <div>
+                                <label class="text-[9px] uppercase tracking-widest opacity-50 block mb-2">Patient Photos (up to 2)</label>
+                                <input type="file" id="soap-patient-photos" accept="image/*" multiple>
+                                <div id="soap-patient-photos-existing" class="flex flex-wrap gap-2 mt-2"></div>
+                            </div>
+
+                            <div>
+                                <label class="text-[9px] uppercase tracking-widest opacity-50 block mb-2">Marking Photos (up to 2)</label>
+                                <input type="file" id="soap-marking-photos" accept="image/*" multiple>
+                                <div id="soap-marking-photos-existing" class="flex flex-wrap gap-2 mt-2"></div>
+                            </div>
+
+                            <div>
+                                <label class="text-[9px] uppercase tracking-widest opacity-50 block mb-2">Post Procedure Photos (up to 2)</label>
+                                <input type="file" id="soap-post-photos" accept="image/*" multiple>
+                                <div id="soap-post-photos-existing" class="flex flex-wrap gap-2 mt-2"></div>
+                            </div>
+                        </div>
                         <div class="grid grid-cols-2 gap-4">
                             <textarea id="soap-s" placeholder="Subjective (S) - Patient concerns, updates" class="h-32 resize-none"></textarea>
                             <textarea id="soap-o" placeholder="Objective (O) - Physical exam, findings" class="h-32 resize-none"></textarea>
@@ -151,14 +174,27 @@
         </div>
     </div>
 
+    <div id="image-lightbox" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-[120] p-6">
+        <button onclick="closeImageLightbox()" class="absolute top-5 right-7 text-white text-3xl opacity-80 hover:opacity-100">&times;</button>
+        <img id="lightbox-img" src="" alt="Clinical photo" class="max-w-full max-h-[88vh] rounded-xl shadow-2xl border border-white/10">
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const SUPABASE_URL = 'https://qkjmrnqkoipdltauweub.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFram1ybnFrb2lwZGx0YXV3ZXViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1MTkyMjgsImV4cCI6MjA4OTA5NTIyOH0.EGqgJ9RNY9vYfuVeeEcGoMu_cIaygRq0hnyT-iE7zTw';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const CLINICAL_PHOTOS_BUCKET = 'clinical-photos';
+        const MAX_PHOTO_COUNT = 2;
+        const MAX_PHOTO_SIZE_MB = 8;
 
         let currentPatientId = null;
         let notesById = {};
+        let soapPhotosState = {
+            patient: [],
+            marking: [],
+            post: []
+        };
 
         // Basic HTML escape to prevent any stored content from breaking the DOM.
         function escapeHtml(value) {
@@ -342,6 +378,128 @@
             return safeIds.map(id => getTreatmentLabelById(id)).join(', ');
         }
 
+        function normalizePhotoArray(value) {
+            if (Array.isArray(value)) return value.filter(Boolean);
+            if (typeof value === 'string' && value.trim()) {
+                try {
+                    const parsed = JSON.parse(value);
+                    if (Array.isArray(parsed)) return parsed.filter(Boolean);
+                } catch (_) {
+                    return [];
+                }
+            }
+            return [];
+        }
+
+        function buildPhotoThumb(url, onRemove) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative inline-block';
+            wrapper.innerHTML = `
+                <img src="${url}" class="photo-thumb" alt="Clinical photo thumbnail">
+                <button type="button" class="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-[#5d534a] text-white text-[10px] flex items-center justify-center">&times;</button>
+            `;
+            const img = wrapper.querySelector('img');
+            const btn = wrapper.querySelector('button');
+            img.addEventListener('click', () => openImageLightbox(url));
+            btn.addEventListener('click', () => onRemove());
+            return wrapper;
+        }
+
+        function renderSoapPhotosExisting() {
+            const map = [
+                { key: 'patient', containerId: 'soap-patient-photos-existing' },
+                { key: 'marking', containerId: 'soap-marking-photos-existing' },
+                { key: 'post', containerId: 'soap-post-photos-existing' }
+            ];
+
+            map.forEach(({ key, containerId }) => {
+                const container = document.getElementById(containerId);
+                if (!container) return;
+                container.innerHTML = '';
+                (soapPhotosState[key] || []).forEach((url, idx) => {
+                    const thumb = buildPhotoThumb(url, () => {
+                        soapPhotosState[key].splice(idx, 1);
+                        renderSoapPhotosExisting();
+                    });
+                    container.appendChild(thumb);
+                });
+            });
+        }
+
+        function clearSoapPhotoInputs() {
+            const ids = ['soap-patient-photos', 'soap-marking-photos', 'soap-post-photos'];
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+        }
+
+        function validatePhotoInputLimit(inputId, existingCount) {
+            const input = document.getElementById(inputId);
+            if (!input) return true;
+            const selectedFiles = Array.from(input.files || []);
+
+            if ((existingCount + selectedFiles.length) > MAX_PHOTO_COUNT) {
+                alert(`You can keep up to ${MAX_PHOTO_COUNT} photos in this category.`);
+                return false;
+            }
+
+            const oversized = selectedFiles.find(f => f.size > (MAX_PHOTO_SIZE_MB * 1024 * 1024));
+            if (oversized) {
+                alert(`Each photo must be <= ${MAX_PHOTO_SIZE_MB}MB.`);
+                return false;
+            }
+            return true;
+        }
+
+        async function uploadSoapPhotos(noteId, categoryKey, inputId) {
+            const input = document.getElementById(inputId);
+            if (!input) return [];
+            const files = Array.from(input.files || []);
+            if (!files.length) return [];
+
+            const uploaded = [];
+            for (const file of files) {
+                const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+                const fileName = `${noteId}/${categoryKey}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+                const { error: uploadError } = await _supabase.storage
+                    .from(CLINICAL_PHOTOS_BUCKET)
+                    .upload(fileName, file, { upsert: false });
+
+                if (uploadError) {
+                    throw new Error(uploadError.message || 'Upload failed');
+                }
+
+                const { data: publicData } = _supabase.storage
+                    .from(CLINICAL_PHOTOS_BUCKET)
+                    .getPublicUrl(fileName);
+                if (publicData?.publicUrl) uploaded.push(publicData.publicUrl);
+            }
+            return uploaded;
+        }
+
+        window.openImageLightbox = (src) => {
+            const modal = document.getElementById('image-lightbox');
+            const img = document.getElementById('lightbox-img');
+            if (!modal || !img) return;
+            img.src = src;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        };
+
+        window.closeImageLightbox = () => {
+            const modal = document.getElementById('image-lightbox');
+            const img = document.getElementById('lightbox-img');
+            if (!modal || !img) return;
+            img.src = '';
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        };
+
+        document.getElementById('image-lightbox')?.addEventListener('click', (e) => {
+            if (e.target.id === 'image-lightbox') closeImageLightbox();
+        });
+
         // Render dropdown options immediately (this script is at the end of the body).
         renderTreatmentsDropdownOptions('admin-book-treatments-options', 'admin-book-treatment-checkbox');
         renderSoapProceduresChecklist();
@@ -490,6 +648,12 @@
                         cb.checked = procIds.includes(cb.value);
                     });
                     syncSoapProceduresSelectedSummary();
+
+                    soapPhotosState.patient = normalizePhotoArray(note.patient_photos);
+                    soapPhotosState.marking = normalizePhotoArray(note.marking_photos);
+                    soapPhotosState.post = normalizePhotoArray(note.post_photos);
+                    renderSoapPhotosExisting();
+                    clearSoapPhotoInputs();
                 } else {
                     document.getElementById('form-title').innerText = "New Clinical Entry";
                     document.getElementById('soap-form').reset();
@@ -504,6 +668,10 @@
                     // Clear multi-select procedures realized
                     document.querySelectorAll('input.soap-procedure-checkbox').forEach(cb => cb.checked = false);
                     syncSoapProceduresSelectedSummary();
+
+                    soapPhotosState = { patient: [], marking: [], post: [] };
+                    renderSoapPhotosExisting();
+                    clearSoapPhotoInputs();
                 }
             }
         }
@@ -550,6 +718,19 @@
                         <div><p class="font-bold opacity-30 uppercase text-[7px] mb-1 tracking-widest">Assessment</p><p class="text-gray-700 font-medium whitespace-pre-wrap">${escapeHtml(n.assessment || '-')}</p></div>
                         <div><p class="font-bold opacity-30 uppercase text-[7px] mb-1 tracking-widest">Plan</p><p class="text-gray-700 whitespace-pre-wrap">${escapeHtml(n.plan || '-')}</p></div>
                     </div>
+                    ${(() => {
+                        const patientPhotos = normalizePhotoArray(n.patient_photos);
+                        const markingPhotos = normalizePhotoArray(n.marking_photos);
+                        const postPhotos = normalizePhotoArray(n.post_photos);
+
+                        function row(label, arr) {
+                            if (!arr.length) return '';
+                            return `<div class="mt-3"><p class="font-bold text-[#b59a6d] uppercase tracking-widest text-[8px] mb-2">${label}</p><div class="flex flex-wrap gap-2">${arr.map(url => `<img src="${escapeHtml(url)}" class="photo-thumb" onclick="openImageLightbox('${escapeHtml(url)}')" alt="${label}">`).join('')}</div></div>`;
+                        }
+
+                        const block = row('Patient Photos', patientPhotos) + row('Marking Photos', markingPhotos) + row('Post Procedure Photos', postPhotos);
+                        return block ? `<div class="mt-4 pt-4 border-t border-gray-50">${block}</div>` : '';
+                    })()}
                     ${Array.isArray(n.procedures_realized_ids) && n.procedures_realized_ids.length ? `<div class="mt-5 pt-4 border-t border-gray-50 text-[10px]"><span class="font-bold text-[#b59a6d] uppercase tracking-widest text-[8px] mr-2">Procedures:</span> <span class="italic text-gray-500">${escapeHtml(formatTreatmentIds(n.procedures_realized_ids))}</span></div>` : ''}
                     ${n.suggestions ? `<div class="mt-5 pt-4 border-t border-gray-50 text-[10px]"><span class="font-bold text-[#b59a6d] uppercase tracking-widest text-[8px] mr-2">Suggestions:</span> <span class="italic text-gray-500">${escapeHtml(n.suggestions)}</span></div>` : ''}
                 </div>
@@ -573,6 +754,31 @@
             e.preventDefault();
             const id = document.getElementById('edit-note-id').value;
             const proceduresRealizedIds = getSelectedSoapProcedureIds();
+            if (!validatePhotoInputLimit('soap-patient-photos', soapPhotosState.patient.length)) return;
+            if (!validatePhotoInputLimit('soap-marking-photos', soapPhotosState.marking.length)) return;
+            if (!validatePhotoInputLimit('soap-post-photos', soapPhotosState.post.length)) return;
+
+            let photoStateToSave = {
+                patient: [...soapPhotosState.patient],
+                marking: [...soapPhotosState.marking],
+                post: [...soapPhotosState.post]
+            };
+
+            try {
+                // Use existing note id for updates, and a temporary id for inserts.
+                const noteStorageId = id || `new-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+                const uploadedPatient = await uploadSoapPhotos(noteStorageId, 'patient', 'soap-patient-photos');
+                const uploadedMarking = await uploadSoapPhotos(noteStorageId, 'marking', 'soap-marking-photos');
+                const uploadedPost = await uploadSoapPhotos(noteStorageId, 'post', 'soap-post-photos');
+
+                photoStateToSave.patient = [...photoStateToSave.patient, ...uploadedPatient];
+                photoStateToSave.marking = [...photoStateToSave.marking, ...uploadedMarking];
+                photoStateToSave.post = [...photoStateToSave.post, ...uploadedPost];
+            } catch (uploadErr) {
+                alert("Photo upload error: " + uploadErr.message);
+                return;
+            }
+
             const noteData = {
                 patient_id: currentPatientId,
                 visit_date: document.getElementById('soap-date').value,
@@ -582,6 +788,9 @@
                 assessment: document.getElementById('soap-a').value,
                 plan: document.getElementById('soap-p').value,
                 procedures_realized_ids: proceduresRealizedIds,
+                patient_photos: photoStateToSave.patient,
+                marking_photos: photoStateToSave.marking,
+                post_photos: photoStateToSave.post,
                 suggestions: document.getElementById('soap-sugg').value
             };
 
