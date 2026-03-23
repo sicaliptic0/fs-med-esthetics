@@ -35,7 +35,7 @@
 
     <div id="mobile-overlay" class="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 hidden md:hidden" onclick="closeMobileMenu()"></div>
 
-    <aside id="sidebar" class="w-64 sidebar flex flex-col fixed top-0 left-0 h-screen z-50 shadow-2xl md:shadow-none bg-white -translate-x-full pointer-events-none transition-transform duration-300 ease-in-out md:static md:h-full md:translate-x-0 md:pointer-events-auto md:flex">
+    <aside id="sidebar" class="w-64 sidebar flex flex-col fixed top-0 left-0 h-screen overflow-y-auto z-50 shadow-2xl md:shadow-none bg-white -translate-x-full pointer-events-none transition-transform duration-300 ease-in-out md:static md:h-full md:translate-x-0 md:pointer-events-auto md:flex">
         <div class="p-6 text-center border-b border-[#E9E0D2] flex justify-between items-center md:block">
             <h1 class="logo-font text-sm md:text-base tracking-widest text-[#B59A6D]">FS PORTAL</h1>
             <button onclick="toggleMobileMenu()" class="md:hidden text-xl opacity-50 hover:opacity-100">&times;</button>
@@ -67,6 +67,9 @@
                 <span id="user-name" class="font-medium not-italic">Patient</span>
             </h2>
             <div class="flex items-center gap-6">
+                <button onclick="logout()" class="md:hidden text-[9px] uppercase tracking-widest font-bold opacity-60 hover:opacity-100 transition border-b border-[#B59A6D]" data-en="Logout" data-es="Salir">
+                    Logout
+                </button>
                 <button onclick="toggleLanguage()" class="text-[10px] uppercase tracking-widest font-bold opacity-60 hover:opacity-100 transition border-b border-[#B59A6D]">
                     <span id="lang-label">ESP</span>
                 </button>
@@ -805,6 +808,11 @@
                 });
                 if (notifyErr) {
                     console.error('Booking email notification error:', notifyErr.message);
+                    alert(
+                        currentLang === 'en'
+                            ? `Booking saved, but alert email failed: ${notifyErr.message}`
+                            : `La cita se guardó, pero falló la alerta por correo: ${notifyErr.message}`
+                    );
                 }
 
                 showSuccessModal(); // New Aesthetic Feedback
