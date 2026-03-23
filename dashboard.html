@@ -150,7 +150,12 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // 1. DASHBOARD LOGIC: Switching Tabs
+        // 1. CONFIGURATION (Using your existing Supabase keys)
+        const SUPABASE_URL = 'https://qkjmrnqkoipdltauweub.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFram1ybnFrb2lwZGx0YXV3ZXViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1MTkyMjgsImV4cCI6MjA4OTA5NTIyOH0.EGqgJ9RNY9vYfuVeeEcGoMu_cIaygRq0hnyT-iE7zTw';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // 2. DASHBOARD LOGIC: Switching Tabs
         function switchView(viewId, navElement) {
             document.getElementById('dashboard-view').classList.add('hidden');
             document.getElementById('booking-view').classList.add('hidden');
@@ -162,7 +167,7 @@
             }
         }
 
-        // 2. LOCALIZATION LOGIC: Language Toggle
+        // 3. LOCALIZATION LOGIC: Language Toggle
         let currentLang = localStorage.getItem('preferredLang') || 'en';
         function updateLanguage() {
             document.querySelectorAll('[data-en]').forEach(el => {
@@ -176,25 +181,64 @@
             updateLanguage();
         }
 
-        // 3. LOGOUT LOGIC
-        function logout() {
-            // Add Supabase signout here
+        // 4. LOGOUT LOGIC
+        async function logout() {
+            await _supabase.auth.signOut();
             window.location.href = 'index.html';
         }
 
+        // 5. ASYNC BOOKING LOGIC (The new database connection)
+        async function handleBooking(event) {
+            event.preventDefault();
+
+            // UI Feedback: Disable button
+            const submitBtn = event.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerText;
+            submitBtn.innerText = currentLang === 'en' ? "Processing..." : "Procesando...";
+            submitBtn.disabled = true;
+
+            // Get current logged-in patient
+            const { data: { user }, error: authError } = await _supabase.auth.getUser();
+
+            if (authError || !user) {
+                alert(currentLang === 'en' ? "Please log in to schedule." : "Por favor inicia sesión para agendar.");
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Package Clinical Data
+            const appointmentData = {
+                patient_id: user.id,
+                service_type: document.getElementById('book-service').value,
+                appointment_date: document.getElementById('book-date').value,
+                appointment_time: document.getElementById('book-time').value,
+                status: 'pending'
+            };
+
+            // Insert into the 'appointments' table you just created
+            const { error: dbError } = await _supabase
+                .from('appointments')
+                .insert([appointmentData]);
+
+            if (dbError) {
+                console.error("Clinical Database Error:", dbError.message);
+                alert(currentLang === 'en' ? "Error saving appointment." : "Error al guardar la cita.");
+            } else {
+                const successMsg = currentLang === 'en' 
+                    ? `Request received. We will contact you soon.` 
+                    : `Solicitud recibida. Nos contactaremos pronto.`;
+                
+                alert(successMsg);
+                event.target.reset();
+                switchView('dashboard-view', document.querySelectorAll('.nav-item')[0]);
+            }
+
+            // Restore UI
+            submitBtn.innerText = originalText;
+            submitBtn.disabled = false;
+        }
+
         document.addEventListener('DOMContentLoaded', updateLanguage);
-
-        function handleBooking(event) {
-        event.preventDefault();
-        const service = document.getElementById('book-service').value;
-        const date = document.getElementById('book-date').value;
-        const time = document.getElementById('book-time').value;
-
-        alert(`Appointment requested for ${service} on ${date} at ${time}. We will contact you soon.`);
-        
-        // Return to dashboard after booking
-        switchView('dashboard-view', document.querySelectorAll('.nav-item')[0]);
-    }
     </script>
 </body>
 </html>
