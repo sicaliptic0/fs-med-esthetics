@@ -15,6 +15,7 @@
         .status-badge { font-size: 8px; padding: 2px 8px; border-radius: 99px; text-transform: uppercase; font-weight: bold; }
         .status-pending { background-color: #FEF3C7; color: #92400E; }
         .status-confirmed { background-color: #D1FAE5; color: #065F46; }
+        input, textarea, select { border: 1px solid #e9e0d2; background: #fafafa; padding: 10px; border-radius: 5px; outline-color: #b59a6d; }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden">
@@ -31,10 +32,7 @@
     <main class="flex-1 flex flex-col overflow-hidden">
         <header class="h-20 bg-white border-b border-[#e9e0d2] flex items-center justify-between px-12">
             <h2 id="view-title" class="text-2xl italic">Patient Database</h2>
-            <div class="flex items-center gap-4">
-                <span class="text-[10px] uppercase tracking-widest opacity-40">Active Provider:</span>
-                <span class="text-sm font-medium">Dr. Samuel Galviz</span>
-            </div>
+            <button onclick="openAdminBooking()" class="bg-[#b59a6d] text-white px-6 py-2 text-[10px] uppercase tracking-widest font-bold shadow-md hover:bg-[#9e865e]">New Appointment</button>
         </header>
 
         <div id="patients-view" class="flex-1 overflow-y-auto p-12">
@@ -44,6 +42,7 @@
                         <tr>
                             <th class="p-6">Patient Name</th>
                             <th class="p-6">DOB</th>
+                            <th class="p-6">Sex</th>
                             <th class="p-6">Phone</th>
                             <th class="p-6">Actions</th>
                         </tr>
@@ -71,74 +70,196 @@
         </div>
     </main>
 
+    <div id="history-modal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-50 p-6 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-4xl h-[85vh] p-10 rounded-2xl shadow-2xl flex flex-col">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-3xl italic">Clinical History: <span id="history-patient-name" class="font-bold"></span></h3>
+                <button onclick="closeHistoryModal()" class="text-2xl opacity-40">&times;</button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto space-y-8 pr-4">
+                <form id="soap-form" class="bg-gray-50 p-6 rounded-xl border border-[#e9e0d2] space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-[10px] uppercase font-bold text-[#b59a6d]">Add New SOAP Note</span>
+                        <input type="date" id="soap-date" class="text-xs" required>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <textarea id="soap-s" placeholder="Subjective (S)" class="h-24 text-sm"></textarea>
+                        <textarea id="soap-o" placeholder="Objective (O)" class="h-24 text-sm"></textarea>
+                        <textarea id="soap-a" placeholder="Assessment / Evolution (A)" class="h-24 text-sm"></textarea>
+                        <textarea id="soap-p" placeholder="Plan / Treatment (P)" class="h-24 text-sm"></textarea>
+                    </div>
+                    <textarea id="soap-sugg" placeholder="Clinical Suggestions" class="w-full h-16 text-sm"></textarea>
+                    <button type="submit" class="w-full bg-[#5d534a] text-white py-3 uppercase text-[10px] tracking-widest">Save Encounter</button>
+                </form>
+
+                <div id="notes-timeline" class="space-y-6 pt-4">
+                    </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="admin-booking-modal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-50 p-6 backdrop-blur-sm">
+        <div class="bg-white p-10 max-w-md w-full rounded-2xl shadow-2xl">
+            <h3 class="text-2xl mb-6 italic">Direct Admin Booking</h3>
+            <form id="admin-booking-form" class="space-y-4 flex flex-col">
+                <select id="admin-book-patient" class="text-sm" required>
+                    <option value="">Select Patient...</option>
+                </select>
+                <select id="admin-book-service" class="text-sm" required>
+                    <option value="botox">Facial Neurotoxins</option>
+                    <option value="fillers">Dermal Fillers</option>
+                    <option value="prp">PRP Restoration</option>
+                </select>
+                <input type="date" id="admin-book-date" class="text-sm" required>
+                <input type="time" id="admin-book-time" class="text-sm" required>
+                <button type="submit" class="bg-[#b59a6d] text-white py-3 uppercase text-[10px] tracking-widest font-bold">Schedule Appointment</button>
+                <button type="button" onclick="closeAdminBooking()" class="text-[9px] uppercase opacity-40">Cancel</button>
+            </form>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const SUPABASE_URL = 'https://qkjmrnqkoipdltauweub.supabase.co';
-        const SUPABASE_KEY = 'your_key_here'; // Use your existing key
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFram1ybnFrb2lwZGx0YXV3ZXViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1MTkyMjgsImV4cCI6MjA4OTA5NTIyOH0.EGqgJ9RNY9vYfuVeeEcGoMu_cIaygRq0hnyT-iE7zTw';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // 1. Navigation Logic
+        let currentPatientId = null;
+
+        // --- CORE NAVIGATION ---
+        async function checkAdmin() {
+            const { data: { user } } = await _supabase.auth.getUser();
+            const admins = ['samuel.galviz@gmail.com', 'freddy@email.com'];
+            if (!user || !admins.includes(user.email)) { window.location.href = 'index.html'; return; }
+            fetchPatients();
+        }
+
         function switchAdminView(viewId, element) {
-            document.getElementById('patients-view').classList.add('hidden');
-            document.getElementById('appointments-view').classList.add('hidden');
+            document.querySelectorAll('.flex-1.overflow-y-auto').forEach(v => v.classList.add('hidden'));
             document.getElementById(viewId).classList.remove('hidden');
-            
             document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active-link'));
             element.classList.add('active-link');
-            
             document.getElementById('view-title').innerText = viewId === 'patients-view' ? 'Patient Database' : 'Appointment Queue';
-            
             if(viewId === 'appointments-view') fetchAppointments();
             else fetchPatients();
         }
 
-        // 2. Fetch Patients (Same as your old code)
+        // --- PATIENT & APPOINTMENT FETCHING ---
         async function fetchPatients() {
             const { data, error } = await _supabase.from('profiles').select('*').order('last_name');
             renderPatientTable(data || []);
+            // Populate admin booking dropdown
+            const select = document.getElementById('admin-book-patient');
+            select.innerHTML = '<option value="">Select Patient...</option>' + 
+                data.map(p => `<option value="${p.id}">${p.last_name}, ${p.first_name}</option>`).join('');
         }
 
-        // 3. NEW: Fetch Appointments with Patient Details
         async function fetchAppointments() {
-            const { data, error } = await _supabase
-                .from('appointments')
-                .select(`
-                    id, 
-                    service_type, 
-                    appointment_date, 
-                    appointment_time, 
-                    status,
-                    profiles ( first_name, last_name )
-                `)
-                .order('appointment_date', { ascending: true });
-
-            renderAppointmentsTable(data || []);
-        }
-
-        function renderAppointmentsTable(appointments) {
-            const tbody = document.getElementById('appointment-table-body');
-            tbody.innerHTML = appointments.map(appt => `
+            const { data } = await _supabase.from('appointments').select('*, profiles(first_name, last_name)').order('appointment_date');
+            document.getElementById('appointment-table-body').innerHTML = data.map(appt => `
                 <tr class="border-t border-gray-50">
-                    <td class="p-6 font-medium">${appt.profiles.last_name}, ${appt.profiles.first_name}</td>
-                    <td class="p-6 uppercase text-[10px] tracking-widest">${appt.service_type}</td>
+                    <td class="p-6 font-medium">${appt.profiles?.last_name}, ${appt.profiles?.first_name}</td>
+                    <td class="p-6 uppercase text-[9px] tracking-widest">${appt.service_type}</td>
                     <td class="p-6 text-xs">${appt.appointment_date} @ ${appt.appointment_time}</td>
                     <td class="p-6"><span class="status-badge status-${appt.status}">${appt.status}</span></td>
                     <td class="p-6">
-                        ${appt.status === 'pending' ? 
-                            `<button onclick="updateStatus('${appt.id}', 'confirmed')" class="text-green-600 font-bold text-[10px] uppercase">Confirm</button>` : 
-                            `<span class="opacity-30 text-[10px] uppercase">Vetted</span>`
-                        }
+                        ${appt.status === 'pending' ? `<button onclick="updateStatus('${appt.id}', 'confirmed')" class="text-green-600 font-bold text-[10px] uppercase">Confirm</button>` : `<span class="opacity-20 text-[9px] uppercase">Validated</span>`}
                     </td>
                 </tr>
             `).join('');
         }
 
-        async function updateStatus(id, newStatus) {
-            const { error } = await _supabase.from('appointments').update({ status: newStatus }).eq('id', id);
-            if (!error) fetchAppointments();
+        function renderPatientTable(patients) {
+            document.getElementById('patient-table-body').innerHTML = patients.map(p => `
+                <tr class="border-t border-gray-50 hover:bg-gray-50 transition">
+                    <td class="p-6 font-medium">${p.last_name}, ${p.first_name}</td>
+                    <td class="p-6 text-xs">${p.dob}</td>
+                    <td class="p-6 text-xs capitalize">${p.sex}</td>
+                    <td class="p-6 text-xs">${p.phone || '-'}</td>
+                    <td class="p-6 flex gap-4">
+                        <button onclick="openHistory('${p.id}', '${p.first_name} ${p.last_name}')" class="text-[#b59a6d] font-bold text-[10px] uppercase hover:underline">History (SOAP)</button>
+                    </td>
+                </tr>
+            `).join('');
         }
 
-        window.onload = () => { fetchPatients(); };
+        // --- SOAP NOTES LOGIC ---
+        async function openHistory(patientId, name) {
+            currentPatientId = patientId;
+            document.getElementById('history-patient-name').innerText = name;
+            document.getElementById('soap-date').valueAsDate = new Date();
+            document.getElementById('history-modal').classList.remove('hidden');
+            loadNotes();
+        }
+
+        async function loadNotes() {
+            const { data } = await _supabase.from('clinical_history').select('*').eq('patient_id', currentPatientId).order('visit_date', { ascending: false });
+            document.getElementById('notes-timeline').innerHTML = data.map(n => `
+                <div class="p-5 border-l-2 border-[#b59a6d] bg-white shadow-sm rounded-r-lg relative">
+                    <div class="flex justify-between mb-3">
+                        <span class="text-[10px] font-bold uppercase tracking-widest text-[#b59a6d]">Visit: ${n.visit_date}</span>
+                        <button onclick="deleteNote('${n.id}')" class="text-red-300 hover:text-red-500 text-[10px] uppercase font-bold">Delete</button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 text-xs opacity-80 italic">
+                        <p><strong>S:</strong> ${n.subjective}</p>
+                        <p><strong>O:</strong> ${n.objective}</p>
+                        <p><strong>A:</strong> ${n.assessment}</p>
+                        <p><strong>P:</strong> ${n.plan}</p>
+                    </div>
+                    ${n.suggestions ? `<p class="mt-2 text-[10px] border-t pt-2 border-gray-100"><strong>Sugg:</strong> ${n.suggestions}</p>` : ''}
+                </div>
+            `).join('');
+        }
+
+        document.getElementById('soap-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const note = {
+                patient_id: currentPatientId,
+                visit_date: document.getElementById('soap-date').value,
+                subjective: document.getElementById('soap-s').value,
+                objective: document.getElementById('soap-o').value,
+                assessment: document.getElementById('soap-a').value,
+                plan: document.getElementById('soap-p').value,
+                suggestions: document.getElementById('soap-sugg').value
+            };
+            const { error } = await _supabase.from('clinical_history').insert([note]);
+            if (!error) { e.target.reset(); loadNotes(); }
+        };
+
+        // --- ADMIN BOOKING ---
+        function openAdminBooking() { document.getElementById('admin-booking-modal').classList.remove('hidden'); }
+        function closeAdminBooking() { document.getElementById('admin-booking-modal').classList.add('hidden'); }
+        function closeHistoryModal() { document.getElementById('history-modal').classList.add('hidden'); }
+
+        document.getElementById('admin-booking-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const appt = {
+                patient_id: document.getElementById('admin-book-patient').value,
+                service_type: document.getElementById('admin-book-service').value,
+                appointment_date: document.getElementById('admin-book-date').value,
+                appointment_time: document.getElementById('admin-book-time').value,
+                status: 'confirmed' // Admins book confirmed appointments directly
+            };
+            await _supabase.from('appointments').insert([appt]);
+            closeAdminBooking();
+            fetchAppointments();
+        };
+
+        async function updateStatus(id, newStatus) {
+            await _supabase.from('appointments').update({ status: newStatus }).eq('id', id);
+            fetchAppointments();
+        }
+
+        async function deleteNote(id) {
+            if(confirm("Delete this clinical record?")) {
+                await _supabase.from('clinical_history').delete().eq('id', id);
+                loadNotes();
+            }
+        }
+
+        async function logout() { await _supabase.auth.signOut(); window.location.href = 'index.html'; }
+        window.onload = checkAdmin;
     </script>
 </body>
 </html>
