@@ -103,33 +103,34 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const SUPABASE_URL = 'https://qkjmrnqkoipdltauweub.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFram1ybnFrb2lwZGx0YXV3ZXViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1MTkyMjgsImV4cCI6MjA4OTA5NTIyOH0.EGqgJ9RNY9vYfuVeeEcGoMu_cIaygRq0hnyT-iE7zTw';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
+    
         let currentPatientId = null;
-
+    
+        // --- AUTH & NAVIGATION ---
         async function checkAdmin() {
             const { data: { user } } = await _supabase.auth.getUser();
             const admins = ['samuel.galviz@gmail.com', 'freddyjosevp@email.com'];
             if (!user || !admins.includes(user.email)) { window.location.href = 'index.html'; return; }
             fetchPatients();
         }
-
+    
         function switchAdminView(viewId, element) {
             document.querySelectorAll('main > div').forEach(v => v.classList.add('hidden'));
             document.getElementById(viewId).classList.remove('hidden');
             document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active-link'));
             element.classList.add('active-link');
         }
-
+    
+        // --- PATIENT MANAGEMENT ---
         async function fetchPatients() {
             const { data } = await _supabase.from('profiles').select('*').order('last_name');
             renderPatientTable(data || []);
         }
-
+    
         function renderPatientTable(patients) {
             document.getElementById('patient-table-body').innerHTML = patients.map(p => `
                 <tr class="border-t border-gray-50 hover:bg-gray-50 transition">
@@ -142,14 +143,15 @@
                 </tr>
             `).join('');
         }
-
+    
+        // --- CLINICAL HISTORY (SOAP) LOGIC ---
         async function openHistory(patientId, name) {
             currentPatientId = patientId;
             document.getElementById('history-patient-name').innerText = name;
             document.getElementById('history-modal').classList.remove('hidden');
             loadNotes();
         }
-
+    
         function toggleSoapForm(show, note = null) {
             const container = document.getElementById('soap-form-container');
             container.classList.toggle('hidden', !show);
@@ -157,95 +159,114 @@
             if(show) {
                 if(note) {
                     document.getElementById('form-title').innerText = "Modify Clinical Encounter";
-                document.getElementById('edit-note-id').value = note.id;
-                document.getElementById('soap-date').value = note.visit_date;
-                document.getElementById('soap-time').value = note.visit_time || '';
-                document.getElementById('soap-s').value = note.subjective || '';
-                document.getElementById('soap-o').value = note.objective || '';
-                document.getElementById('soap-a').value = note.assessment || '';
-                document.getElementById('soap-p').value = note.plan || '';
-                document.getElementById('soap-sugg').value = note.suggestions || '';
-            } else {
-                document.getElementById('form-title').innerText = "New Clinical Entry";
-                document.getElementById('soap-form').reset();
-                document.getElementById('edit-note-id').value = "";
-                
-                // DEFAULT TO CURRENT DATE/TIME
-                const now = new Date();
-                document.getElementById('soap-date').value = now.toISOString().split('T')[0];
-                document.getElementById('soap-time').value = now.toTimeString().substring(0, 5);
-            }
+                    document.getElementById('edit-note-id').value = note.id;
+                    document.getElementById('soap-date').value = note.visit_date;
+                    document.getElementById('soap-time').value = note.visit_time || '';
+                    document.getElementById('soap-s').value = note.subjective || '';
+                    document.getElementById('soap-o').value = note.objective || '';
+                    document.getElementById('soap-a').value = note.assessment || '';
+                    document.getElementById('soap-p').value = note.plan || '';
+                    document.getElementById('soap-sugg').value = note.suggestions || '';
+                } else {
+                    document.getElementById('form-title').innerText = "New Clinical Entry";
+                    document.getElementById('soap-form').reset();
+                    document.getElementById('edit-note-id').value = "";
+                    const now = new Date();
+                    document.getElementById('soap-date').value = now.toISOString().split('T')[0];
+                    document.getElementById('soap-time').value = now.toTimeString().substring(0, 5);
+                }
             }
         }
-
+    
         async function loadNotes() {
-        const container = document.getElementById('notes-container');
-        container.innerHTML = '<p class="text-center opacity-30 text-sm mt-10">Accessing secure records...</p>';
-        
-        const { data, error } = await _supabase
-            .from('clinical_history')
-            .select('*')
-            .eq('patient_id', currentPatientId)
-            .order('visit_date', { ascending: false })
-            .order('visit_time', { ascending: false });
-
-        if (!data || data.length === 0) {
-            container.innerHTML = `
-                <div class="text-center py-20 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-                    <p class="opacity-40 italic text-sm mb-4">No clinical history found for this patient.</p>
-                    <p class="text-[10px] uppercase tracking-widest opacity-30">Start by adding a new encounter above.</p>
-                </div>`;
-            return;
-        }
-
-        container.innerHTML = data.map(n => `
-            <div class="p-6 bg-white border border-[#e9e0d2] rounded-xl shadow-sm relative group hover:border-[#b59a6d] transition-colors">
-                <div class="flex justify-between items-start mb-4">
-                    <div>
-                        <span class="text-[10px] font-bold uppercase tracking-widest text-[#b59a6d]">Encounter: ${n.visit_date} @ ${n.visit_time || 'N/A'}</span>
+            const container = document.getElementById('notes-container');
+            container.innerHTML = '<p class="text-center opacity-30 text-sm mt-10">Accessing secure records...</p>';
+            
+            const { data, error } = await _supabase
+                .from('clinical_history')
+                .select('*')
+                .eq('patient_id', currentPatientId)
+                .order('visit_date', { ascending: false })
+                .order('visit_time', { ascending: false });
+    
+            if (!data || data.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-20 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                        <p class="opacity-40 italic text-sm mb-4">No clinical history found for this patient.</p>
+                        <p class="text-[10px] uppercase tracking-widest opacity-30">Start by adding a new encounter above.</p>
+                    </div>`;
+                return;
+            }
+    
+            container.innerHTML = data.map(n => `
+                <div class="p-6 bg-white border border-[#e9e0d2] rounded-xl shadow-sm relative group hover:border-[#b59a6d] transition-colors">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <span class="text-[10px] font-bold uppercase tracking-widest text-[#b59a6d]">Encounter: ${n.visit_date} @ ${n.visit_time || 'N/A'}</span>
+                        </div>
+                        <div class="flex flex-col items-end gap-1">
+                            <button onclick='editNote(${JSON.stringify(n)})' class="text-[9px] uppercase font-bold text-blue-500 hover:text-blue-700 underline transition">Modify Encounter</button>
+                            <button onclick='deleteNote("${n.id}")' class="text-[9px] uppercase font-bold text-red-400 hover:text-red-600 underline transition">Delete Encounter</button>
+                        </div>
                     </div>
-                    <button onclick='editNote(${JSON.stringify(n)})' class="text-[9px] uppercase font-bold text-blue-500 hover:text-blue-700 underline transition">Modify Encounter</button>
+                    <div class="grid grid-cols-2 gap-x-8 gap-y-6 text-xs leading-relaxed">
+                        <div><p class="font-bold opacity-30 uppercase text-[7px] mb-1 tracking-widest">Subjective</p><p class="text-gray-700">${n.subjective || '-'}</p></div>
+                        <div><p class="font-bold opacity-30 uppercase text-[7px] mb-1 tracking-widest">Objective</p><p class="text-gray-700">${n.objective || '-'}</p></div>
+                        <div><p class="font-bold opacity-30 uppercase text-[7px] mb-1 tracking-widest">Assessment</p><p class="text-gray-700 font-medium">${n.assessment || '-'}</p></div>
+                        <div><p class="font-bold opacity-30 uppercase text-[7px] mb-1 tracking-widest">Plan</p><p class="text-gray-700">${n.plan || '-'}</p></div>
+                    </div>
+                    ${n.suggestions ? `<div class="mt-5 pt-4 border-t border-gray-50 text-[10px]"><span class="font-bold text-[#b59a6d] uppercase tracking-widest text-[8px] mr-2">Post-Encounter Suggestions:</span> <span class="italic text-gray-500">${n.suggestions}</span></div>` : ''}
                 </div>
-                <div class="grid grid-cols-2 gap-x-8 gap-y-6 text-xs leading-relaxed">
-                    <div><p class="font-bold opacity-30 uppercase text-[7px] mb-1 tracking-widest">Subjective</p><p class="text-gray-700">${n.subjective || '-'}</p></div>
-                    <div><p class="font-bold opacity-30 uppercase text-[7px] mb-1 tracking-widest">Objective</p><p class="text-gray-700">${n.objective || '-'}</p></div>
-                    <div><p class="font-bold opacity-30 uppercase text-[7px] mb-1 tracking-widest">Assessment</p><p class="text-gray-700 font-medium">${n.assessment || '-'}</p></div>
-                    <div><p class="font-bold opacity-30 uppercase text-[7px] mb-1 tracking-widest">Plan</p><p class="text-gray-700">${n.plan || '-'}</p></div>
-                </div>
-                ${n.suggestions ? `<div class="mt-5 pt-4 border-t border-gray-50 text-[10px]"><span class="font-bold text-[#b59a6d] uppercase tracking-widest text-[8px] mr-2">Post-Encounter Suggestions:</span> <span class="italic text-gray-500">${n.suggestions}</span></div>` : ''}
-            </div>
-        `).join('');
-    }   
-
-        window.editNote = (note) => { toggleSoapForm(true, note); };
-
-        document.getElementById('soap-form').onsubmit = async (e) => {
-        e.preventDefault();
-        const id = document.getElementById('edit-note-id').value;
-        const noteData = {
-            patient_id: currentPatientId,
-            visit_date: document.getElementById('soap-date').value,
-            visit_time: document.getElementById('soap-time').value,
-            subjective: document.getElementById('soap-s').value,
-            objective: document.getElementById('soap-o').value,
-            assessment: document.getElementById('soap-a').value,
-            plan: document.getElementById('soap-p').value,
-            suggestions: document.getElementById('soap-sugg').value
-        };
-
-        let result;
-        // Use UPDATE if we have an ID (Modify), otherwise INSERT (New)
-        if(id) result = await _supabase.from('clinical_history').update(noteData).eq('id', id);
-        else result = await _supabase.from('clinical_history').insert([noteData]);
-
-        if (!result.error) {
-            toggleSoapForm(false);
-            loadNotes();
-        } else {
-            alert("Security/Database Error: " + result.error.message);
+            `).join('');
         }
-    };
-
+    
+        // --- RECORD ACTIONS (Save/Edit/Delete) ---
+        window.editNote = (note) => { toggleSoapForm(true, note); };
+    
+        async function deleteNote(id) {
+            // Confirmation is essential in clinical record management
+            const confirmation = confirm("Are you sure you want to permanently delete this clinical record? This action cannot be undone.");
+            
+            if (confirmation) {
+                const { error } = await _supabase
+                    .from('clinical_history')
+                    .delete()
+                    .eq('id', id);
+    
+                if (!error) {
+                    loadNotes(); // Refresh the list
+                } else {
+                    alert("Database Error: " + error.message);
+                }
+            }
+        }
+    
+        document.getElementById('soap-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('edit-note-id').value;
+            const noteData = {
+                patient_id: currentPatientId,
+                visit_date: document.getElementById('soap-date').value,
+                visit_time: document.getElementById('soap-time').value,
+                subjective: document.getElementById('soap-s').value,
+                objective: document.getElementById('soap-o').value,
+                assessment: document.getElementById('soap-a').value,
+                plan: document.getElementById('soap-p').value,
+                suggestions: document.getElementById('soap-sugg').value
+            };
+    
+            let result;
+            if(id) result = await _supabase.from('clinical_history').update(noteData).eq('id', id);
+            else result = await _supabase.from('clinical_history').insert([noteData]);
+    
+            if (!result.error) {
+                toggleSoapForm(false);
+                loadNotes();
+            } else {
+                alert("Security/Database Error: " + result.error.message);
+            }
+        };
+    
         function closeHistoryModal() { document.getElementById('history-modal').classList.add('hidden'); }
         async function logout() { await _supabase.auth.signOut(); window.location.href = 'index.html'; }
         window.onload = checkAdmin;
