@@ -257,7 +257,13 @@
                 return;
             }
 
-            const { data: { user } } = await _supabase.auth.getUser();
+            const { data: { user }, error: authError } = await _supabase.auth.getUser();
+            if (authError || !user) {
+                alert(currentLang === 'en' ? "Please log in to book an appointment." : "Inicia sesion para agendar una cita.");
+                submitBtn.innerText = originalText;
+                submitBtn.disabled = false;
+                return;
+            }
 
             const { error: dbError } = await _supabase.from('appointments').insert([{
                 patient_id: user.id,

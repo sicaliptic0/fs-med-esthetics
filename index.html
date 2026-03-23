@@ -441,119 +441,124 @@
             }
         }
 
- // 4. LÓGICA DE AUTENTICACIÓN (LOGIN Y REGISTRO)
- document.getElementById('do-auth').addEventListener('click', async () => {
-            const email = document.getElementById('auth-email').value.trim();
-            const password = document.getElementById('auth-password').value;
-            const btnText = document.getElementById('btn-text');
-            const spinner = document.getElementById('spinner');
-            const authBtn = document.getElementById('do-auth');
+// 4. LOGICA DE AUTENTICACION (LOGIN Y REGISTRO)
+document.getElementById('do-auth').addEventListener('click', async () => {
+    const email = document.getElementById('auth-email').value.trim();
+    const password = document.getElementById('auth-password').value;
+    const btnText = document.getElementById('btn-text');
+    const spinner = document.getElementById('spinner');
+    const authBtn = document.getElementById('do-auth');
 
-            // Validaciones Básicas
-            if (!email || !password) {
-                return alert(currentLang === 'en' ? "Please fill in email and password." : "Por favor llena el correo y la contraseña.");
-            }
-
-            if (isSignUp) {
-                const confirmPassword = document.getElementById('auth-confirm-password').value;
-                const firstName = document.getElementById('auth-firstname').value.trim();
-                const lastName = document.getElementById('auth-lastname').value.trim();
-                const phoneInput = document.getElementById('auth-phone').value.trim();
-                const phoneCode = document.getElementById('auth-phone-code').value;
-                const tosCheck = document.getElementById('tos-check').checked;
-                
-                // Recolectar métodos de contacto seleccionados
-                const contactCheckboxes = document.querySelectorAll('.contact-method:checked');
-                const preferredContacts = Array.from(contactCheckboxes).map(cb => cb.value);
-
-                // Validaciones de Registro
-        if (!firstName || !lastName) {
-            return alert(currentLang === 'en' ? "Please provide both First and Last Name." : "Por favor provee Nombre y Apellido.");
-        }
-        if (password.length < 6) return alert(currentLang === 'en' ? "Password must be at least 6 characters." : "La contraseña debe tener al menos 6 caracteres.");
-        if (password !== confirmPassword) return alert(currentLang === 'en' ? "Passwords do not match." : "Las contraseñas no coinciden.");
-                // Validación inteligente: Si piden que los llamen o escriban por WhatsApp, NECESITAMOS el teléfono
-                if ((preferredContacts.includes('WhatsApp') || preferredContacts.includes('SMS') || preferredContacts.includes('Llamada')) && !phoneInput) {
-                    return alert(currentLang === 'en' ? "Please provide a valid phone number for your preferred contact method." : "Por favor ingresa tu número de teléfono para contactarte.");
-                }
-
-                if (!tosCheck) return alert(currentLang === 'en' ? "Please agree to the Terms of Service." : "Por favor acepta los Términos de Servicio.");
-            
-                if (result.error) {
-        alert("Error: " + result.error.message);
-    } else {
-        // PROFESSIONAL UPDATE:
-        alert(currentLang === 'en' 
-            ? "Account created! Please check your email to verify your identity before logging in." 
-            : "¡Cuenta creada! Por favor, revise su correo para verificar su identidad antes de iniciar sesión.");
-        
-        // Instead of redirecting to dashboard immediately, 
-        // close the modal or keep them on the index page.
-        document.getElementById('auth-modal').classList.add('hidden');
+    // Validaciones basicas
+    if (!email || !password) {
+        alert(currentLang === 'en' ? "Please fill in email and password." : "Por favor llena el correo y la contraseña.");
+        return;
     }
 
-                
-            }
-
-            // UI: Estado de Carga
-            btnText.classList.add('hidden');
-            spinner.classList.remove('hidden');
-            authBtn.disabled = true;
-
-            let result;
-
-            if (isSignUp) {
-                // FLUJO DE REGISTRO
+    // Validaciones especificas de registro
+    let signUpPayload = null;
+    if (isSignUp) {
+        const confirmPassword = document.getElementById('auth-confirm-password').value;
         const firstName = document.getElementById('auth-firstname').value.trim();
         const lastName = document.getElementById('auth-lastname').value.trim();
         const phoneInput = document.getElementById('auth-phone').value.trim();
-        const fullPhone = phoneInput ? (document.getElementById('auth-phone-code').value + phoneInput) : "";
+        const phoneCode = document.getElementById('auth-phone-code').value;
         const dob = document.getElementById('auth-dob').value;
         const sex = document.getElementById('auth-sex').value;
-        const preferredContacts = Array.from(document.querySelectorAll('.contact-method:checked')).map(cb => cb.value);
-                result = await _supabase.auth.signUp({ 
-                    email, 
-                    password, 
-                    options: { 
-                        data: { 
-                            first_name: firstName,
+        const tosCheck = document.getElementById('tos-check').checked;
+
+        const contactCheckboxes = document.querySelectorAll('.contact-method:checked');
+        const preferredContacts = Array.from(contactCheckboxes).map(cb => cb.value);
+
+        if (!firstName || !lastName) {
+            alert(currentLang === 'en' ? "Please provide both First and Last Name." : "Por favor provee Nombre y Apellido.");
+            return;
+        }
+        if (password.length < 6) {
+            alert(currentLang === 'en' ? "Password must be at least 6 characters." : "La contraseña debe tener al menos 6 caracteres.");
+            return;
+        }
+        if (password !== confirmPassword) {
+            alert(currentLang === 'en' ? "Passwords do not match." : "Las contraseñas no coinciden.");
+            return;
+        }
+
+        // Si piden WhatsApp/SMS/llamada, requerimos telefono
+        if ((preferredContacts.includes('WhatsApp') || preferredContacts.includes('SMS') || preferredContacts.includes('Llamada')) && !phoneInput) {
+            alert(currentLang === 'en' ? "Please provide a valid phone number for your preferred contact method." : "Por favor ingresa tu número de teléfono para contactarte.");
+            return;
+        }
+        if (!tosCheck) {
+            alert(currentLang === 'en' ? "Please agree to the Terms of Service." : "Por favor acepta los Términos de Servicio.");
+            return;
+        }
+
+        const fullPhone = phoneInput ? (phoneCode + phoneInput) : "";
+        signUpPayload = {
+            email,
+            password,
+            options: {
+                data: {
+                    first_name: firstName,
                     last_name: lastName,
                     phone: fullPhone,
-                    dob: dob, 
+                    dob: dob,
                     sex: sex,
-                    preferred_contact_methods: preferredContacts // Guardamos el arreglo (ej. ["WhatsApp", "Email"])
-                        } 
-                    }
-                });
-
-                // Verifica si el correo ya estaba registrado
-                if (result.data?.user?.identities?.length === 0) {
-                    btnText.classList.remove('hidden');
-                    spinner.classList.add('hidden');
-                    authBtn.disabled = false;
-                    return alert(currentLang === 'en' ? "This email is already registered. Please Login." : "Este correo ya está registrado. Por favor, inicia sesión.");
+                    preferred_contact_methods: preferredContacts
                 }
+            }
+        };
+    }
 
-            } else {
-                // FLUJO DE LOGIN
-                result = await _supabase.auth.signInWithPassword({ email, password });
+    // UI: Estado de Carga
+    btnText.classList.add('hidden');
+    spinner.classList.remove('hidden');
+    authBtn.disabled = true;
+
+    try {
+        if (isSignUp) {
+            const result = await _supabase.auth.signUp(signUpPayload);
+
+            if (result.error) {
+                const errMsg = (result.error.message || '').toLowerCase();
+                const alreadyRegistered = errMsg.includes('already') && errMsg.includes('registered');
+
+                alert(
+                    currentLang === 'en'
+                        ? (alreadyRegistered ? "This email is already registered. Please log in." : "Could not create account. Please try again.")
+                        : (alreadyRegistered ? "Este correo ya está registrado. Por favor, inicia sesión." : "No se pudo crear la cuenta. Inténtalo nuevamente.")
+                );
+                return;
             }
 
-            // Restaurar UI
-            btnText.classList.remove('hidden');
-            spinner.classList.add('hidden');
-            authBtn.disabled = false;
+            // Si la app requiere verificacion por correo, lo comun es que no venga session inmediatamente.
+            alert(
+                currentLang === 'en'
+                    ? "Account created! Please check your email to verify your identity before logging in."
+                    : "¡Cuenta creada! Revisa tu correo para verificar tu identidad antes de iniciar sesión."
+            );
+            document.getElementById('auth-modal').classList.add('hidden');
 
-            // Manejo de Resultados
-            if (result.error) {
-                alert("Error: " + result.error.message);
-            } else {
-                if (isSignUp) {
-                    alert(currentLang === 'en' ? "Registration successful!" : "¡Registro exitoso!");
-                }
+            if (result.data?.session) {
                 window.location.href = 'dashboard.html';
             }
-        });
+            return;
+        }
+
+        // FLUJO DE LOGIN
+        const result = await _supabase.auth.signInWithPassword({ email, password });
+        if (result.error) {
+            alert("Error: " + result.error.message);
+            return;
+        }
+        window.location.href = 'dashboard.html';
+    } finally {
+        // Restaurar UI
+        btnText.classList.remove('hidden');
+        spinner.classList.add('hidden');
+        authBtn.disabled = false;
+    }
+});
 
         // 5. LOGIN CON GOOGLE
         async function loginWithGoogle() {
