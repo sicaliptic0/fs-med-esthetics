@@ -63,40 +63,40 @@
                 <h3 class="text-3xl italic">Clinical History: <span id="history-patient-name" class="font-bold"></span></h3>
                 <p class="text-[10px] uppercase tracking-widest opacity-40">Longitudinal Medical Record</p>
             </div>
-
+    
             <div class="flex-1 flex flex-col overflow-hidden">
                 <div class="flex justify-between items-center mb-6">
-                    <button id="add-note-btn" onclick="toggleSoapForm(true)" class="bg-[#b59a6d] text-white px-6 py-2 text-[10px] uppercase tracking-widest font-bold rounded-full">Add New Encounter</button>
+                    <button id="add-note-btn" onclick="toggleSoapForm(true)" class="bg-[#b59a6d] text-white px-6 py-2 text-[10px] uppercase tracking-widest font-bold rounded-full shadow-sm hover:bg-[#9e865e] transition">Add New Encounter</button>
                 </div>
-
+    
                 <div id="notes-container" class="flex-1 overflow-y-auto pr-4 space-y-6">
                     </div>
-
+    
                 <div id="soap-form-container" class="hidden absolute inset-0 bg-white p-10 flex flex-col z-10 rounded-2xl">
                     <div class="flex justify-between items-center mb-6">
                         <h4 class="text-xl italic" id="form-title">New Clinical Entry</h4>
-                        <button onclick="toggleSoapForm(false)" class="text-[10px] uppercase underline opacity-40">Cancel</button>
+                        <button onclick="toggleSoapForm(false)" class="text-[10px] uppercase underline opacity-40 hover:opacity-100">Cancel / Back to Timeline</button>
                     </div>
                     <form id="soap-form" class="space-y-4">
                         <input type="hidden" id="edit-note-id">
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="text-[9px] uppercase font-bold opacity-40">Date</label>
+                                <label class="text-[9px] uppercase font-bold opacity-40 mb-1 block">Visit Date</label>
                                 <input type="date" id="soap-date" required>
                             </div>
                             <div>
-                                <label class="text-[9px] uppercase font-bold opacity-40">Time</label>
+                                <label class="text-[9px] uppercase font-bold opacity-40 mb-1 block">Visit Time</label>
                                 <input type="time" id="soap-time" required>
                             </div>
                         </div>
                         <div class="grid grid-cols-2 gap-4">
-                            <textarea id="soap-s" placeholder="Subjective (S) - Patient concerns" class="h-32"></textarea>
-                            <textarea id="soap-o" placeholder="Objective (O) - Physical exam/findings" class="h-32"></textarea>
-                            <textarea id="soap-a" placeholder="Assessment/Evolution (A) - Diagnosis" class="h-32"></textarea>
-                            <textarea id="soap-p" placeholder="Plan/Treatment (P) - Procedures/Orders" class="h-32"></textarea>
+                            <textarea id="soap-s" placeholder="Subjective (S) - Patient concerns, medical history updates" class="h-32"></textarea>
+                            <textarea id="soap-o" placeholder="Objective (O) - Physical examination, skin analysis, site findings" class="h-32"></textarea>
+                            <textarea id="soap-a" placeholder="Assessment/Evolution (A) - Clinical diagnosis, progress since last visit" class="h-32"></textarea>
+                            <textarea id="soap-p" placeholder="Plan/Treatment (P) - Procedures performed (Botox/Filler units), dosage, orders" class="h-32"></textarea>
                         </div>
-                        <textarea id="soap-sugg" placeholder="Follow-up Suggestions" class="h-20"></textarea>
-                        <button type="submit" class="w-full bg-[#5d534a] text-white py-4 uppercase text-[10px] tracking-widest font-bold hover:bg-[#b59a6d] transition">Save Record</button>
+                        <textarea id="soap-sugg" placeholder="Follow-up Suggestions & Post-procedure Instructions" class="h-20"></textarea>
+                        <button type="submit" class="w-full bg-[#5d534a] text-white py-4 uppercase text-[10px] tracking-widest font-bold hover:bg-[#b59a6d] transition shadow-md">Save Clinical Record</button>
                     </form>
                 </div>
             </div>
@@ -156,91 +156,95 @@
             
             if(show) {
                 if(note) {
-                    document.getElementById('form-title').innerText = "Edit Clinical Entry";
-                    document.getElementById('edit-note-id').value = note.id;
-                    document.getElementById('soap-date').value = note.visit_date;
-                    document.getElementById('soap-time').value = note.visit_time || '';
-                    document.getElementById('soap-s').value = note.subjective || '';
-                    document.getElementById('soap-o').value = note.objective || '';
-                    document.getElementById('soap-a').value = note.assessment || '';
-                    document.getElementById('soap-p').value = note.plan || '';
-                    document.getElementById('soap-sugg').value = note.suggestions || '';
-                } else {
-                    document.getElementById('form-title').innerText = "New Clinical Entry";
-                    document.getElementById('soap-form').reset();
-                    document.getElementById('edit-note-id').value = "";
-                    // Default values
-                    const now = new Date();
-                    document.getElementById('soap-date').value = now.toISOString().split('T')[0];
-                    document.getElementById('soap-time').value = now.toTimeString().substring(0, 5);
-                }
+                    document.getElementById('form-title').innerText = "Modify Clinical Encounter";
+                document.getElementById('edit-note-id').value = note.id;
+                document.getElementById('soap-date').value = note.visit_date;
+                document.getElementById('soap-time').value = note.visit_time || '';
+                document.getElementById('soap-s').value = note.subjective || '';
+                document.getElementById('soap-o').value = note.objective || '';
+                document.getElementById('soap-a').value = note.assessment || '';
+                document.getElementById('soap-p').value = note.plan || '';
+                document.getElementById('soap-sugg').value = note.suggestions || '';
+            } else {
+                document.getElementById('form-title').innerText = "New Clinical Entry";
+                document.getElementById('soap-form').reset();
+                document.getElementById('edit-note-id').value = "";
+                
+                // DEFAULT TO CURRENT DATE/TIME
+                const now = new Date();
+                document.getElementById('soap-date').value = now.toISOString().split('T')[0];
+                document.getElementById('soap-time').value = now.toTimeString().substring(0, 5);
+            }
             }
         }
 
         async function loadNotes() {
-            const container = document.getElementById('notes-container');
-            container.innerHTML = '<p class="text-center opacity-30 text-sm mt-10">Loading medical records...</p>';
-            
-            const { data, error } = await _supabase
-                .from('clinical_history')
-                .select('*')
-                .eq('patient_id', currentPatientId)
-                .order('visit_date', { ascending: false });
+        const container = document.getElementById('notes-container');
+        container.innerHTML = '<p class="text-center opacity-30 text-sm mt-10">Accessing secure records...</p>';
+        
+        const { data, error } = await _supabase
+            .from('clinical_history')
+            .select('*')
+            .eq('patient_id', currentPatientId)
+            .order('visit_date', { ascending: false })
+            .order('visit_time', { ascending: false });
 
-            if (!data || data.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-20 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-                        <p class="opacity-40 italic text-sm mb-4">No clinical history found for this patient.</p>
-                    </div>`;
-                return;
-            }
-
-            container.innerHTML = data.map(n => `
-                <div class="p-6 bg-white border border-[#e9e0d2] rounded-xl shadow-sm relative group">
-                    <div class="flex justify-between items-start mb-4">
-                        <div>
-                            <span class="text-[10px] font-bold uppercase tracking-widest text-[#b59a6d]">Visit: ${n.visit_date} @ ${n.visit_time || 'N/A'}</span>
-                        </div>
-                        <button onclick='editNote(${JSON.stringify(n)})' class="text-[9px] uppercase font-bold text-blue-400 hover:text-blue-600 transition">Edit Entry</button>
-                    </div>
-                    <div class="grid grid-cols-2 gap-x-8 gap-y-4 text-xs">
-                        <div><p class="font-bold opacity-30 uppercase text-[8px] mb-1">Subjective</p><p class="italic text-gray-600">${n.subjective || '-'}</p></div>
-                        <div><p class="font-bold opacity-30 uppercase text-[8px] mb-1">Objective</p><p class="italic text-gray-600">${n.objective || '-'}</p></div>
-                        <div><p class="font-bold opacity-30 uppercase text-[8px] mb-1">Assessment</p><p class="italic text-gray-600">${n.assessment || '-'}</p></div>
-                        <div><p class="font-bold opacity-30 uppercase text-[8px] mb-1">Plan</p><p class="italic text-gray-600">${n.plan || '-'}</p></div>
-                    </div>
-                    ${n.suggestions ? `<div class="mt-4 pt-4 border-t border-gray-50 text-[10px]"><span class="font-bold text-[#b59a6d]">Follow-up:</span> ${n.suggestions}</div>` : ''}
-                </div>
-            `).join('');
+        if (!data || data.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-20 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                    <p class="opacity-40 italic text-sm mb-4">No clinical history found for this patient.</p>
+                    <p class="text-[10px] uppercase tracking-widest opacity-30">Start by adding a new encounter above.</p>
+                </div>`;
+            return;
         }
+
+        container.innerHTML = data.map(n => `
+            <div class="p-6 bg-white border border-[#e9e0d2] rounded-xl shadow-sm relative group hover:border-[#b59a6d] transition-colors">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <span class="text-[10px] font-bold uppercase tracking-widest text-[#b59a6d]">Encounter: ${n.visit_date} @ ${n.visit_time || 'N/A'}</span>
+                    </div>
+                    <button onclick='editNote(${JSON.stringify(n)})' class="text-[9px] uppercase font-bold text-blue-500 hover:text-blue-700 underline transition">Modify Encounter</button>
+                </div>
+                <div class="grid grid-cols-2 gap-x-8 gap-y-6 text-xs leading-relaxed">
+                    <div><p class="font-bold opacity-30 uppercase text-[7px] mb-1 tracking-widest">Subjective</p><p class="text-gray-700">${n.subjective || '-'}</p></div>
+                    <div><p class="font-bold opacity-30 uppercase text-[7px] mb-1 tracking-widest">Objective</p><p class="text-gray-700">${n.objective || '-'}</p></div>
+                    <div><p class="font-bold opacity-30 uppercase text-[7px] mb-1 tracking-widest">Assessment</p><p class="text-gray-700 font-medium">${n.assessment || '-'}</p></div>
+                    <div><p class="font-bold opacity-30 uppercase text-[7px] mb-1 tracking-widest">Plan</p><p class="text-gray-700">${n.plan || '-'}</p></div>
+                </div>
+                ${n.suggestions ? `<div class="mt-5 pt-4 border-t border-gray-50 text-[10px]"><span class="font-bold text-[#b59a6d] uppercase tracking-widest text-[8px] mr-2">Post-Encounter Suggestions:</span> <span class="italic text-gray-500">${n.suggestions}</span></div>` : ''}
+            </div>
+        `).join('');
+    }   
 
         window.editNote = (note) => { toggleSoapForm(true, note); };
 
         document.getElementById('soap-form').onsubmit = async (e) => {
-            e.preventDefault();
-            const id = document.getElementById('edit-note-id').value;
-            const noteData = {
-                patient_id: currentPatientId,
-                visit_date: document.getElementById('soap-date').value,
-                visit_time: document.getElementById('soap-time').value,
-                subjective: document.getElementById('soap-s').value,
-                objective: document.getElementById('soap-o').value,
-                assessment: document.getElementById('soap-a').value,
-                plan: document.getElementById('soap-p').value,
-                suggestions: document.getElementById('soap-sugg').value
-            };
-
-            let result;
-            if(id) result = await _supabase.from('clinical_history').update(noteData).eq('id', id);
-            else result = await _supabase.from('clinical_history').insert([noteData]);
-
-            if (!result.error) {
-                toggleSoapForm(false);
-                loadNotes();
-            } else {
-                alert("Error saving record: " + result.error.message);
-            }
+        e.preventDefault();
+        const id = document.getElementById('edit-note-id').value;
+        const noteData = {
+            patient_id: currentPatientId,
+            visit_date: document.getElementById('soap-date').value,
+            visit_time: document.getElementById('soap-time').value,
+            subjective: document.getElementById('soap-s').value,
+            objective: document.getElementById('soap-o').value,
+            assessment: document.getElementById('soap-a').value,
+            plan: document.getElementById('soap-p').value,
+            suggestions: document.getElementById('soap-sugg').value
         };
+
+        let result;
+        // Use UPDATE if we have an ID (Modify), otherwise INSERT (New)
+        if(id) result = await _supabase.from('clinical_history').update(noteData).eq('id', id);
+        else result = await _supabase.from('clinical_history').insert([noteData]);
+
+        if (!result.error) {
+            toggleSoapForm(false);
+            loadNotes();
+        } else {
+            alert("Security/Database Error: " + result.error.message);
+        }
+    };
 
         function closeHistoryModal() { document.getElementById('history-modal').classList.add('hidden'); }
         async function logout() { await _supabase.auth.signOut(); window.location.href = 'index.html'; }
