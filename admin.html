@@ -51,114 +51,144 @@
         </div>
 
         <div id="appointments-view" class="flex-1 overflow-y-auto p-12 hidden">
-            <div id="appointment-table-body"></div>
+            <div class="bg-white rounded-xl shadow-sm border border-[#e9e0d2] overflow-hidden">
+                <table class="w-full text-left">
+                    <thead class="bg-gray-50 text-[10px] uppercase tracking-widest opacity-60">
+                        <tr>
+                            <th class="p-6">Patient</th>
+                            <th class="p-6">Procedure</th>
+                            <th class="p-6">Date/Time</th>
+                            <th class="p-6">Status</th>
+                            <th class="p-6">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="appointment-table-body" class="text-sm"></tbody>
+                </table>
+            </div>
         </div>
     </main>
 
     <div id="history-modal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-50 p-4 backdrop-blur-sm">
         <div class="bg-white w-full max-w-5xl h-[90vh] p-8 rounded-2xl shadow-2xl flex flex-col relative">
             <button onclick="closeHistoryModal()" class="absolute top-6 right-8 text-2xl opacity-30 hover:opacity-100">&times;</button>
-            
             <div class="mb-8">
                 <h3 class="text-3xl italic">Clinical History: <span id="history-patient-name" class="font-bold"></span></h3>
                 <p class="text-[10px] uppercase tracking-widest opacity-40">Longitudinal Medical Record</p>
             </div>
-    
             <div class="flex-1 flex flex-col overflow-hidden">
                 <div class="flex justify-between items-center mb-6">
-                    <button id="add-note-btn" onclick="toggleSoapForm(true)" class="bg-[#b59a6d] text-white px-6 py-2 text-[10px] uppercase tracking-widest font-bold rounded-full shadow-sm hover:bg-[#9e865e] transition">Add New Encounter</button>
+                    <button id="add-note-btn" onclick="toggleSoapForm(true)" class="bg-[#b59a6d] text-white px-6 py-2 text-[10px] uppercase tracking-widest font-bold rounded-full">Add New Encounter</button>
                 </div>
-    
-                <div id="notes-container" class="flex-1 overflow-y-auto pr-4 space-y-6">
-                    </div>
-    
+                <div id="notes-container" class="flex-1 overflow-y-auto pr-4 space-y-6"></div>
                 <div id="soap-form-container" class="hidden absolute inset-0 bg-white p-10 flex flex-col z-10 rounded-2xl">
                     <div class="flex justify-between items-center mb-6">
                         <h4 class="text-xl italic" id="form-title">New Clinical Entry</h4>
-                        <button onclick="toggleSoapForm(false)" class="text-[10px] uppercase underline opacity-40 hover:opacity-100">Cancel / Back to Timeline</button>
+                        <button onclick="toggleSoapForm(false)" class="text-[10px] uppercase underline opacity-40">Cancel</button>
                     </div>
                     <form id="soap-form" class="space-y-4">
                         <input type="hidden" id="edit-note-id">
                         <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="text-[9px] uppercase font-bold opacity-40 mb-1 block">Visit Date</label>
-                                <input type="date" id="soap-date" required>
-                            </div>
-                            <div>
-                                <label class="text-[9px] uppercase font-bold opacity-40 mb-1 block">Visit Time</label>
-                                <input type="time" id="soap-time" required>
-                            </div>
+                            <div><label class="text-[9px] uppercase font-bold opacity-40">Date</label><input type="date" id="soap-date" required></div>
+                            <div><label class="text-[9px] uppercase font-bold opacity-40">Time</label><input type="time" id="soap-time" required></div>
                         </div>
                         <div class="grid grid-cols-2 gap-4">
-                            <textarea id="soap-s" placeholder="Subjective (S) - Patient concerns, medical history updates" class="h-32"></textarea>
-                            <textarea id="soap-o" placeholder="Objective (O) - Physical examination, skin analysis, site findings" class="h-32"></textarea>
-                            <textarea id="soap-a" placeholder="Assessment/Evolution (A) - Clinical diagnosis, progress since last visit" class="h-32"></textarea>
-                            <textarea id="soap-p" placeholder="Plan/Treatment (P) - Procedures performed (Botox/Filler units), dosage, orders" class="h-32"></textarea>
+                            <textarea id="soap-s" placeholder="Subjective (S)" class="h-32"></textarea>
+                            <textarea id="soap-o" placeholder="Objective (O)" class="h-32"></textarea>
+                            <textarea id="soap-a" placeholder="Assessment (A)" class="h-32"></textarea>
+                            <textarea id="soap-p" placeholder="Plan (P)" class="h-32"></textarea>
                         </div>
-                        <textarea id="soap-sugg" placeholder="Follow-up Suggestions & Post-procedure Instructions" class="h-20"></textarea>
-                        <button type="submit" class="w-full bg-[#5d534a] text-white py-4 uppercase text-[10px] tracking-widest font-bold hover:bg-[#b59a6d] transition shadow-md">Save Clinical Record</button>
+                        <textarea id="soap-sugg" placeholder="Suggestions" class="h-20"></textarea>
+                        <button type="submit" class="w-full bg-[#5d534a] text-white py-4 uppercase text-[10px] tracking-widest font-bold">Save Record</button>
                     </form>
                 </div>
             </div>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const SUPABASE_URL = 'https://qkjmrnqkoipdltauweub.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFram1ybnFrb2lwZGx0YXV3ZXViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1MTkyMjgsImV4cCI6MjA4OTA5NTIyOH0.EGqgJ9RNY9vYfuVeeEcGoMu_cIaygRq0hnyT-iE7zTw';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    
+
         let currentPatientId = null;
-    
-        // --- AUTH & NAVIGATION ---
+
+        // 1. AUTH & NAVIGATION
         async function checkAdmin() {
             const { data: { user } } = await _supabase.auth.getUser();
             const admins = ['samuel.galviz@gmail.com', 'freddyjosevp@email.com'];
             if (!user || !admins.includes(user.email)) { window.location.href = 'index.html'; return; }
             fetchPatients();
         }
-    
+
         function switchAdminView(viewId, element) {
             document.querySelectorAll('main > div').forEach(v => v.classList.add('hidden'));
             document.getElementById(viewId).classList.remove('hidden');
             document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active-link'));
             element.classList.add('active-link');
+            
+            // CRITICAL FIX: Trigger fetch when switching tabs
+            if(viewId === 'appointments-view') fetchAppointments();
+            else fetchPatients();
         }
-    
-        // --- PATIENT MANAGEMENT ---
+
+        // 2. PATIENT DATA
         async function fetchPatients() {
-            const { data } = await _supabase.from('profiles').select('*').order('last_name');
+            const { data, error } = await _supabase.from('profiles').select('*').order('last_name');
+            if (error) console.error(error);
             renderPatientTable(data || []);
         }
-    
+
         function renderPatientTable(patients) {
             document.getElementById('patient-table-body').innerHTML = patients.map(p => `
                 <tr class="border-t border-gray-50 hover:bg-gray-50 transition">
                     <td class="p-6 font-medium">${p.last_name}, ${p.first_name}</td>
                     <td class="p-6 text-xs">${p.dob}</td>
                     <td class="p-6 text-xs">${p.phone || '-'}</td>
+                    <td class="p-6"><button onclick="openHistory('${p.id}', '${p.first_name} ${p.last_name}')" class="text-[#b59a6d] font-bold text-[10px] uppercase">History (SOAP)</button></td>
+                </tr>
+            `).join('');
+        }
+
+        // 3. APPOINTMENT DATA (RESTORED)
+        async function fetchAppointments() {
+            const { data, error } = await _supabase.from('appointments').select('*, profiles(first_name, last_name)').order('appointment_date', { ascending: false });
+            if (error) console.error(error);
+            renderAppointmentsTable(data || []);
+        }
+
+        function renderAppointmentsTable(appointments) {
+            document.getElementById('appointment-table-body').innerHTML = appointments.map(appt => `
+                <tr class="border-t border-gray-50">
+                    <td class="p-6 font-medium">${appt.profiles?.last_name || 'Unknown'}, ${appt.profiles?.first_name || ''}</td>
+                    <td class="p-6 uppercase text-[9px] tracking-widest">${appt.service_type}</td>
+                    <td class="p-6 text-xs">${appt.appointment_date} @ ${appt.appointment_time}</td>
+                    <td class="p-6"><span class="status-badge status-${appt.status}">${appt.status}</span></td>
                     <td class="p-6">
-                        <button onclick="openHistory('${p.id}', '${p.first_name} ${p.last_name}')" class="text-[#b59a6d] font-bold text-[10px] uppercase hover:underline">History (SOAP)</button>
+                        ${appt.status === 'pending' ? `<button onclick="updateStatus('${appt.id}', 'confirmed')" class="text-green-600 font-bold text-[10px] uppercase">Confirm</button>` : `<span class="opacity-20 text-[9px] uppercase">Vetted</span>`}
                     </td>
                 </tr>
             `).join('');
         }
-    
-        // --- CLINICAL HISTORY (SOAP) LOGIC ---
+
+        async function updateStatus(id, newStatus) {
+            await _supabase.from('appointments').update({ status: newStatus }).eq('id', id);
+            fetchAppointments();
+        }
+
+        // 4. HISTORY & SOAP LOGIC
         async function openHistory(patientId, name) {
             currentPatientId = patientId;
             document.getElementById('history-patient-name').innerText = name;
             document.getElementById('history-modal').classList.remove('hidden');
             loadNotes();
         }
-    
+
         function toggleSoapForm(show, note = null) {
             const container = document.getElementById('soap-form-container');
             container.classList.toggle('hidden', !show);
-            
             if(show) {
                 if(note) {
-                    document.getElementById('form-title').innerText = "Modify Clinical Encounter";
                     document.getElementById('edit-note-id').value = note.id;
                     document.getElementById('soap-date').value = note.visit_date;
                     document.getElementById('soap-time').value = note.visit_time || '';
@@ -168,7 +198,6 @@
                     document.getElementById('soap-p').value = note.plan || '';
                     document.getElementById('soap-sugg').value = note.suggestions || '';
                 } else {
-                    document.getElementById('form-title').innerText = "New Clinical Entry";
                     document.getElementById('soap-form').reset();
                     document.getElementById('edit-note-id').value = "";
                     const now = new Date();
@@ -177,70 +206,39 @@
                 }
             }
         }
-    
+
         async function loadNotes() {
+            const { data } = await _supabase.from('clinical_history').select('*').eq('patient_id', currentPatientId).order('visit_date', { ascending: false });
             const container = document.getElementById('notes-container');
-            container.innerHTML = '<p class="text-center opacity-30 text-sm mt-10">Accessing secure records...</p>';
-            
-            const { data, error } = await _supabase
-                .from('clinical_history')
-                .select('*')
-                .eq('patient_id', currentPatientId)
-                .order('visit_date', { ascending: false })
-                .order('visit_time', { ascending: false });
-    
-            if (!data || data.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-20 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-                        <p class="opacity-40 italic text-sm mb-4">No clinical history found for this patient.</p>
-                        <p class="text-[10px] uppercase tracking-widest opacity-30">Start by adding a new encounter above.</p>
-                    </div>`;
-                return;
-            }
-    
+            if (!data || data.length === 0) { container.innerHTML = '<p class="text-center opacity-30 mt-10">No records found.</p>'; return; }
             container.innerHTML = data.map(n => `
-                <div class="p-6 bg-white border border-[#e9e0d2] rounded-xl shadow-sm relative group hover:border-[#b59a6d] transition-colors">
+                <div class="p-6 bg-white border border-[#e9e0d2] rounded-xl shadow-sm relative group">
                     <div class="flex justify-between items-start mb-4">
-                        <div>
-                            <span class="text-[10px] font-bold uppercase tracking-widest text-[#b59a6d]">Encounter: ${n.visit_date} @ ${n.visit_time || 'N/A'}</span>
-                        </div>
-                        <div class="flex flex-col items-end gap-1">
-                            <button onclick='editNote(${JSON.stringify(n)})' class="text-[9px] uppercase font-bold text-blue-500 hover:text-blue-700 underline transition">Modify Encounter</button>
-                            <button onclick='deleteNote("${n.id}")' class="text-[9px] uppercase font-bold text-red-400 hover:text-red-600 underline transition">Delete Encounter</button>
+                        <span class="text-[10px] font-bold uppercase tracking-widest text-[#b59a6d]">Encounter: ${n.visit_date} @ ${n.visit_time || 'N/A'}</span>
+                        <div class="flex gap-2">
+                            <button onclick='editNote(${JSON.stringify(n)})' class="text-[9px] uppercase font-bold text-blue-500 underline">Modify</button>
+                            <button onclick='deleteNote("${n.id}")' class="text-[9px] uppercase font-bold text-red-400 underline">Delete</button>
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 gap-x-8 gap-y-6 text-xs leading-relaxed">
-                        <div><p class="font-bold opacity-30 uppercase text-[7px] mb-1 tracking-widest">Subjective</p><p class="text-gray-700">${n.subjective || '-'}</p></div>
-                        <div><p class="font-bold opacity-30 uppercase text-[7px] mb-1 tracking-widest">Objective</p><p class="text-gray-700">${n.objective || '-'}</p></div>
-                        <div><p class="font-bold opacity-30 uppercase text-[7px] mb-1 tracking-widest">Assessment</p><p class="text-gray-700 font-medium">${n.assessment || '-'}</p></div>
-                        <div><p class="font-bold opacity-30 uppercase text-[7px] mb-1 tracking-widest">Plan</p><p class="text-gray-700">${n.plan || '-'}</p></div>
+                    <div class="grid grid-cols-2 gap-4 text-xs">
+                        <div><p class="opacity-30 uppercase text-[7px] mb-1">Subjective</p><p>${n.subjective || '-'}</p></div>
+                        <div><p class="opacity-30 uppercase text-[7px] mb-1">Objective</p><p>${n.objective || '-'}</p></div>
+                        <div><p class="opacity-30 uppercase text-[7px] mb-1">Assessment</p><p>${n.assessment || '-'}</p></div>
+                        <div><p class="opacity-30 uppercase text-[7px] mb-1">Plan</p><p>${n.plan || '-'}</p></div>
                     </div>
-                    ${n.suggestions ? `<div class="mt-5 pt-4 border-t border-gray-50 text-[10px]"><span class="font-bold text-[#b59a6d] uppercase tracking-widest text-[8px] mr-2">Post-Encounter Suggestions:</span> <span class="italic text-gray-500">${n.suggestions}</span></div>` : ''}
                 </div>
             `).join('');
         }
-    
-        // --- RECORD ACTIONS (Save/Edit/Delete) ---
+
         window.editNote = (note) => { toggleSoapForm(true, note); };
-    
+
         async function deleteNote(id) {
-            // Confirmation is essential in clinical record management
-            const confirmation = confirm("Are you sure you want to permanently delete this clinical record? This action cannot be undone.");
-            
-            if (confirmation) {
-                const { error } = await _supabase
-                    .from('clinical_history')
-                    .delete()
-                    .eq('id', id);
-    
-                if (!error) {
-                    loadNotes(); // Refresh the list
-                } else {
-                    alert("Database Error: " + error.message);
-                }
+            if (confirm("Permanently delete this record?")) {
+                await _supabase.from('clinical_history').delete().eq('id', id);
+                loadNotes();
             }
         }
-    
+
         document.getElementById('soap-form').onsubmit = async (e) => {
             e.preventDefault();
             const id = document.getElementById('edit-note-id').value;
@@ -254,19 +252,12 @@
                 plan: document.getElementById('soap-p').value,
                 suggestions: document.getElementById('soap-sugg').value
             };
-    
-            let result;
-            if(id) result = await _supabase.from('clinical_history').update(noteData).eq('id', id);
-            else result = await _supabase.from('clinical_history').insert([noteData]);
-    
-            if (!result.error) {
-                toggleSoapForm(false);
-                loadNotes();
-            } else {
-                alert("Security/Database Error: " + result.error.message);
-            }
+            if(id) await _supabase.from('clinical_history').update(noteData).eq('id', id);
+            else await _supabase.from('clinical_history').insert([noteData]);
+            toggleSoapForm(false);
+            loadNotes();
         };
-    
+
         function closeHistoryModal() { document.getElementById('history-modal').classList.add('hidden'); }
         async function logout() { await _supabase.auth.signOut(); window.location.href = 'index.html'; }
         window.onload = checkAdmin;
