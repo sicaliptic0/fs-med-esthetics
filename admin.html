@@ -586,16 +586,22 @@
             // This is the part that crashed last time because the modal was missing!
             const select = document.getElementById('admin-book-patient');
             if(select) {
+                const fullName = (p) => {
+                    const first = String(p?.first_name || '').trim();
+                    const last = String(p?.last_name || '').trim();
+                    const merged = `${last}, ${first}`.replace(/^,\s*/, '').trim();
+                    return merged || 'Patient';
+                };
                 select.innerHTML = '<option value="">Select Patient...</option>' + 
-                    data.map(p => `<option value="${p.id}">${p.last_name}, ${p.first_name}</option>`).join('');
+                    data.map(p => `<option value="${p.id}">${fullName(p)}</option>`).join('');
             }
         }
 
         function renderPatientTable(patients) {
             document.getElementById('patient-table-body').innerHTML = patients.map(p => `
                 <tr class="border-t border-gray-50 hover:bg-gray-50 transition">
-                    <td class="p-6 font-medium">${p.last_name}, ${p.first_name}</td>
-                    <td class="p-6 text-xs">${p.dob}</td>
+                    <td class="p-6 font-medium">${[p.last_name, p.first_name].filter(v => String(v || '').trim()).join(', ') || 'Patient'}</td>
+                    <td class="p-6 text-xs">${p.dob || '-'}</td>
                     <td class="p-6 text-xs capitalize">${p.sex || '-'}</td>
                     <td class="p-6 text-xs">${p.phone || '-'}</td>
                     <td class="p-6">

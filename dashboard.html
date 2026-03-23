@@ -171,6 +171,49 @@
         </div>
     </div>
 
+    <div id="profile-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[110] hidden flex items-center justify-center p-6">
+        <div class="bg-white p-8 md:p-10 max-w-lg w-full rounded-2xl shadow-2xl">
+            <h3 class="text-2xl italic mb-2 text-[#5D534A]" data-en="Complete Your Profile" data-es="Completa tu Perfil">Complete Your Profile</h3>
+            <p class="text-sm font-light opacity-70 mb-6" data-en="Please confirm your main details so we can contact you correctly." data-es="Por favor confirma tus datos principales para poder contactarte correctamente.">Please confirm your main details so we can contact you correctly.</p>
+            <form id="profile-form" class="space-y-5">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block uppercase text-[10px] tracking-widest text-[#B59A6D] font-bold mb-2" data-en="First Name" data-es="Nombre">First Name</label>
+                        <input id="profile-first-name" type="text" class="w-full p-3 border border-[#E9E0D2] bg-[#FCFAF7] outline-none focus:border-[#B59A6D]" required>
+                    </div>
+                    <div>
+                        <label class="block uppercase text-[10px] tracking-widest text-[#B59A6D] font-bold mb-2" data-en="Last Name" data-es="Apellido">Last Name</label>
+                        <input id="profile-last-name" type="text" class="w-full p-3 border border-[#E9E0D2] bg-[#FCFAF7] outline-none focus:border-[#B59A6D]" required>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block uppercase text-[10px] tracking-widest text-[#B59A6D] font-bold mb-2" data-en="Date of Birth" data-es="Fecha de Nacimiento">Date of Birth</label>
+                        <input id="profile-dob" type="date" class="w-full p-3 border border-[#E9E0D2] bg-[#FCFAF7] outline-none focus:border-[#B59A6D]" required>
+                    </div>
+                    <div>
+                        <label class="block uppercase text-[10px] tracking-widest text-[#B59A6D] font-bold mb-2" data-en="Phone" data-es="Teléfono">Phone</label>
+                        <input id="profile-phone" type="tel" class="w-full p-3 border border-[#E9E0D2] bg-[#FCFAF7] outline-none focus:border-[#B59A6D]" required>
+                    </div>
+                </div>
+                <div>
+                    <label class="block uppercase text-[10px] tracking-widest text-[#B59A6D] font-bold mb-2" data-en="Sex" data-es="Sexo">Sex</label>
+                    <select id="profile-sex" class="w-full p-3 border border-[#E9E0D2] bg-[#FCFAF7] outline-none focus:border-[#B59A6D]" required>
+                        <option value="" data-en="Select..." data-es="Selecciona...">Select...</option>
+                        <option value="male" data-en="Male" data-es="Masculino">Male</option>
+                        <option value="female" data-en="Female" data-es="Femenino">Female</option>
+                        <option value="other" data-en="Other" data-es="Otro">Other</option>
+                    </select>
+                </div>
+                <div class="flex justify-end">
+                    <button type="submit" class="btn-gold px-6 py-3 uppercase text-[10px] tracking-widest font-bold">
+                        <span data-en="Save Profile" data-es="Guardar Perfil">Save Profile</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         // 1. CONFIGURATION
@@ -616,6 +659,69 @@
             }, 300);
         }
 
+        function normalizeSex(value) {
+            const raw = String(value || '').trim().toLowerCase();
+            if (!raw) return '';
+            if (raw === 'male' || raw === 'masculino' || raw === 'hombre' || raw === 'm') return 'male';
+            if (raw === 'female' || raw === 'femenino' || raw === 'mujer' || raw === 'f') return 'female';
+            return 'other';
+        }
+
+        function splitFullName(fullName) {
+            const clean = String(fullName || '').trim();
+            if (!clean) return { first: '', last: '' };
+            const parts = clean.split(/\s+/).filter(Boolean);
+            if (parts.length === 1) return { first: parts[0], last: '' };
+            return { first: parts[0], last: parts.slice(1).join(' ') };
+        }
+
+        function getAuthProfileSeed(user) {
+            const meta = user?.user_metadata || {};
+            const fullFromMeta = meta.full_name || meta.name || '';
+            const split = splitFullName(fullFromMeta);
+            const firstName = String(meta.first_name || meta.given_name || split.first || '').trim();
+            const lastName = String(meta.last_name || meta.family_name || split.last || '').trim();
+            return {
+                first_name: firstName,
+                last_name: lastName,
+                dob: String(meta.dob || meta.birthdate || '').trim(),
+                phone: String(meta.phone || meta.phone_number || '').trim(),
+                sex: normalizeSex(meta.sex || meta.gender || ''),
+            };
+        }
+
+        function updateHeaderIdentity(firstName, lastName) {
+            const first = String(firstName || '').trim();
+            const last = String(lastName || '').trim();
+            const fullName = (first + ' ' + last).trim() || 'Patient';
+            document.getElementById('user-name').innerText = fullName;
+            const initial = (first || last || 'P').charAt(0).toUpperCase();
+            document.getElementById('user-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(initial)}&background=E9E0D2&color=5D534A`;
+        }
+
+        function profileIsComplete(profile) {
+            return Boolean(
+                String(profile?.first_name || '').trim() &&
+                String(profile?.last_name || '').trim() &&
+                String(profile?.dob || '').trim() &&
+                String(profile?.phone || '').trim() &&
+                String(profile?.sex || '').trim()
+            );
+        }
+
+        function openProfileModal(profile) {
+            document.getElementById('profile-first-name').value = profile?.first_name || '';
+            document.getElementById('profile-last-name').value = profile?.last_name || '';
+            document.getElementById('profile-dob').value = profile?.dob || '';
+            document.getElementById('profile-phone').value = profile?.phone || '';
+            document.getElementById('profile-sex').value = normalizeSex(profile?.sex || '');
+            document.getElementById('profile-modal').classList.remove('hidden');
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profile-modal').classList.add('hidden');
+        }
+
         // 5. LOGOUT
         async function logout() {
             await _supabase.auth.signOut();
@@ -650,38 +756,47 @@
             }
         }
         async function loadPatientProfile() {
-            // 1. Verify who is currently logged in
             const { data: { user }, error: authError } = await _supabase.auth.getUser();
-            
-            if (user) {
-                // Fallback: usar datos guardados en la sesión (user_metadata) si no existe fila en `profiles`.
-                const metaFirst = user.user_metadata?.first_name || '';
-                const metaLast = user.user_metadata?.last_name || '';
-                const metaFullName = (metaFirst + ' ' + metaLast).trim();
-                if (metaFullName) {
-                    document.getElementById('user-name').innerText = metaFullName;
-                    const initial = (metaFirst || metaLast || 'P').charAt(0).toUpperCase();
-                    document.getElementById('user-avatar').src = `https://ui-avatars.com/api/?name=${initial}&background=E9E0D2&color=5D534A`;
-                }
+            if (authError || !user) return;
 
-                // 2. Fetch their specific first name from the profiles table
-                const { data: profile, error: dbError } = await _supabase
-                    .from('profiles')
-                    .select('first_name, last_name')
-                    .eq('id', user.id)
-                    .single();
+            const fromAuth = getAuthProfileSeed(user);
+            updateHeaderIdentity(fromAuth.first_name, fromAuth.last_name);
 
-                // 3. Update the HTML if the name exists
-                if (profile && (profile.first_name || profile.last_name)) {
-                    const first = profile.first_name || '';
-                    const last = profile.last_name || '';
-                    const fullName = (first + ' ' + last).trim();
-                    document.getElementById('user-name').innerText = fullName || 'Patient';
-                    
-                    // Bonus: Update the Avatar letter automatically
-                    const initial = (profile.first_name || profile.last_name || 'P').charAt(0).toUpperCase();
-                    document.getElementById('user-avatar').src = `https://ui-avatars.com/api/?name=${initial}&background=E9E0D2&color=5D534A`;
-                }
+            const { data: profile } = await _supabase
+                .from('profiles')
+                .select('id, first_name, last_name, dob, phone, sex')
+                .eq('id', user.id)
+                .maybeSingle();
+
+            const merged = {
+                first_name: String(profile?.first_name || fromAuth.first_name || '').trim(),
+                last_name: String(profile?.last_name || fromAuth.last_name || '').trim(),
+                dob: String(profile?.dob || fromAuth.dob || '').trim(),
+                phone: String(profile?.phone || fromAuth.phone || '').trim(),
+                sex: normalizeSex(profile?.sex || fromAuth.sex || ''),
+            };
+
+            updateHeaderIdentity(merged.first_name, merged.last_name);
+
+            if (!profile?.id || JSON.stringify(merged) !== JSON.stringify({
+                first_name: String(profile?.first_name || '').trim(),
+                last_name: String(profile?.last_name || '').trim(),
+                dob: String(profile?.dob || '').trim(),
+                phone: String(profile?.phone || '').trim(),
+                sex: normalizeSex(profile?.sex || ''),
+            })) {
+                await _supabase.from('profiles').upsert({
+                    id: user.id,
+                    first_name: merged.first_name || 'Patient',
+                    last_name: merged.last_name || '',
+                    dob: merged.dob || null,
+                    phone: merged.phone || null,
+                    sex: merged.sex || null,
+                }, { onConflict: 'id' });
+            }
+
+            if (!profileIsComplete(merged)) {
+                openProfileModal(merged);
             }
         }
 
@@ -690,18 +805,23 @@
 
             const { data: existingProfile, error: findErr } = await _supabase
                 .from('profiles')
-                .select('id')
+                .select('id, first_name, last_name, dob, phone, sex')
                 .eq('id', user.id)
                 .maybeSingle();
 
-            if (!findErr && existingProfile?.id) return true;
-
-            const firstName = String(user.user_metadata?.first_name || 'Patient').trim() || 'Patient';
-            const lastName = String(user.user_metadata?.last_name || '').trim();
+            const authSeed = getAuthProfileSeed(user);
+            const firstName = String(existingProfile?.first_name || authSeed.first_name || 'Patient').trim() || 'Patient';
+            const lastName = String(existingProfile?.last_name || authSeed.last_name || '').trim();
+            const dob = String(existingProfile?.dob || authSeed.dob || '').trim();
+            const phone = String(existingProfile?.phone || authSeed.phone || '').trim();
+            const sex = normalizeSex(existingProfile?.sex || authSeed.sex || '');
             const fallbackProfile = {
                 id: user.id,
-                first_name: firstName,
-                last_name: lastName
+                first_name: firstName || 'Patient',
+                last_name: lastName || '',
+                dob: dob || null,
+                phone: phone || null,
+                sex: sex || null,
             };
 
             const { error: insertErr } = await _supabase
@@ -763,6 +883,21 @@
                 alert(currentLang === 'en'
                     ? "Could not prepare your patient profile. Please contact support."
                     : "No se pudo preparar tu perfil de paciente. Contacta soporte.");
+                submitBtn.innerText = originalText;
+                submitBtn.disabled = false;
+                return;
+            }
+
+            const { data: currentProfile } = await _supabase
+                .from('profiles')
+                .select('first_name, last_name, dob, phone, sex')
+                .eq('id', user.id)
+                .maybeSingle();
+            if (!profileIsComplete(currentProfile || {})) {
+                alert(currentLang === 'en'
+                    ? "Please complete your profile first (name, DOB, phone and sex)."
+                    : "Primero completa tu perfil (nombre, fecha de nacimiento, teléfono y sexo).");
+                openProfileModal(currentProfile || {});
                 submitBtn.innerText = originalText;
                 submitBtn.disabled = false;
                 return;
@@ -854,6 +989,42 @@
             loadPatientProfile();
             loadAppointmentsOverview();
             document.getElementById('book-date').addEventListener('change', updateAvailableTimes);
+            document.getElementById('profile-form').addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const { data: { user } } = await _supabase.auth.getUser();
+                if (!user) return;
+
+                const firstName = document.getElementById('profile-first-name').value.trim();
+                const lastName = document.getElementById('profile-last-name').value.trim();
+                const dob = document.getElementById('profile-dob').value;
+                const phone = document.getElementById('profile-phone').value.trim();
+                const sex = normalizeSex(document.getElementById('profile-sex').value);
+
+                if (!firstName || !lastName || !dob || !phone || !sex) {
+                    alert(currentLang === 'en'
+                        ? "Please complete all required fields."
+                        : "Completa todos los campos obligatorios.");
+                    return;
+                }
+
+                const { error } = await _supabase
+                    .from('profiles')
+                    .upsert({
+                        id: user.id,
+                        first_name: firstName,
+                        last_name: lastName,
+                        dob,
+                        phone,
+                        sex,
+                    }, { onConflict: 'id' });
+                if (error) {
+                    alert((currentLang === 'en' ? 'Could not save profile: ' : 'No se pudo guardar el perfil: ') + error.message);
+                    return;
+                }
+
+                updateHeaderIdentity(firstName, lastName);
+                closeProfileModal();
+            });
         });
     </script>
 </body>
