@@ -15,7 +15,7 @@
         .status-badge { font-size: 8px; padding: 2px 8px; border-radius: 99px; text-transform: uppercase; font-weight: bold; }
         .status-pending { background-color: #FEF3C7; color: #92400E; }
         .status-confirmed { background-color: #D1FAE5; color: #065F46; }
-        input, textarea, select { border: 1px solid #e9e0d2; background: #fff; padding: 10px; border-radius: 8px; outline-color: #b59a6d; width: 100%; font-size: 14px; }
+        input:not([type="checkbox"]):not([type="radio"]), textarea, select { border: 1px solid #e9e0d2; background: #fff; padding: 10px; border-radius: 8px; outline-color: #b59a6d; width: 100%; font-size: 14px; }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden">
@@ -109,14 +109,7 @@
                                 <label class="text-[9px] uppercase tracking-widest text-[#B59A6D] font-bold">Procedimiento realizado</label>
                                 <span id="soap-procedures-selected" class="text-[10px] uppercase tracking-widest opacity-60 font-semibold">0 selected</span>
                             </div>
-                            <div class="relative">
-                                <button id="soap-procedures-btn" type="button" onclick="toggleSoapProceduresDropdown()" class="w-full text-left p-3 border border-[#e9e0d2] outline-none focus:border-[#b59a6d] bg-[#FCFAF7] text-sm text-[#5d534a] rounded-lg">
-                                    Select procedures (multi)
-                                </button>
-                                <div id="soap-procedures-dropdown" class="hidden absolute left-0 right-0 mt-2 bg-white border border-[#e9e0d2] rounded-xl shadow-2xl max-h-72 overflow-y-auto overflow-x-hidden p-4 z-[90]">
-                                    <div id="soap-procedures-options" class="space-y-6"></div>
-                                </div>
-                            </div>
+                            <select id="soap-procedures-select" multiple size="7" class="w-full p-3 border border-[#e9e0d2] outline-none focus:border-[#b59a6d] bg-white text-sm text-[#5d534a] rounded-lg"></select>
                         </div>
                         <div class="grid grid-cols-2 gap-4">
                             <textarea id="soap-s" placeholder="Subjective (S) - Patient concerns, updates" class="h-32 resize-none"></textarea>
@@ -272,6 +265,39 @@
             return Array.from(document.querySelectorAll(`input.${checkboxClass}:checked`)).map(cb => cb.value);
         }
 
+        function getSelectedSoapProcedureIds() {
+            const select = document.getElementById('soap-procedures-select');
+            if (!select) return [];
+            return Array.from(select.selectedOptions).map(opt => opt.value);
+        }
+
+        function renderSoapProceduresSelectOptions() {
+            const select = document.getElementById('soap-procedures-select');
+            if (!select) return;
+
+            const grouped = {};
+            TREATMENT_OPTIONS.forEach(o => {
+                if (!grouped[o.category]) grouped[o.category] = [];
+                grouped[o.category].push(o);
+            });
+
+            select.innerHTML = '';
+            TREATMENT_CATEGORIES.forEach(cat => {
+                const options = grouped[cat.id] || [];
+                if (!options.length) return;
+
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = cat.title;
+                options.forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t.id;
+                    opt.textContent = `${t.label} - ${t.price}`;
+                    optgroup.appendChild(opt);
+                });
+                select.appendChild(optgroup);
+            });
+        }
+
         // Admin booking dropdown controls
         function toggleAdminTreatmentsDropdown() {
             const dropdown = document.getElementById('admin-book-treatments-dropdown');
@@ -286,25 +312,16 @@
             selectedCountEl.innerText = `${count} selected`;
         }
 
-        // SOAP procedures dropdown controls
-        function toggleSoapProceduresDropdown() {
-            const dropdown = document.getElementById('soap-procedures-dropdown');
-            if (!dropdown) return;
-            dropdown.classList.toggle('hidden');
-        }
-
         function syncSoapProceduresSelectedSummary() {
             const selectedCountEl = document.getElementById('soap-procedures-selected');
             if (!selectedCountEl) return;
-            const count = getCheckedValuesByClass('soap-procedure-checkbox').length;
+            const count = getSelectedSoapProcedureIds().length;
             selectedCountEl.innerText = `${count} selected`;
         }
 
         function closeAdminDropdowns() {
             const a = document.getElementById('admin-book-treatments-dropdown');
-            const b = document.getElementById('soap-procedures-dropdown');
             if (a) a.classList.add('hidden');
-            if (b) b.classList.add('hidden');
         }
 
         function formatTreatmentIds(ids) {
@@ -314,7 +331,7 @@
 
         // Render dropdown options immediately (this script is at the end of the body).
         renderTreatmentsDropdownOptions('admin-book-treatments-options', 'admin-book-treatment-checkbox');
-        renderTreatmentsDropdownOptions('soap-procedures-options', 'soap-procedure-checkbox');
+        renderSoapProceduresSelectOptions();
         syncAdminTreatmentsSelectedSummary();
         syncSoapProceduresSelectedSummary();
 
@@ -322,22 +339,15 @@
         document.querySelectorAll('input.admin-book-treatment-checkbox').forEach(cb => {
             cb.addEventListener('change', syncAdminTreatmentsSelectedSummary);
         });
-        document.querySelectorAll('input.soap-procedure-checkbox').forEach(cb => {
-            cb.addEventListener('change', syncSoapProceduresSelectedSummary);
-        });
+        const soapProceduresSelect = document.getElementById('soap-procedures-select');
+        if (soapProceduresSelect) soapProceduresSelect.addEventListener('change', syncSoapProceduresSelectedSummary);
 
         // Close dropdowns when clicking outside.
         document.addEventListener('click', (e) => {
             const adminBtn = document.getElementById('admin-book-treatments-btn');
             const adminDropdown = document.getElementById('admin-book-treatments-dropdown');
-            const soapBtn = document.getElementById('soap-procedures-btn');
-            const soapDropdown = document.getElementById('soap-procedures-dropdown');
-
             if (adminDropdown && !adminDropdown.classList.contains('hidden')) {
                 if (adminBtn && (adminBtn.contains(e.target) || adminDropdown.contains(e.target))) return;
-            }
-            if (soapDropdown && !soapDropdown.classList.contains('hidden')) {
-                if (soapBtn && (soapBtn.contains(e.target) || soapDropdown.contains(e.target))) return;
             }
 
             closeAdminDropdowns();
@@ -462,9 +472,12 @@
                             ? rawProcIds.replace(/[{}"]/g, '').split(',').map(s => s.trim()).filter(Boolean)
                             : []);
 
-                    document.querySelectorAll('input.soap-procedure-checkbox').forEach(cb => {
-                        cb.checked = procIds.includes(cb.value);
-                    });
+                    const select = document.getElementById('soap-procedures-select');
+                    if (select) {
+                        Array.from(select.options).forEach(opt => {
+                            opt.selected = procIds.includes(opt.value);
+                        });
+                    }
                     syncSoapProceduresSelectedSummary();
                 } else {
                     document.getElementById('form-title').innerText = "New Clinical Entry";
@@ -478,7 +491,8 @@
                     document.getElementById('soap-time').value = localISOTime.split('T')[1].substring(0, 5);
 
                     // Clear multi-select procedures realized
-                    document.querySelectorAll('input.soap-procedure-checkbox').forEach(cb => cb.checked = false);
+                    const select = document.getElementById('soap-procedures-select');
+                    if (select) Array.from(select.options).forEach(opt => opt.selected = false);
                     syncSoapProceduresSelectedSummary();
                 }
             }
@@ -548,7 +562,7 @@
         document.getElementById('soap-form').onsubmit = async (e) => {
             e.preventDefault();
             const id = document.getElementById('edit-note-id').value;
-            const proceduresRealizedIds = getCheckedValuesByClass('soap-procedure-checkbox');
+            const proceduresRealizedIds = getSelectedSoapProcedureIds();
             const noteData = {
                 patient_id: currentPatientId,
                 visit_date: document.getElementById('soap-date').value,
