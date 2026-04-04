@@ -70,8 +70,8 @@
                         <thead class="bg-gray-50 text-[10px] uppercase tracking-widest opacity-60">
                             <tr>
                                 <th class="p-6">Patient Name</th>
-                                <th class="p-6">DOB</th>
-                                <th class="p-6 hidden md:table-cell">Sex</th>
+                                <th class="p-6">Age</th>
+                                <th class="p-6 hidden md:table-cell">Email</th>
                                 <th class="p-6 hidden md:table-cell">Phone</th>
                                 <th class="p-6">Clinic</th>
                                 <th class="p-6">Actions</th>
@@ -807,7 +807,7 @@
 
         // --- PATIENT FETCHING ---
         async function fetchPatients() {
-            const { data, error } = await _supabase.from('profiles').select('id, first_name, last_name, dob, sex, phone, clinic_affiliation').order('last_name');
+            const { data, error } = await _supabase.from('profiles').select('id, first_name, last_name, dob, sex, phone, email, clinic_affiliation').order('last_name');
             if (error) { console.error("Fetch Patients Error:", error); return; }
             renderPatientTable(data || []);
 
@@ -824,6 +824,16 @@
             }
         }
 
+        function calcAge(dob) {
+            if (!dob) return '-';
+            const today = new Date();
+            const birth = new Date(dob);
+            let age = today.getFullYear() - birth.getFullYear();
+            const m = today.getMonth() - birth.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+            return age >= 0 ? age + ' yrs' : '-';
+        }
+
         function renderPatientTable(patients) {
             document.getElementById('patient-table-body').innerHTML = patients.map(p => {
                 const clinicAff = Array.isArray(p.clinic_affiliation) ? p.clinic_affiliation : [];
@@ -835,9 +845,9 @@
                 return `
                 <tr class="border-t border-gray-50 hover:bg-gray-50 transition">
                     <td class="p-6 font-medium">${[p.last_name, p.first_name].filter(v => String(v || '').trim()).join(', ') || 'Patient'}</td>
-                    <td class="p-6 text-xs">${p.dob || '-'}</td>
-                    <td class="p-6 text-xs capitalize hidden md:table-cell">${p.sex || '-'}</td>
-                    <td class="p-6 text-xs hidden md:table-cell">${p.phone || '-'}</td>
+                    <td class="p-6 text-xs">${calcAge(p.dob)}</td>
+                    <td class="p-6 text-xs hidden md:table-cell">${escapeHtml(p.email || '-')}</td>
+                    <td class="p-6 text-xs hidden md:table-cell">${escapeHtml(p.phone || '-')}</td>
                     <td class="p-6 text-xs">${clinicBadges}</td>
                     <td class="p-6">
                         <div class="flex items-center gap-3 flex-wrap">
