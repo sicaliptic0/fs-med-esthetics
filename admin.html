@@ -25,6 +25,9 @@
         #history-modal { display: none; }
         #history-modal.modal-open { display: block; }
         @media (min-width: 768px) { #history-modal.modal-open { display: flex; } }
+        /* Desktop-only table columns — avoids hidden + md:table-cell !important conflict */
+        .col-desktop { display: none; }
+        @media (min-width: 768px) { .col-desktop { display: table-cell; } }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden">
@@ -137,6 +140,111 @@
                 </label>
             </div>
 
+            <!-- ===== HISTORIA DE INGRESO ===== -->
+            <div class="border border-[#e9e0d2] rounded-xl mb-4 z-10 bg-white overflow-hidden">
+                <button type="button" onclick="toggleAdmissionSection()" class="w-full flex items-center justify-between px-4 py-3 hover:bg-[#FCFAF7] transition">
+                    <div class="flex items-center gap-3">
+                        <span class="text-[9px] uppercase tracking-widest text-[#b59a6d] font-bold">Historia de Ingreso</span>
+                        <span id="adm-save-indicator" class="hidden text-[8px] uppercase tracking-widest text-green-600 font-bold">✓ Guardado</span>
+                    </div>
+                    <svg id="adm-chevron" class="w-4 h-4 text-[#b59a6d] transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+                <div id="admission-section" class="hidden border-t border-[#e9e0d2] p-4 space-y-4">
+
+                    <!-- Escalas -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div>
+                            <label class="text-[9px] uppercase font-bold opacity-40 mb-1 block">Fitzpatrick</label>
+                            <select id="adm-fitzpatrick" style="padding:8px;font-size:12px;width:100%;border:1px solid #e9e0d2;border-radius:8px;background:#fff;outline-color:#b59a6d;">
+                                <option value="">—</option>
+                                <option value="I">I · Very Fair</option>
+                                <option value="II">II · Fair</option>
+                                <option value="III">III · Medium</option>
+                                <option value="IV">IV · Olive</option>
+                                <option value="V">V · Brown</option>
+                                <option value="VI">VI · Dark</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[9px] uppercase font-bold opacity-40 mb-1 block">Glogau</label>
+                            <select id="adm-glogau" style="padding:8px;font-size:12px;width:100%;border:1px solid #e9e0d2;border-radius:8px;background:#fff;outline-color:#b59a6d;">
+                                <option value="">—</option>
+                                <option value="I">I · Mild</option>
+                                <option value="II">II · Moderate</option>
+                                <option value="III">III · Advanced</option>
+                                <option value="IV">IV · Severe</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[9px] uppercase font-bold opacity-40 mb-1 block">Tipo de Piel</label>
+                            <select id="adm-skin-type" style="padding:8px;font-size:12px;width:100%;border:1px solid #e9e0d2;border-radius:8px;background:#fff;outline-color:#b59a6d;">
+                                <option value="">—</option>
+                                <option value="oily">Grasa</option>
+                                <option value="dry">Seca</option>
+                                <option value="mixed">Mixta</option>
+                                <option value="sensitive">Sensible</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[9px] uppercase font-bold opacity-40 mb-1 block">Escala de Merz</label>
+                            <select id="adm-merz" style="padding:8px;font-size:12px;width:100%;border:1px solid #e9e0d2;border-radius:8px;background:#fff;outline-color:#b59a6d;">
+                                <option value="">—</option>
+                                <option value="0">0 · Sin alteración</option>
+                                <option value="1">1 · Leve</option>
+                                <option value="2">2 · Moderado</option>
+                                <option value="3">3 · Marcado</option>
+                                <option value="4">4 · Severo</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Motivo de Consulta -->
+                    <div>
+                        <label class="text-[9px] uppercase font-bold opacity-40 mb-2 block">Motivo de Consulta</label>
+                        <div class="flex flex-wrap gap-4">
+                            <label class="flex items-center gap-1.5 text-xs cursor-pointer"><input type="checkbox" class="adm-reason accent-[#b59a6d]" value="wrinkles"> Arrugas</label>
+                            <label class="flex items-center gap-1.5 text-xs cursor-pointer"><input type="checkbox" class="adm-reason accent-[#b59a6d]" value="spots"> Manchas</label>
+                            <label class="flex items-center gap-1.5 text-xs cursor-pointer"><input type="checkbox" class="adm-reason accent-[#b59a6d]" value="texture"> Textura</label>
+                            <label class="flex items-center gap-1.5 text-xs cursor-pointer"><input type="checkbox" class="adm-reason accent-[#b59a6d]" value="fillers"> Rellenos</label>
+                            <label class="flex items-center gap-1.5 text-xs cursor-pointer"><input type="checkbox" class="adm-reason accent-[#b59a6d]" value="sagging"> Flacidez</label>
+                            <label class="flex items-center gap-1.5 text-xs cursor-pointer"><input type="checkbox" class="adm-reason accent-[#b59a6d]" value="other"> Otros</label>
+                        </div>
+                    </div>
+
+                    <!-- Examen Físico -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-[9px] uppercase font-bold opacity-40 mb-1 block">Cicatrices / Manchas (Localización y cantidad)</label>
+                            <textarea id="adm-scars" rows="3" placeholder="Ej: Cicatriz mejilla derecha x1, Melasma frontal..." style="width:100%;padding:8px;font-size:12px;border:1px solid #e9e0d2;border-radius:8px;background:#fff;outline-color:#b59a6d;resize:vertical;"></textarea>
+                        </div>
+                        <div>
+                            <label class="text-[9px] uppercase font-bold opacity-40 mb-1 block">Antecedentes Personales</label>
+                            <textarea id="adm-personal-history" rows="3" placeholder="Alergias, enfermedades, medicamentos, cirugías previas..." style="width:100%;padding:8px;font-size:12px;border:1px solid #e9e0d2;border-radius:8px;background:#fff;outline-color:#b59a6d;resize:vertical;"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Antecedentes Estéticos -->
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="text-[9px] uppercase font-bold opacity-40">Antecedentes Estéticos</label>
+                            <button type="button" onclick="addAestheticRow()" class="text-[9px] uppercase tracking-widest font-bold text-[#b59a6d] border border-[#b59a6d] px-3 py-1 rounded-full hover:bg-[#b59a6d] hover:text-white transition">+ Agregar</button>
+                        </div>
+                        <div id="aesthetic-header-row" class="grid gap-2 mb-1 px-1 hidden md:grid" style="grid-template-columns: 2fr 2fr 1fr 2fr auto;">
+                            <span class="text-[8px] uppercase tracking-widest opacity-40 font-bold">Procedimiento</span>
+                            <span class="text-[8px] uppercase tracking-widest opacity-40 font-bold">Área</span>
+                            <span class="text-[8px] uppercase tracking-widest opacity-40 font-bold">Cant.</span>
+                            <span class="text-[8px] uppercase tracking-widest opacity-40 font-bold">Tiempo</span>
+                            <span></span>
+                        </div>
+                        <div id="aesthetic-history-rows" class="space-y-2">
+                            <p class="aesthetic-empty text-xs opacity-30 italic text-center py-2">Sin antecedentes estéticos registrados.</p>
+                        </div>
+                    </div>
+
+                    <button type="button" onclick="saveAdmissionHistory()" class="w-full bg-[#5d534a] text-white py-3 uppercase text-[10px] tracking-widest font-bold hover:bg-[#b59a6d] transition shadow-md rounded-lg">Guardar Historia de Ingreso</button>
+                </div>
+            </div>
+
             <div class="flex-1 flex flex-col md:overflow-hidden relative z-10">
                 <div class="flex justify-between items-center mb-6">
                     <button id="add-note-btn" onclick="toggleSoapForm(true)" class="bg-[#b59a6d] text-white px-6 py-2 text-[10px] uppercase tracking-widest font-bold rounded-full shadow-sm hover:bg-[#9e865e] transition">Add New Encounter</button>
@@ -173,19 +281,19 @@
                             <p class="text-[9px] uppercase tracking-widest text-[#B59A6D] font-bold">Clinical Photo Evidence (optional)</p>
 
                             <div>
-                                <label class="text-[9px] uppercase tracking-widest opacity-50 block mb-2">Patient Photos (up to 2)</label>
+                                <label class="text-[9px] uppercase tracking-widest opacity-50 block mb-2">Patient Photos (up to 5)</label>
                                 <input type="file" id="soap-patient-photos" accept="image/*" multiple>
                                 <div id="soap-patient-photos-existing" class="flex flex-wrap gap-2 mt-2"></div>
                             </div>
 
                             <div>
-                                <label class="text-[9px] uppercase tracking-widest opacity-50 block mb-2">Marking Photos (up to 2)</label>
+                                <label class="text-[9px] uppercase tracking-widest opacity-50 block mb-2">Marking Photos (up to 5)</label>
                                 <input type="file" id="soap-marking-photos" accept="image/*" multiple>
                                 <div id="soap-marking-photos-existing" class="flex flex-wrap gap-2 mt-2"></div>
                             </div>
 
                             <div>
-                                <label class="text-[9px] uppercase tracking-widest opacity-50 block mb-2">Post Procedure Photos (up to 2)</label>
+                                <label class="text-[9px] uppercase tracking-widest opacity-50 block mb-2">Post Procedure Photos (up to 5)</label>
                                 <input type="file" id="soap-post-photos" accept="image/*" multiple>
                                 <div id="soap-post-photos-existing" class="flex flex-wrap gap-2 mt-2"></div>
                             </div>
@@ -426,11 +534,12 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFram1ybnFrb2lwZGx0YXV3ZXViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1MTkyMjgsImV4cCI6MjA4OTA5NTIyOH0.EGqgJ9RNY9vYfuVeeEcGoMu_cIaygRq0hnyT-iE7zTw';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         const CLINICAL_PHOTOS_BUCKET = 'clinical-photos';
-        const MAX_PHOTO_COUNT = 2;
+        const MAX_PHOTO_COUNT = 5;
         const MAX_PHOTO_SIZE_MB = 8;
 
         let currentPatientId = null;
         let currentPatientClinic = [];
+        let currentAdmissionId = null;
         let notesById = {};
         let soapPhotosState = {
             patient: [],
@@ -844,7 +953,7 @@
 
                 return `
                 <tr class="border-t border-gray-50 hover:bg-gray-50 transition">
-                    <td class="p-6 font-medium">${[p.last_name, p.first_name].filter(v => String(v || '').trim()).join(', ') || 'Patient'}</td>
+                    <td class="p-6 font-medium">${[p.last_name, p.first_name].filter(v => String(v || '').trim()).join(', ') || escapeHtml(p.email || 'Patient')}</td>
                     <td class="p-6 text-xs">${calcAge(p.dob)}</td>
                     <td class="p-6 text-xs hidden md:table-cell">${escapeHtml(p.email || '-')}</td>
                     <td class="p-6 text-xs hidden md:table-cell">${escapeHtml(p.phone || '-')}</td>
@@ -996,7 +1105,14 @@
             if (cbFs) cbFs.checked = currentPatientClinic.includes('fs');
             if (cbViva) cbViva.checked = currentPatientClinic.includes('viva');
 
+            // Collapse admission section on open (collapsed by default)
+            const admSection = document.getElementById('admission-section');
+            const chevron = document.getElementById('adm-chevron');
+            if (admSection) admSection.classList.add('hidden');
+            if (chevron) chevron.style.transform = '';
+
             document.getElementById('history-modal').classList.add('modal-open');
+            loadAdmissionHistory(patientId);
             loadNotes();
         }
 
@@ -1303,6 +1419,146 @@
             closeNewPatientModal();
             fetchPatients();
         });
+
+        // --- ADMISSION HISTORY ---
+        function toggleAdmissionSection() {
+            const section = document.getElementById('admission-section');
+            const chevron = document.getElementById('adm-chevron');
+            section.classList.toggle('hidden');
+            if (chevron) chevron.style.transform = section.classList.contains('hidden') ? '' : 'rotate(180deg)';
+        }
+
+        function addAestheticRow(data = {}) {
+            const container = document.getElementById('aesthetic-history-rows');
+            const empty = container.querySelector('.aesthetic-empty');
+            if (empty) empty.remove();
+
+            const fieldStyle = 'padding:6px 8px;font-size:11px;border:1px solid #e9e0d2;border-radius:6px;background:#fff;width:100%;outline-color:#b59a6d;';
+            const procOptions = [
+                { v: '',               l: 'Procedimiento...' },
+                { v: 'botox',          l: 'Bótox' },
+                { v: 'fillers',        l: 'Rellenos' },
+                { v: 'biostimulators', l: 'Bioestimuladores' },
+                { v: 'threads',        l: 'Hilos' },
+                { v: 'peelings',       l: 'Peelings' },
+                { v: 'laser',          l: 'Láser' },
+            ];
+            const unitOptions = [
+                { v: 'days',   l: 'Días' },
+                { v: 'weeks',  l: 'Semanas' },
+                { v: 'months', l: 'Meses' },
+                { v: 'years',  l: 'Años' },
+            ];
+
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'aesthetic-row grid gap-2 items-center';
+            rowDiv.style.gridTemplateColumns = '2fr 2fr 1fr 2fr auto';
+
+            rowDiv.innerHTML = `
+                <select class="aest-proc" style="${fieldStyle}">
+                    ${procOptions.map(o => `<option value="${o.v}" ${data.procedure === o.v ? 'selected' : ''}>${o.l}</option>`).join('')}
+                </select>
+                <input class="aest-area" type="text" value="${escapeHtml(data.area || '')}" placeholder="Área tratada" style="${fieldStyle}">
+                <input class="aest-qty" type="number" value="${escapeHtml(String(data.quantity || ''))}" placeholder="N°" min="0" style="${fieldStyle}">
+                <div class="flex gap-1">
+                    <input class="aest-time-val" type="number" value="${escapeHtml(String(data.time_value || ''))}" placeholder="N°" min="0" style="${fieldStyle}">
+                    <select class="aest-time-unit" style="${fieldStyle}">
+                        ${unitOptions.map(o => `<option value="${o.v}" ${data.time_unit === o.v ? 'selected' : ''}>${o.l}</option>`).join('')}
+                    </select>
+                </div>
+                <button type="button" onclick="this.closest('.aesthetic-row').remove()" class="text-red-400 hover:text-red-600 font-bold text-xl leading-none px-1">&times;</button>
+            `;
+            container.appendChild(rowDiv);
+        }
+
+        function getAestheticData() {
+            return Array.from(document.querySelectorAll('#aesthetic-history-rows .aesthetic-row')).map(row => ({
+                procedure:  row.querySelector('.aest-proc').value,
+                area:       row.querySelector('.aest-area').value,
+                quantity:   row.querySelector('.aest-qty').value,
+                time_value: row.querySelector('.aest-time-val').value,
+                time_unit:  row.querySelector('.aest-time-unit').value
+            })).filter(r => r.procedure || r.area);
+        }
+
+        async function loadAdmissionHistory(patientId) {
+            currentAdmissionId = null;
+            // Reset fields
+            ['adm-fitzpatrick','adm-glogau','adm-skin-type','adm-merz'].forEach(id => {
+                const el = document.getElementById(id); if (el) el.value = '';
+            });
+            ['adm-scars','adm-personal-history'].forEach(id => {
+                const el = document.getElementById(id); if (el) el.value = '';
+            });
+            document.querySelectorAll('.adm-reason').forEach(cb => cb.checked = false);
+            const container = document.getElementById('aesthetic-history-rows');
+            if (container) container.innerHTML = '<p class="aesthetic-empty text-xs opacity-30 italic text-center py-2">Sin antecedentes estéticos registrados.</p>';
+
+            const { data } = await _supabase
+                .from('admission_history')
+                .select('*')
+                .eq('patient_id', patientId)
+                .maybeSingle();
+
+            if (!data) return;
+            currentAdmissionId = data.id;
+
+            const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+            set('adm-fitzpatrick', data.fitzpatrick);
+            set('adm-glogau', data.glogau);
+            set('adm-skin-type', data.skin_type);
+            set('adm-merz', data.merz_scale);
+            set('adm-scars', data.scars_spots);
+            set('adm-personal-history', data.personal_history);
+
+            const reasons = Array.isArray(data.consultation_reasons) ? data.consultation_reasons : [];
+            document.querySelectorAll('.adm-reason').forEach(cb => { cb.checked = reasons.includes(cb.value); });
+
+            let aesthetic = data.aesthetic_history;
+            if (typeof aesthetic === 'string') { try { aesthetic = JSON.parse(aesthetic); } catch(_) { aesthetic = []; } }
+            if (!Array.isArray(aesthetic)) aesthetic = [];
+            if (container) container.innerHTML = '';
+            if (aesthetic.length) {
+                aesthetic.forEach(row => addAestheticRow(row));
+            } else {
+                if (container) container.innerHTML = '<p class="aesthetic-empty text-xs opacity-30 italic text-center py-2">Sin antecedentes estéticos registrados.</p>';
+            }
+        }
+
+        async function saveAdmissionHistory() {
+            if (!currentPatientId) return;
+
+            const reasons = Array.from(document.querySelectorAll('.adm-reason:checked')).map(cb => cb.value);
+            const payload = {
+                patient_id:            currentPatientId,
+                fitzpatrick:           document.getElementById('adm-fitzpatrick').value || null,
+                glogau:                document.getElementById('adm-glogau').value || null,
+                skin_type:             document.getElementById('adm-skin-type').value || null,
+                merz_scale:            document.getElementById('adm-merz').value || null,
+                consultation_reasons:  reasons,
+                scars_spots:           document.getElementById('adm-scars').value.trim() || null,
+                personal_history:      document.getElementById('adm-personal-history').value.trim() || null,
+                aesthetic_history:     getAestheticData(),
+                updated_at:            new Date().toISOString()
+            };
+
+            let error;
+            if (currentAdmissionId) {
+                ({ error } = await _supabase.from('admission_history').update(payload).eq('id', currentAdmissionId));
+            } else {
+                const { data: ins, error: ie } = await _supabase
+                    .from('admission_history').insert([payload]).select('id').single();
+                error = ie;
+                if (ins) currentAdmissionId = ins.id;
+            }
+
+            if (error) {
+                alert('Error guardando historia de ingreso: ' + error.message);
+            } else {
+                const ind = document.getElementById('adm-save-indicator');
+                if (ind) { ind.classList.remove('hidden'); setTimeout(() => ind.classList.add('hidden'), 3000); }
+            }
+        }
 
         // --- EDIT PATIENT MODAL ---
         function updateEpDOB() {
