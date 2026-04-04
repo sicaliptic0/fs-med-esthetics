@@ -427,8 +427,19 @@
 
                 <div class="grid grid-cols-2 gap-4">
                     <div class="flex flex-col">
-                        <label class="text-[8px] uppercase tracking-widest opacity-40 ml-1 mb-1" data-en="Date of Birth" data-es="Fecha de Nac.">Date of Birth</label>
-                        <input type="date" id="auth-dob" class="w-full p-4 border border-[#E9E0D2] outline-none focus:border-[#B59A6D] bg-[#FCFAF7] text-sm text-[#5D534A]">
+                        <label class="text-[8px] uppercase tracking-widest opacity-40 ml-1 mb-1" data-en="Date of Birth (MM/DD/YYYY)" data-es="Fecha de Nac. (MM/DD/AAAA)">Date of Birth (MM/DD/YYYY)</label>
+                        <div class="flex gap-1">
+                            <select id="auth-dob-month" onchange="updateDOB()" class="w-[42%] p-3 border border-[#E9E0D2] outline-none focus:border-[#B59A6D] bg-[#FCFAF7] text-xs text-[#5D534A]">
+                                <option value="" disabled selected>Month</option>
+                                <option value="01">Jan</option><option value="02">Feb</option><option value="03">Mar</option>
+                                <option value="04">Apr</option><option value="05">May</option><option value="06">Jun</option>
+                                <option value="07">Jul</option><option value="08">Aug</option><option value="09">Sep</option>
+                                <option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option>
+                            </select>
+                            <input type="number" id="auth-dob-day" placeholder="DD" min="1" max="31" onchange="updateDOB()" class="w-[27%] p-3 border border-[#E9E0D2] outline-none focus:border-[#B59A6D] bg-[#FCFAF7] text-xs text-[#5D534A]">
+                            <input type="number" id="auth-dob-year" placeholder="YYYY" min="1920" max="2015" onchange="updateDOB()" class="w-[31%] p-3 border border-[#E9E0D2] outline-none focus:border-[#B59A6D] bg-[#FCFAF7] text-xs text-[#5D534A]">
+                        </div>
+                        <input type="hidden" id="auth-dob">
                     </div>
                     <div class="flex flex-col justify-end">
                         <select id="auth-sex" class="w-full p-4 border border-[#E9E0D2] outline-none focus:border-[#B59A6D] bg-[#FCFAF7] text-sm text-[#5D534A]">
@@ -442,10 +453,20 @@
 
             <!-- CAMPOS SIEMPRE VISIBLES -->
             <input type="email" id="auth-email" placeholder="Email" class="w-full p-4 border border-[#E9E0D2] outline-none focus:border-[#B59A6D] bg-[#FCFAF7] text-sm">
-            <input type="password" id="auth-password" placeholder="Password" class="w-full p-4 border border-[#E9E0D2] outline-none focus:border-[#B59A6D] bg-[#FCFAF7] text-sm">
+            <div class="relative">
+                <input type="password" id="auth-password" placeholder="Password" class="w-full p-4 border border-[#E9E0D2] outline-none focus:border-[#B59A6D] bg-[#FCFAF7] text-sm pr-12">
+                <button type="button" onclick="togglePassword('auth-password','eye-password')" tabindex="-1" class="absolute right-4 top-1/2 -translate-y-1/2 text-[#5D534A] opacity-40 hover:opacity-80 transition">
+                    <span id="eye-password"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg></span>
+                </button>
+            </div>
             
             <!-- CONFIRMAR CONTRASEÑA (Solo Registro) -->
-            <input type="password" id="auth-confirm-password" placeholder="Confirm Password / Confirmar Contraseña" class="w-full p-4 border border-[#E9E0D2] outline-none focus:border-[#B59A6D] bg-[#FCFAF7] text-sm hidden">
+            <div class="relative hidden" id="confirm-password-wrapper">
+                <input type="password" id="auth-confirm-password" placeholder="Confirm Password / Confirmar Contraseña" class="w-full p-4 border border-[#E9E0D2] outline-none focus:border-[#B59A6D] bg-[#FCFAF7] text-sm pr-12">
+                <button type="button" onclick="togglePassword('auth-confirm-password','eye-confirm')" tabindex="-1" class="absolute right-4 top-1/2 -translate-y-1/2 text-[#5D534A] opacity-40 hover:opacity-80 transition">
+                    <span id="eye-confirm"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg></span>
+                </button>
+            </div>
             
             <div class="text-right" id="forgot-password-container">
                 <button onclick="handleForgotPassword()" class="text-[10px] uppercase tracking-widest opacity-60 hover:text-[#B59A6D]" data-en="Forgot Password?" data-es="¿Olvidó su contraseña?">Forgot Password?</button>
@@ -490,6 +511,26 @@
 
     <!-- SCRIPTS -->
     <script>
+        // 0. UTILIDADES UI
+        const EYE_OPEN = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>`;
+        const EYE_OFF  = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>`;
+
+        function togglePassword(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon  = document.getElementById(iconId);
+            if (input.type === 'password') { input.type = 'text';     icon.innerHTML = EYE_OFF;  }
+            else                           { input.type = 'password'; icon.innerHTML = EYE_OPEN; }
+        }
+
+        function updateDOB() {
+            const month = document.getElementById('auth-dob-month').value;
+            const day   = document.getElementById('auth-dob-day').value;
+            const year  = document.getElementById('auth-dob-year').value;
+            if (month && day && year && String(year).length === 4) {
+                document.getElementById('auth-dob').value = `${year}-${month}-${String(day).padStart(2,'0')}`;
+            }
+        }
+
         // 1. LÓGICA DE IDIOMA
         const btn = document.getElementById('lang-toggle');
         let currentLang = 'en';
@@ -560,7 +601,7 @@
             
             // Mostrar/Ocultar campos extra
             document.getElementById('signup-fields').classList.toggle('hidden', !isSignUp);
-            document.getElementById('auth-confirm-password').classList.toggle('hidden', !isSignUp);
+            document.getElementById('confirm-password-wrapper').classList.toggle('hidden', !isSignUp);
             document.getElementById('tos-container').classList.toggle('hidden', !isSignUp);
             document.getElementById('forgot-password-container').classList.toggle('hidden', isSignUp);
 
