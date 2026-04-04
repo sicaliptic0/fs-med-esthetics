@@ -19,11 +19,19 @@
         .status-modified { background-color: #FFEDD5; color: #9A3412; }
         input:not([type="checkbox"]):not([type="radio"]), textarea, select { border: 1px solid #e9e0d2; background: #fff; padding: 10px; border-radius: 8px; outline-color: #b59a6d; width: 100%; font-size: 14px; }
         .photo-thumb { width: 82px; height: 82px; object-fit: cover; border-radius: 10px; border: 1px solid #e9e0d2; cursor: pointer; }
+        .clinic-badge-fs { background-color: #EDE9E3; color: #5d534a; font-size: 8px; padding: 2px 8px; border-radius: 99px; font-weight: bold; text-transform: uppercase; }
+        .clinic-badge-viva { background-color: #E0F0EA; color: #065F46; font-size: 8px; padding: 2px 8px; border-radius: 99px; font-weight: bold; text-transform: uppercase; }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden">
 
-    <aside class="w-64 admin-sidebar flex flex-col p-6 z-10 relative">
+    <!-- Mobile Overlay -->
+    <div id="mobile-overlay" onclick="closeMobileSidebar()" class="fixed inset-0 bg-black/50 z-20 hidden md:hidden"></div>
+
+    <!-- Sidebar -->
+    <aside id="admin-sidebar" class="w-64 admin-sidebar flex flex-col p-6 z-30 fixed md:static h-full -translate-x-full md:translate-x-0 transition-transform duration-300">
+        <!-- Mobile close button -->
+        <button onclick="closeMobileSidebar()" class="md:hidden absolute top-4 right-4 text-2xl opacity-40 hover:opacity-100 transition">&times;</button>
         <h1 class="text-[#b59a6d] text-xl tracking-widest font-bold mb-10 text-center">FS ADMIN</h1>
         <nav class="flex-1 space-y-2">
             <a onclick="switchAdminView('patients-view', this)" class="nav-link active-link block px-4 py-3 text-[10px] uppercase tracking-widest">Patients</a>
@@ -32,54 +40,87 @@
         <button onclick="logout()" class="text-[10px] uppercase tracking-widest opacity-40 hover:opacity-100 transition mt-auto">Logout</button>
     </aside>
 
-    <main class="flex-1 flex flex-col overflow-hidden bg-[#FCFAF7]">
-        <header class="h-20 bg-white border-b border-[#e9e0d2] flex items-center justify-between px-12 z-0">
-            <h2 id="view-title" class="text-2xl italic">Patient Database</h2>
-            <button onclick="openAdminBooking()" class="bg-[#b59a6d] text-white px-6 py-2 text-[10px] uppercase tracking-widest font-bold shadow-md hover:bg-[#9e865e] transition rounded-full">New Appointment</button>
+    <main class="flex-1 flex flex-col overflow-hidden bg-[#FCFAF7] w-full">
+        <!-- Header -->
+        <header class="min-h-[5rem] bg-white border-b border-[#e9e0d2] flex flex-wrap items-center justify-between px-4 md:px-12 py-3 gap-3 z-0">
+            <div class="flex items-center gap-3">
+                <!-- Hamburger (mobile only) -->
+                <button onclick="openMobileSidebar()" class="md:hidden p-2 rounded-lg hover:bg-gray-100 transition" aria-label="Open menu">
+                    <svg class="w-6 h-6 text-[#5d534a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                </button>
+                <h2 id="view-title" class="text-2xl italic">Patient Database</h2>
+            </div>
+            <div class="flex items-center gap-2 flex-wrap">
+                <button onclick="openNewPatientModal()" class="bg-[#5d534a] text-white px-5 py-2 text-[10px] uppercase tracking-widest font-bold shadow-md hover:bg-[#4a4239] transition rounded-full">+ New Patient</button>
+                <button onclick="openAdminBooking()" class="bg-[#b59a6d] text-white px-6 py-2 text-[10px] uppercase tracking-widest font-bold shadow-md hover:bg-[#9e865e] transition rounded-full">+ New Appointment</button>
+            </div>
         </header>
 
-        <div id="patients-view" class="flex-1 overflow-y-auto p-12">
+        <!-- Patients View -->
+        <div id="patients-view" class="flex-1 overflow-y-auto p-4 md:p-8">
             <div class="bg-white rounded-xl shadow-sm border border-[#e9e0d2] overflow-hidden">
-                <table class="w-full text-left">
-                    <thead class="bg-gray-50 text-[10px] uppercase tracking-widest opacity-60">
-                        <tr>
-                            <th class="p-6">Patient Name</th>
-                            <th class="p-6">DOB</th>
-                            <th class="p-6">Sex</th>
-                            <th class="p-6">Phone</th>
-                            <th class="p-6">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="patient-table-body" class="text-sm"></tbody>
-                </table>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left min-w-[600px]">
+                        <thead class="bg-gray-50 text-[10px] uppercase tracking-widest opacity-60">
+                            <tr>
+                                <th class="p-6">Patient Name</th>
+                                <th class="p-6">DOB</th>
+                                <th class="p-6 hidden md:table-cell">Sex</th>
+                                <th class="p-6 hidden md:table-cell">Phone</th>
+                                <th class="p-6">Clinic</th>
+                                <th class="p-6">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="patient-table-body" class="text-sm"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
-        <div id="appointments-view" class="flex-1 overflow-y-auto p-12 hidden">
+        <!-- Appointments View -->
+        <div id="appointments-view" class="flex-1 overflow-y-auto p-4 md:p-8 hidden">
             <div class="bg-white rounded-xl shadow-sm border border-[#e9e0d2] overflow-hidden">
-                <table class="w-full text-left">
-                    <thead class="bg-gray-50 text-[10px] uppercase tracking-widest opacity-60">
-                        <tr>
-                            <th class="p-6">Patient</th>
-                            <th class="p-6">Procedure</th>
-                            <th class="p-6">Date/Time</th>
-                            <th class="p-6">Status</th>
-                            <th class="p-6">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="appointment-table-body" class="text-sm"></tbody>
-                </table>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left min-w-[600px]">
+                        <thead class="bg-gray-50 text-[10px] uppercase tracking-widest opacity-60">
+                            <tr>
+                                <th class="p-6">Patient</th>
+                                <th class="p-6">Procedure</th>
+                                <th class="p-6">Date/Time</th>
+                                <th class="p-6">Status</th>
+                                <th class="p-6">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="appointment-table-body" class="text-sm"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </main>
 
-    <div id="history-modal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-        <div class="bg-white w-full max-w-5xl h-[90vh] p-8 rounded-2xl shadow-2xl flex flex-col relative overflow-hidden">
-            <button onclick="closeHistoryModal()" class="absolute top-6 right-8 text-2xl opacity-30 hover:opacity-100 z-20">&times;</button>
-            
-            <div class="mb-6 z-10">
-                <h3 class="text-3xl italic">Clinical History: <span id="history-patient-name" class="font-bold"></span></h3>
+    <!-- ===== HISTORY MODAL ===== -->
+    <div id="history-modal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-50 p-2 md:p-4 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-5xl h-[95vh] md:h-[90vh] p-4 md:p-8 rounded-2xl shadow-2xl flex flex-col relative overflow-hidden">
+            <button onclick="closeHistoryModal()" class="absolute top-4 md:top-6 right-4 md:right-8 text-2xl opacity-30 hover:opacity-100 z-20">&times;</button>
+
+            <div class="mb-4 md:mb-6 z-10">
+                <h3 class="text-2xl md:text-3xl italic">Clinical History: <span id="history-patient-name" class="font-bold"></span></h3>
                 <p class="text-[10px] uppercase tracking-widest opacity-40">Longitudinal Medical Record</p>
+            </div>
+
+            <!-- Clinic Affiliation Bar -->
+            <div class="bg-[#FCFAF7] border border-[#e9e0d2] rounded-lg px-4 py-3 mb-4 flex items-center gap-4 flex-wrap z-10">
+                <span class="text-[9px] uppercase tracking-widest text-[#b59a6d] font-bold">Clinic:</span>
+                <label class="flex items-center gap-2 cursor-pointer text-sm">
+                    <input type="checkbox" id="clinic-fs" onchange="saveClinicAffiliation()" class="accent-[#b59a6d]">
+                    FS Med-Esthetics
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer text-sm">
+                    <input type="checkbox" id="clinic-viva" onchange="saveClinicAffiliation()" class="accent-[#065F46]">
+                    Viva Skin
+                </label>
             </div>
 
             <div class="flex-1 flex flex-col overflow-hidden relative z-10">
@@ -87,8 +128,7 @@
                     <button id="add-note-btn" onclick="toggleSoapForm(true)" class="bg-[#b59a6d] text-white px-6 py-2 text-[10px] uppercase tracking-widest font-bold rounded-full shadow-sm hover:bg-[#9e865e] transition">Add New Encounter</button>
                 </div>
 
-                <div id="notes-container" class="flex-1 overflow-y-auto pr-4 space-y-6 pb-10">
-                    </div>
+                <div id="notes-container" class="flex-1 overflow-y-auto pr-4 space-y-6 pb-10"></div>
 
                 <div id="soap-form-container" class="hidden absolute inset-0 bg-white flex flex-col z-30 rounded-2xl overflow-y-auto">
                     <div class="flex justify-between items-center mb-6 pt-2">
@@ -136,7 +176,8 @@
                                 <div id="soap-post-photos-existing" class="flex flex-wrap gap-2 mt-2"></div>
                             </div>
                         </div>
-                        <div class="grid grid-cols-2 gap-4">
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <textarea id="soap-s" placeholder="Subjective (S) - Patient concerns, updates" class="h-32 resize-none"></textarea>
                             <textarea id="soap-o" placeholder="Objective (O) - Physical exam, findings" class="h-32 resize-none"></textarea>
                             <textarea id="soap-a" placeholder="Assessment/Evolution (A) - Diagnosis" class="h-32 resize-none"></textarea>
@@ -150,6 +191,68 @@
         </div>
     </div>
 
+    <!-- ===== NEW PATIENT MODAL ===== -->
+    <div id="new-patient-modal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-lg p-8 rounded-2xl shadow-2xl relative overflow-y-auto max-h-[95vh]">
+            <button onclick="closeNewPatientModal()" class="absolute top-4 right-6 text-2xl opacity-30 hover:opacity-100 transition">&times;</button>
+            <h3 class="text-2xl italic mb-1">New Patient</h3>
+            <p class="text-[10px] uppercase tracking-widest opacity-40 mb-6">Manual patient record (no portal account)</p>
+
+            <form id="new-patient-form" class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[9px] uppercase font-bold opacity-40 mb-1 block">First Name *</label>
+                        <input type="text" id="np-first-name" placeholder="First name" required>
+                    </div>
+                    <div>
+                        <label class="text-[9px] uppercase font-bold opacity-40 mb-1 block">Last Name *</label>
+                        <input type="text" id="np-last-name" placeholder="Last name" required>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[9px] uppercase font-bold opacity-40 mb-1 block">Date of Birth</label>
+                        <input type="date" id="np-dob">
+                    </div>
+                    <div>
+                        <label class="text-[9px] uppercase font-bold opacity-40 mb-1 block">Sex</label>
+                        <select id="np-sex">
+                            <option value="">Select...</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[9px] uppercase font-bold opacity-40 mb-1 block">Phone</label>
+                    <input type="tel" id="np-phone" placeholder="Phone number">
+                </div>
+                <div>
+                    <label class="text-[9px] uppercase font-bold opacity-40 mb-1 block">Email</label>
+                    <input type="email" id="np-email" placeholder="Email address">
+                </div>
+
+                <!-- Clinic Affiliation -->
+                <div class="bg-[#FCFAF7] border border-[#e9e0d2] rounded-lg p-4">
+                    <p class="text-[9px] uppercase tracking-widest text-[#b59a6d] font-bold mb-3">Clinic Affiliation *</p>
+                    <div class="flex items-center gap-6 flex-wrap">
+                        <label class="flex items-center gap-2 cursor-pointer text-sm">
+                            <input type="checkbox" id="np-clinic-fs" class="accent-[#b59a6d]">
+                            FS Med-Esthetics
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer text-sm">
+                            <input type="checkbox" id="np-clinic-viva" class="accent-[#065F46]">
+                            Viva Skin
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-[#5d534a] text-white py-4 uppercase text-[10px] tracking-widest font-bold hover:bg-[#b59a6d] transition shadow-md rounded-lg mt-2">Create Patient Record</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== ADMIN BOOKING MODAL ===== -->
     <div id="admin-booking-modal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-50 p-6 backdrop-blur-sm">
         <div class="bg-white p-10 max-w-md w-full rounded-2xl shadow-2xl relative">
             <h3 class="text-2xl mb-6 italic">Direct Admin Booking</h3>
@@ -176,11 +279,13 @@
         </div>
     </div>
 
+    <!-- ===== IMAGE LIGHTBOX ===== -->
     <div id="image-lightbox" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-[120] p-6">
         <button onclick="closeImageLightbox()" class="absolute top-5 right-7 text-white text-3xl opacity-80 hover:opacity-100">&times;</button>
         <img id="lightbox-img" src="" alt="Clinical photo" class="max-w-full max-h-[88vh] rounded-xl shadow-2xl border border-white/10">
     </div>
 
+    <!-- ===== APPOINTMENT DECISION MODAL ===== -->
     <div id="appointment-decision-modal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-[115] p-6 backdrop-blur-sm">
         <div class="bg-white p-8 max-w-lg w-full rounded-2xl shadow-2xl relative">
             <button onclick="closeAppointmentDecisionModal()" class="absolute top-4 right-6 text-2xl text-gray-400 hover:text-[#B59A6D] transition">&times;</button>
@@ -212,6 +317,13 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+        /* SUPABASE SCHEMA REQUIRED:
+           ALTER TABLE profiles ADD COLUMN IF NOT EXISTS clinic_affiliation text[] DEFAULT '{}';
+           ALTER TABLE profiles ADD COLUMN IF NOT EXISTS is_manual_patient boolean DEFAULT false;
+           Make sure user_id is nullable in profiles for manual patients.
+           RLS: Allow admin insert on profiles (or disable RLS for admin role).
+        */
+
         const SUPABASE_URL = 'https://qkjmrnqkoipdltauweub.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFram1ybnFrb2lwZGx0YXV3ZXViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1MTkyMjgsImV4cCI6MjA4OTA5NTIyOH0.EGqgJ9RNY9vYfuVeeEcGoMu_cIaygRq0hnyT-iE7zTw';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -220,6 +332,7 @@
         const MAX_PHOTO_SIZE_MB = 8;
 
         let currentPatientId = null;
+        let currentPatientClinic = [];
         let notesById = {};
         let soapPhotosState = {
             patient: [],
@@ -556,6 +669,21 @@
             closeAdminDropdowns();
         });
 
+        // --- MOBILE SIDEBAR ---
+        function openMobileSidebar() {
+            const sidebar = document.getElementById('admin-sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            if (sidebar) sidebar.classList.remove('-translate-x-full');
+            if (overlay) overlay.classList.remove('hidden');
+        }
+
+        function closeMobileSidebar() {
+            const sidebar = document.getElementById('admin-sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            if (sidebar) sidebar.classList.add('-translate-x-full');
+            if (overlay) overlay.classList.add('hidden');
+        }
+
         // --- CORE NAVIGATION & AUTH ---
         async function checkAdmin() {
             const { data: { user } } = await _supabase.auth.getUser();
@@ -568,54 +696,63 @@
             document.getElementById('patients-view').classList.add('hidden');
             document.getElementById('appointments-view').classList.add('hidden');
             document.getElementById(viewId).classList.remove('hidden');
-            
+
             document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active-link'));
             element.classList.add('active-link');
             document.getElementById('view-title').innerText = viewId === 'patients-view' ? 'Patient Database' : 'Appointment Queue';
 
-            if(viewId === 'appointments-view') fetchAppointments();
+            if (viewId === 'appointments-view') fetchAppointments();
             else fetchPatients();
+
+            closeMobileSidebar();
         }
 
         // --- PATIENT FETCHING ---
         async function fetchPatients() {
-            const { data, error } = await _supabase.from('profiles').select('*').order('last_name');
+            const { data, error } = await _supabase.from('profiles').select('id, first_name, last_name, dob, sex, phone, clinic_affiliation').order('last_name');
             if (error) { console.error("Fetch Patients Error:", error); return; }
             renderPatientTable(data || []);
-            
-            // This is the part that crashed last time because the modal was missing!
+
             const select = document.getElementById('admin-book-patient');
-            if(select) {
+            if (select) {
                 const fullName = (p) => {
                     const first = String(p?.first_name || '').trim();
                     const last = String(p?.last_name || '').trim();
                     const merged = `${last}, ${first}`.replace(/^,\s*/, '').trim();
                     return merged || 'Patient';
                 };
-                select.innerHTML = '<option value="">Select Patient...</option>' + 
+                select.innerHTML = '<option value="">Select Patient...</option>' +
                     data.map(p => `<option value="${p.id}">${fullName(p)}</option>`).join('');
             }
         }
 
         function renderPatientTable(patients) {
-            document.getElementById('patient-table-body').innerHTML = patients.map(p => `
+            document.getElementById('patient-table-body').innerHTML = patients.map(p => {
+                const clinicAff = Array.isArray(p.clinic_affiliation) ? p.clinic_affiliation : [];
+                let clinicBadges = '';
+                if (clinicAff.includes('fs')) clinicBadges += `<span class="clinic-badge-fs">FS Med</span> `;
+                if (clinicAff.includes('viva')) clinicBadges += `<span class="clinic-badge-viva">Viva Skin</span>`;
+                if (!clinicBadges) clinicBadges = `<span class="opacity-30 text-xs">—</span>`;
+
+                return `
                 <tr class="border-t border-gray-50 hover:bg-gray-50 transition">
                     <td class="p-6 font-medium">${[p.last_name, p.first_name].filter(v => String(v || '').trim()).join(', ') || 'Patient'}</td>
                     <td class="p-6 text-xs">${p.dob || '-'}</td>
-                    <td class="p-6 text-xs capitalize">${p.sex || '-'}</td>
-                    <td class="p-6 text-xs">${p.phone || '-'}</td>
+                    <td class="p-6 text-xs capitalize hidden md:table-cell">${p.sex || '-'}</td>
+                    <td class="p-6 text-xs hidden md:table-cell">${p.phone || '-'}</td>
+                    <td class="p-6 text-xs">${clinicBadges}</td>
                     <td class="p-6">
-                        <button onclick="openHistory('${p.id}', '${p.first_name} ${p.last_name}')" class="text-[#b59a6d] font-bold text-[10px] uppercase hover:underline">History (SOAP)</button>
+                        <button onclick="openHistory('${p.id}', '${escapeHtml(p.first_name)} ${escapeHtml(p.last_name)}')" class="text-[#b59a6d] font-bold text-[10px] uppercase hover:underline">History (SOAP)</button>
                     </td>
-                </tr>
-            `).join('');
+                </tr>`;
+            }).join('');
         }
 
         // --- APPOINTMENTS FETCHING ---
         async function fetchAppointments() {
             const { data, error } = await _supabase.from('appointments').select('*, profiles(first_name, last_name)').order('appointment_date', { ascending: false });
             if (error) { console.error("Fetch Appts Error:", error); return; }
-            
+
             document.getElementById('appointment-table-body').innerHTML = data.map(appt => `
                 <tr class="border-t border-gray-50 hover:bg-gray-50 transition">
                     <td class="p-6 font-medium">${appt.profiles?.last_name || 'N/A'}, ${appt.profiles?.first_name || ''}</td>
@@ -733,16 +870,47 @@
         async function openHistory(patientId, name) {
             currentPatientId = patientId;
             document.getElementById('history-patient-name').innerText = name;
+
+            // Load clinic affiliation for this patient
+            const { data: profileData } = await _supabase
+                .from('profiles')
+                .select('clinic_affiliation')
+                .eq('id', patientId)
+                .single();
+
+            currentPatientClinic = Array.isArray(profileData?.clinic_affiliation) ? profileData.clinic_affiliation : [];
+            const cbFs = document.getElementById('clinic-fs');
+            const cbViva = document.getElementById('clinic-viva');
+            if (cbFs) cbFs.checked = currentPatientClinic.includes('fs');
+            if (cbViva) cbViva.checked = currentPatientClinic.includes('viva');
+
             document.getElementById('history-modal').classList.remove('hidden');
             loadNotes();
+        }
+
+        async function saveClinicAffiliation() {
+            if (!currentPatientId) return;
+            const fsChecked = document.getElementById('clinic-fs')?.checked;
+            const vivaChecked = document.getElementById('clinic-viva')?.checked;
+            const affiliation = [];
+            if (fsChecked) affiliation.push('fs');
+            if (vivaChecked) affiliation.push('viva');
+            currentPatientClinic = affiliation;
+            const { error } = await _supabase
+                .from('profiles')
+                .update({ clinic_affiliation: affiliation })
+                .eq('id', currentPatientId);
+            if (error) {
+                console.error('saveClinicAffiliation error:', error);
+            }
         }
 
         function toggleSoapForm(show, note = null) {
             const container = document.getElementById('soap-form-container');
             container.classList.toggle('hidden', !show);
-            
-            if(show) {
-                if(note) {
+
+            if (show) {
+                if (note) {
                     document.getElementById('form-title').innerText = "Modify Clinical Encounter";
                     document.getElementById('edit-note-id').value = note.id;
                     document.getElementById('soap-date').value = note.visit_date;
@@ -796,7 +964,7 @@
         async function loadNotes() {
             const container = document.getElementById('notes-container');
             container.innerHTML = '<p class="text-center opacity-30 text-sm mt-10">Accessing secure records...</p>';
-            
+
             const { data, error } = await _supabase
                 .from('clinical_history')
                 .select('*')
@@ -912,7 +1080,7 @@
             };
 
             let result;
-            if(id) result = await _supabase.from('clinical_history').update(noteData).eq('id', id);
+            if (id) result = await _supabase.from('clinical_history').update(noteData).eq('id', id);
             else result = await _supabase.from('clinical_history').insert([noteData]);
 
             if (!result.error) {
@@ -953,10 +1121,57 @@
             e.target.reset();
             syncAdminTreatmentsSelectedSummary();
             closeAdminBooking();
-            if(document.getElementById('appointments-view').classList.contains('hidden') === false) {
+            if (document.getElementById('appointments-view').classList.contains('hidden') === false) {
                 fetchAppointments();
             }
         };
+
+        // --- NEW PATIENT MODAL ---
+        function openNewPatientModal() {
+            document.getElementById('new-patient-form').reset();
+            document.getElementById('new-patient-modal').classList.remove('hidden');
+        }
+
+        function closeNewPatientModal() {
+            document.getElementById('new-patient-modal').classList.add('hidden');
+        }
+
+        document.getElementById('new-patient-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const firstName = document.getElementById('np-first-name').value.trim();
+            const lastName = document.getElementById('np-last-name').value.trim();
+            if (!firstName || !lastName) {
+                alert("First name and last name are required.");
+                return;
+            }
+
+            const dob = document.getElementById('np-dob').value || null;
+            const sex = document.getElementById('np-sex').value || null;
+            const phone = document.getElementById('np-phone').value.trim() || null;
+            const email = document.getElementById('np-email').value.trim() || null;
+            const clinicAff = [];
+            if (document.getElementById('np-clinic-fs').checked) clinicAff.push('fs');
+            if (document.getElementById('np-clinic-viva').checked) clinicAff.push('viva');
+
+            const { error } = await _supabase.from('profiles').insert([{
+                first_name: firstName,
+                last_name: lastName,
+                dob: dob,
+                sex: sex,
+                phone: phone,
+                email: email,
+                clinic_affiliation: clinicAff,
+                is_manual_patient: true
+            }]);
+
+            if (error) {
+                alert("Could not create patient: " + error.message);
+                return;
+            }
+
+            closeNewPatientModal();
+            fetchPatients();
+        });
 
         async function logout() { await _supabase.auth.signOut(); window.location.href = 'index.html'; }
         window.onload = checkAdmin;
