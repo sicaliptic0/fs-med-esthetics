@@ -21,6 +21,10 @@
         .photo-thumb { width: 82px; height: 82px; object-fit: cover; border-radius: 10px; border: 1px solid #e9e0d2; cursor: pointer; }
         .clinic-badge-fs { background-color: #EDE9E3; color: #5d534a; font-size: 8px; padding: 2px 8px; border-radius: 99px; font-weight: bold; text-transform: uppercase; }
         .clinic-badge-viva { background-color: #E0F0EA; color: #065F46; font-size: 8px; padding: 2px 8px; border-radius: 99px; font-weight: bold; text-transform: uppercase; }
+        /* History modal display toggle — avoids md:flex vs hidden conflict */
+        #history-modal { display: none; }
+        #history-modal.modal-open { display: block; }
+        @media (min-width: 768px) { #history-modal.modal-open { display: flex; } }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden">
@@ -101,7 +105,7 @@
     </main>
 
     <!-- ===== HISTORY MODAL ===== -->
-    <div id="history-modal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-white md:bg-black/60 md:backdrop-blur-sm md:flex md:items-center md:justify-center md:p-4">
+    <div id="history-modal" class="fixed inset-0 z-50 overflow-y-auto bg-white md:bg-black/60 md:backdrop-blur-sm md:items-center md:justify-center md:p-4">
         <div class="w-full max-w-5xl bg-white md:h-[90vh] p-4 md:p-8 md:rounded-2xl md:shadow-2xl flex flex-col relative md:overflow-hidden">
 
             <!-- Mobile: sticky top bar with back button -->
@@ -269,6 +273,79 @@
                 </div>
 
                 <button type="submit" class="w-full bg-[#5d534a] text-white py-4 uppercase text-[10px] tracking-widest font-bold hover:bg-[#b59a6d] transition shadow-md rounded-lg mt-2">Create Patient Record</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== EDIT PATIENT MODAL ===== -->
+    <div id="edit-patient-modal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-lg p-8 rounded-2xl shadow-2xl relative overflow-y-auto max-h-[95vh]">
+            <button onclick="closeEditPatient()" class="absolute top-4 right-6 text-2xl opacity-30 hover:opacity-100 transition">&times;</button>
+            <h3 class="text-2xl italic mb-1">Edit Patient</h3>
+            <p class="text-[10px] uppercase tracking-widest opacity-40 mb-6">Update patient record</p>
+
+            <form id="edit-patient-form" class="space-y-4">
+                <input type="hidden" id="ep-id">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[9px] uppercase font-bold opacity-40 mb-1 block">First Name *</label>
+                        <input type="text" id="ep-first-name" placeholder="First name" required>
+                    </div>
+                    <div>
+                        <label class="text-[9px] uppercase font-bold opacity-40 mb-1 block">Last Name *</label>
+                        <input type="text" id="ep-last-name" placeholder="Last name" required>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[9px] uppercase font-bold opacity-40 mb-1 block">Date of Birth (MM/DD/YYYY)</label>
+                        <div class="flex gap-1">
+                            <select id="ep-dob-month" onchange="updateEpDOB()" style="padding:10px;font-size:12px;width:42%;border:1px solid #e9e0d2;border-radius:8px;background:#fff;outline-color:#b59a6d;">
+                                <option value="" disabled selected>MM</option>
+                                <option value="01">Jan</option><option value="02">Feb</option><option value="03">Mar</option>
+                                <option value="04">Apr</option><option value="05">May</option><option value="06">Jun</option>
+                                <option value="07">Jul</option><option value="08">Aug</option><option value="09">Sep</option>
+                                <option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option>
+                            </select>
+                            <input type="number" id="ep-dob-day" placeholder="DD" min="1" max="31" onchange="updateEpDOB()" style="padding:10px;font-size:12px;width:27%;border:1px solid #e9e0d2;border-radius:8px;background:#fff;outline-color:#b59a6d;">
+                            <input type="number" id="ep-dob-year" placeholder="YYYY" min="1920" max="2015" onchange="updateEpDOB()" style="padding:10px;font-size:12px;width:31%;border:1px solid #e9e0d2;border-radius:8px;background:#fff;outline-color:#b59a6d;">
+                        </div>
+                        <input type="hidden" id="ep-dob">
+                    </div>
+                    <div>
+                        <label class="text-[9px] uppercase font-bold opacity-40 mb-1 block">Sex</label>
+                        <select id="ep-sex">
+                            <option value="">Select...</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[9px] uppercase font-bold opacity-40 mb-1 block">Phone</label>
+                    <input type="tel" id="ep-phone" placeholder="Phone number">
+                </div>
+                <div>
+                    <label class="text-[9px] uppercase font-bold opacity-40 mb-1 block">Email</label>
+                    <input type="email" id="ep-email" placeholder="Email address">
+                </div>
+
+                <!-- Clinic Affiliation -->
+                <div class="bg-[#FCFAF7] border border-[#e9e0d2] rounded-lg p-4">
+                    <p class="text-[9px] uppercase tracking-widest text-[#b59a6d] font-bold mb-3">Clinic Affiliation</p>
+                    <div class="flex items-center gap-6 flex-wrap">
+                        <label class="flex items-center gap-2 cursor-pointer text-sm">
+                            <input type="checkbox" id="ep-clinic-fs" class="accent-[#b59a6d]">
+                            FS Med-Esthetics
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer text-sm">
+                            <input type="checkbox" id="ep-clinic-viva" class="accent-[#065F46]">
+                            Viva Skin
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-[#b59a6d] text-white py-4 uppercase text-[10px] tracking-widest font-bold hover:bg-[#9e865e] transition shadow-md rounded-lg mt-2">Save Changes</button>
             </form>
         </div>
     </div>
@@ -763,7 +840,11 @@
                     <td class="p-6 text-xs hidden md:table-cell">${p.phone || '-'}</td>
                     <td class="p-6 text-xs">${clinicBadges}</td>
                     <td class="p-6">
-                        <button onclick="openHistory('${p.id}', '${escapeHtml(p.first_name)} ${escapeHtml(p.last_name)}')" class="text-[#b59a6d] font-bold text-[10px] uppercase hover:underline">History (SOAP)</button>
+                        <div class="flex items-center gap-3 flex-wrap">
+                            <button onclick="openHistory('${p.id}', '${escapeHtml(p.first_name)} ${escapeHtml(p.last_name)}')" class="text-[#b59a6d] font-bold text-[10px] uppercase hover:underline">History</button>
+                            <button onclick="openEditPatient('${p.id}')" class="text-blue-500 font-bold text-[10px] uppercase hover:underline">Edit</button>
+                            <button onclick="deletePatient('${p.id}', '${escapeHtml(p.first_name)} ${escapeHtml(p.last_name)}')" class="text-red-400 font-bold text-[10px] uppercase hover:underline">Delete</button>
+                        </div>
                     </td>
                 </tr>`;
             }).join('');
@@ -905,7 +986,7 @@
             if (cbFs) cbFs.checked = currentPatientClinic.includes('fs');
             if (cbViva) cbViva.checked = currentPatientClinic.includes('viva');
 
-            document.getElementById('history-modal').classList.remove('hidden');
+            document.getElementById('history-modal').classList.add('modal-open');
             loadNotes();
         }
 
@@ -1112,7 +1193,7 @@
             }
         };
 
-        function closeHistoryModal() { document.getElementById('history-modal').classList.add('hidden'); }
+        function closeHistoryModal() { document.getElementById('history-modal').classList.remove('modal-open'); }
 
         // --- ADMIN BOOKING LOGIC ---
         function openAdminBooking() { document.getElementById('admin-booking-modal').classList.remove('hidden'); }
@@ -1212,6 +1293,142 @@
             closeNewPatientModal();
             fetchPatients();
         });
+
+        // --- EDIT PATIENT MODAL ---
+        function updateEpDOB() {
+            const month = document.getElementById('ep-dob-month').value;
+            const day   = document.getElementById('ep-dob-day').value;
+            const year  = document.getElementById('ep-dob-year').value;
+            if (month && day && year && String(year).length === 4) {
+                document.getElementById('ep-dob').value = `${year}-${month}-${String(day).padStart(2,'0')}`;
+            } else {
+                document.getElementById('ep-dob').value = '';
+            }
+        }
+
+        async function openEditPatient(patientId) {
+            const { data: p, error } = await _supabase
+                .from('profiles')
+                .select('id, first_name, last_name, dob, sex, phone, email, clinic_affiliation')
+                .eq('id', patientId)
+                .single();
+
+            if (error || !p) {
+                alert('Could not load patient data: ' + (error?.message || 'Not found'));
+                return;
+            }
+
+            document.getElementById('ep-id').value         = p.id;
+            document.getElementById('ep-first-name').value = p.first_name || '';
+            document.getElementById('ep-last-name').value  = p.last_name  || '';
+            document.getElementById('ep-phone').value      = p.phone      || '';
+            document.getElementById('ep-email').value      = p.email      || '';
+            document.getElementById('ep-sex').value        = p.sex        || '';
+
+            // Pre-fill 3-part DOB selector from YYYY-MM-DD stored value
+            const dobParts = (p.dob || '').split('-');
+            if (dobParts.length === 3) {
+                document.getElementById('ep-dob-month').value = dobParts[1] || '';
+                document.getElementById('ep-dob-day').value   = String(parseInt(dobParts[2], 10)) || '';
+                document.getElementById('ep-dob-year').value  = dobParts[0] || '';
+                document.getElementById('ep-dob').value       = p.dob;
+            } else {
+                document.getElementById('ep-dob-month').value = '';
+                document.getElementById('ep-dob-day').value   = '';
+                document.getElementById('ep-dob-year').value  = '';
+                document.getElementById('ep-dob').value       = '';
+            }
+
+            const clinicAff = Array.isArray(p.clinic_affiliation) ? p.clinic_affiliation : [];
+            document.getElementById('ep-clinic-fs').checked   = clinicAff.includes('fs');
+            document.getElementById('ep-clinic-viva').checked = clinicAff.includes('viva');
+
+            document.getElementById('edit-patient-modal').classList.remove('hidden');
+        }
+
+        function closeEditPatient() {
+            document.getElementById('edit-patient-modal').classList.add('hidden');
+        }
+
+        document.getElementById('edit-patient-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id        = document.getElementById('ep-id').value;
+            const firstName = document.getElementById('ep-first-name').value.trim();
+            const lastName  = document.getElementById('ep-last-name').value.trim();
+            if (!firstName || !lastName) {
+                alert('First name and last name are required.');
+                return;
+            }
+
+            const dob   = document.getElementById('ep-dob').value || null;
+            const sex   = document.getElementById('ep-sex').value || null;
+            const phone = document.getElementById('ep-phone').value.trim() || null;
+            const email = document.getElementById('ep-email').value.trim() || null;
+            const clinicAff = [];
+            if (document.getElementById('ep-clinic-fs').checked)   clinicAff.push('fs');
+            if (document.getElementById('ep-clinic-viva').checked) clinicAff.push('viva');
+
+            const { error } = await _supabase
+                .from('profiles')
+                .update({
+                    first_name: firstName,
+                    last_name: lastName,
+                    dob: dob,
+                    sex: sex,
+                    phone: phone,
+                    email: email,
+                    clinic_affiliation: clinicAff
+                })
+                .eq('id', id);
+
+            if (error) {
+                alert('Could not update patient: ' + error.message);
+                return;
+            }
+
+            closeEditPatient();
+            fetchPatients();
+        });
+
+        // --- DELETE PATIENT ---
+        async function deletePatient(patientId, patientName) {
+            const confirmed = confirm(
+                `Are you sure you want to permanently delete the patient record for "${patientName || 'this patient'}"?\n\nThis will also delete all their clinical history and appointments. This action cannot be undone.`
+            );
+            if (!confirmed) return;
+
+            // 1. Delete clinical history records
+            const { error: histError } = await _supabase
+                .from('clinical_history')
+                .delete()
+                .eq('patient_id', patientId);
+            if (histError) {
+                alert('Could not delete clinical history: ' + histError.message);
+                return;
+            }
+
+            // 2. Delete appointments
+            const { error: apptError } = await _supabase
+                .from('appointments')
+                .delete()
+                .eq('patient_id', patientId);
+            if (apptError) {
+                alert('Could not delete appointments: ' + apptError.message);
+                return;
+            }
+
+            // 3. Delete profile
+            const { error: profileError } = await _supabase
+                .from('profiles')
+                .delete()
+                .eq('id', patientId);
+            if (profileError) {
+                alert('Could not delete patient profile: ' + profileError.message);
+                return;
+            }
+
+            fetchPatients();
+        }
 
         async function logout() { await _supabase.auth.signOut(); window.location.href = 'index.html'; }
         window.onload = checkAdmin;
