@@ -211,8 +211,19 @@
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="text-[9px] uppercase font-bold opacity-40 mb-1 block">Date of Birth</label>
-                        <input type="date" id="np-dob">
+                        <label class="text-[9px] uppercase font-bold opacity-40 mb-1 block">Date of Birth (MM/DD/YYYY)</label>
+                        <div class="flex gap-1">
+                            <select id="np-dob-month" onchange="updateNpDOB()" style="padding:10px;font-size:12px;width:42%;border:1px solid #e9e0d2;border-radius:8px;background:#fff;outline-color:#b59a6d;">
+                                <option value="" disabled selected>MM</option>
+                                <option value="01">Jan</option><option value="02">Feb</option><option value="03">Mar</option>
+                                <option value="04">Apr</option><option value="05">May</option><option value="06">Jun</option>
+                                <option value="07">Jul</option><option value="08">Aug</option><option value="09">Sep</option>
+                                <option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option>
+                            </select>
+                            <input type="number" id="np-dob-day" placeholder="DD" min="1" max="31" onchange="updateNpDOB()" style="padding:10px;font-size:12px;width:27%;border:1px solid #e9e0d2;border-radius:8px;background:#fff;outline-color:#b59a6d;">
+                            <input type="number" id="np-dob-year" placeholder="YYYY" min="1920" max="2015" onchange="updateNpDOB()" style="padding:10px;font-size:12px;width:31%;border:1px solid #e9e0d2;border-radius:8px;background:#fff;outline-color:#b59a6d;">
+                        </div>
+                        <input type="hidden" id="np-dob">
                     </div>
                     <div>
                         <label class="text-[9px] uppercase font-bold opacity-40 mb-1 block">Sex</label>
@@ -1127,8 +1138,24 @@
         };
 
         // --- NEW PATIENT MODAL ---
+        function updateNpDOB() {
+            const month = document.getElementById('np-dob-month').value;
+            const day   = document.getElementById('np-dob-day').value;
+            const year  = document.getElementById('np-dob-year').value;
+            if (month && day && year && String(year).length === 4) {
+                document.getElementById('np-dob').value = `${year}-${month}-${String(day).padStart(2,'0')}`;
+            } else {
+                document.getElementById('np-dob').value = '';
+            }
+        }
+
         function openNewPatientModal() {
             document.getElementById('new-patient-form').reset();
+            // Reset DOB parts manually (form.reset() doesn't clear number inputs reliably)
+            document.getElementById('np-dob-month').value = '';
+            document.getElementById('np-dob-day').value   = '';
+            document.getElementById('np-dob-year').value  = '';
+            document.getElementById('np-dob').value       = '';
             document.getElementById('new-patient-modal').classList.remove('hidden');
         }
 
@@ -1145,15 +1172,18 @@
                 return;
             }
 
-            const dob = document.getElementById('np-dob').value || null;
-            const sex = document.getElementById('np-sex').value || null;
+            const dob   = document.getElementById('np-dob').value || null;
+            const sex   = document.getElementById('np-sex').value || null;
             const phone = document.getElementById('np-phone').value.trim() || null;
             const email = document.getElementById('np-email').value.trim() || null;
             const clinicAff = [];
-            if (document.getElementById('np-clinic-fs').checked) clinicAff.push('fs');
+            if (document.getElementById('np-clinic-fs').checked)   clinicAff.push('fs');
             if (document.getElementById('np-clinic-viva').checked) clinicAff.push('viva');
 
+            const newId = crypto.randomUUID();
+
             const { error } = await _supabase.from('profiles').insert([{
+                id: newId,
                 first_name: firstName,
                 last_name: lastName,
                 dob: dob,
