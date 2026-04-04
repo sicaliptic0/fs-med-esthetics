@@ -314,12 +314,24 @@
   <div id="auth-modal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-[100] p-6 backdrop-blur-sm overflow-y-auto">
     <div class="bg-white p-8 md:p-10 max-w-md w-full rounded-xl shadow-2xl relative my-auto">
         <button onclick="document.getElementById('auth-modal').classList.add('hidden')" class="absolute top-4 right-6 text-2xl text-gray-400 hover:text-[#B59A6D] transition">&times;</button>
-        <h2 id="auth-title" class="text-3xl font-light mb-2 text-[#5D534A] text-center uppercase tracking-widest" data-en="Login" data-es="Ingresar">Login</h2>
-        
+        <!-- TAB TOGGLE: Sign In / New Patient -->
+        <div class="flex rounded-xl border border-[#E9E0D2] mb-6 overflow-hidden">
+            <button id="tab-signin" onclick="setAuthTab('login')"
+                class="flex-1 py-3 text-[10px] uppercase tracking-widest font-bold transition bg-[#5D534A] text-white">
+                <span data-en="Sign In" data-es="Iniciar Sesión">Sign In</span>
+            </button>
+            <button id="tab-signup" onclick="setAuthTab('signup')"
+                class="flex-1 py-3 text-[10px] uppercase tracking-widest font-bold transition bg-white text-[#5D534A] opacity-50 hover:opacity-100">
+                <span data-en="✦ New Patient" data-es="✦ Nuevo Paciente">✦ New Patient</span>
+            </button>
+        </div>
+
+        <h2 id="auth-title" class="text-3xl font-light mb-2 text-[#5D534A] text-center uppercase tracking-widest hidden" data-en="Login" data-es="Ingresar">Login</h2>
+
         <!-- TEXTO EXPLICATIVO PARA AGENDAR -->
-        <div class="bg-[#FCFAF7] border border-[#E9E0D2] p-3 rounded text-center mb-6 mt-2">
-            <p id="auth-subtitle" class="text-[11px] uppercase tracking-wider text-[#B59A6D] font-semibold" 
-               data-en="Log in or register to book your consultation" 
+        <div class="bg-[#FCFAF7] border border-[#E9E0D2] p-3 rounded text-center mb-6 mt-2 hidden">
+            <p id="auth-subtitle" class="text-[11px] uppercase tracking-wider text-[#B59A6D] font-semibold"
+               data-en="Log in or register to book your consultation"
                data-es="Inicia sesión o regístrate para agendar tu cita">
                Log in or register to book your consultation
             </p>
@@ -449,16 +461,11 @@
                 <span class="text-[10px] uppercase tracking-widest opacity-80 font-bold" data-en="Continue with Google" data-es="Continuar con Google">Continue with Google</span>
             </button>
             
-            <div class="flex items-center my-6 opacity-30">
-                <hr class="flex-1 border-[#5D534A]"> 
-                <span class="px-3 text-[10px] uppercase tracking-widest" data-en="or" data-es="o">or</span> 
+            <div class="flex items-center my-4 opacity-30">
+                <hr class="flex-1 border-[#5D534A]">
+                <span class="px-3 text-[10px] uppercase tracking-widest" data-en="or" data-es="o">or</span>
                 <hr class="flex-1 border-[#5D534A]">
             </div>
-            
-            <p class="text-center text-[10px] uppercase tracking-widest opacity-60 mt-6">
-                <span id="toggle-text" data-en="New patient?" data-es="¿Nuevo paciente?">New patient?</span> 
-                <button onclick="toggleAuthMode()" id="toggle-btn" class="text-[#B59A6D] font-bold ml-1" data-en="Create Account" data-es="Crear Cuenta">Create Account</button>
-            </p>
         </div>
     </div>
 </div>
@@ -546,30 +553,40 @@
         });
 
         // 3. CAMBIAR ENTRE LOGIN Y REGISTRO
+        function setAuthTab(mode) {
+            const goSignUp = mode === 'signup';
+            if (goSignUp === isSignUp) return; // already on that tab
+            toggleAuthMode();
+        }
+
+        function updateTabUI() {
+            const tabSignIn = document.getElementById('tab-signin');
+            const tabSignUp = document.getElementById('tab-signup');
+            if (!tabSignIn || !tabSignUp) return;
+            if (isSignUp) {
+                tabSignIn.className = 'flex-1 py-3 text-[10px] uppercase tracking-widest font-bold transition bg-white text-[#5D534A] opacity-50 hover:opacity-100';
+                tabSignUp.className = 'flex-1 py-3 text-[10px] uppercase tracking-widest font-bold transition bg-[#B59A6D] text-white';
+            } else {
+                tabSignIn.className = 'flex-1 py-3 text-[10px] uppercase tracking-widest font-bold transition bg-[#5D534A] text-white';
+                tabSignUp.className = 'flex-1 py-3 text-[10px] uppercase tracking-widest font-bold transition bg-white text-[#5D534A] opacity-50 hover:opacity-100';
+            }
+        }
+
         function toggleAuthMode() {
             isSignUp = !isSignUp;
-            const title = document.getElementById('auth-title');
             const btnText = document.getElementById('btn-text');
-            const toggleBtn = document.getElementById('toggle-btn');
-            const toggleText = document.getElementById('toggle-text');
-            
+
             // Mostrar/Ocultar campos extra
             document.getElementById('signup-fields').classList.toggle('hidden', !isSignUp);
             document.getElementById('confirm-password-wrapper').classList.toggle('hidden', !isSignUp);
             document.getElementById('tos-container').classList.toggle('hidden', !isSignUp);
             document.getElementById('forgot-password-container').classList.toggle('hidden', isSignUp);
 
-            if (isSignUp) {
-                title.innerText = currentLang === 'en' ? "Sign Up" : "Registrarse";
-                btnText.innerText = currentLang === 'en' ? "Create Account" : "Crear Cuenta";
-                toggleBtn.innerText = currentLang === 'en' ? "Login" : "Ingresar";
-                toggleText.innerText = currentLang === 'en' ? "Already have an account?" : "¿Ya tienes cuenta?";
-            } else {
-                title.innerText = currentLang === 'en' ? "Login" : "Ingresar";
-                btnText.innerText = currentLang === 'en' ? "Sign In" : "Iniciar Sesión";
-                toggleBtn.innerText = currentLang === 'en' ? "Create Account" : "Crear Cuenta";
-                toggleText.innerText = currentLang === 'en' ? "New patient?" : "¿Nuevo paciente?";
-            }
+            btnText.innerText = isSignUp
+                ? (currentLang === 'en' ? "Create Account" : "Crear Cuenta")
+                : (currentLang === 'en' ? "Sign In" : "Iniciar Sesión");
+
+            updateTabUI();
         }
 
 // 4. LOGICA DE AUTENTICACION (LOGIN Y REGISTRO)
