@@ -101,9 +101,19 @@
     </main>
 
     <!-- ===== HISTORY MODAL ===== -->
-    <div id="history-modal" class="fixed inset-0 bg-black/60 hidden flex items-start md:items-center justify-center z-50 p-0 md:p-4 backdrop-blur-sm overflow-y-auto">
-        <div class="bg-white w-full max-w-5xl md:h-[90vh] p-4 md:p-8 rounded-none md:rounded-2xl shadow-2xl flex flex-col relative md:overflow-hidden min-h-screen md:min-h-0">
-            <button onclick="closeHistoryModal()" class="absolute top-4 md:top-6 right-4 md:right-8 text-2xl opacity-30 hover:opacity-100 z-20">&times;</button>
+    <div id="history-modal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-white md:bg-black/60 md:backdrop-blur-sm md:flex md:items-center md:justify-center md:p-4">
+        <div class="w-full max-w-5xl bg-white md:h-[90vh] p-4 md:p-8 md:rounded-2xl md:shadow-2xl flex flex-col relative md:overflow-hidden">
+
+            <!-- Mobile: sticky top bar with back button -->
+            <div class="flex items-center justify-between mb-3 md:hidden sticky top-0 bg-white z-20 pt-2 pb-3 border-b border-[#e9e0d2]">
+                <span class="text-[10px] uppercase tracking-widest text-[#b59a6d] font-bold">Clinical History</span>
+                <button onclick="closeHistoryModal()" class="flex items-center gap-1 bg-[#5d534a] text-white text-xs px-4 py-2 rounded-full font-bold uppercase tracking-widest">
+                    ← Back
+                </button>
+            </div>
+
+            <!-- Desktop: absolute close button -->
+            <button onclick="closeHistoryModal()" class="hidden md:block absolute top-6 right-8 text-2xl opacity-40 hover:opacity-100 z-20">&times;</button>
 
             <div class="mb-4 md:mb-6 z-10">
                 <h3 class="text-2xl md:text-3xl italic">Clinical History: <span id="history-patient-name" class="font-bold"></span></h3>
@@ -130,10 +140,10 @@
 
                 <div id="notes-container" class="md:flex-1 md:overflow-y-auto pr-2 md:pr-4 space-y-6 pb-10"></div>
 
-                <div id="soap-form-container" class="hidden md:absolute inset-0 bg-white flex flex-col z-30 md:rounded-2xl overflow-y-auto">
-                    <div class="flex justify-between items-center mb-6 pt-2">
+                <div id="soap-form-container" class="hidden fixed md:absolute inset-0 bg-white flex flex-col z-[60] md:z-30 md:rounded-2xl overflow-y-auto p-4 md:p-0">
+                    <div class="flex justify-between items-center mb-6 pt-2 sticky top-0 bg-white pb-3 border-b border-[#e9e0d2] md:border-none md:static">
                         <h4 class="text-xl italic" id="form-title">New Clinical Entry</h4>
-                        <button onclick="toggleSoapForm(false)" class="text-[10px] uppercase underline opacity-40 hover:opacity-100 transition">Cancel / Back to Timeline</button>
+                        <button onclick="toggleSoapForm(false)" class="bg-[#5d534a] text-white text-[10px] px-4 py-2 rounded-full uppercase tracking-widest font-bold md:bg-transparent md:text-[#5d534a] md:underline md:opacity-40 md:hover:opacity-100 md:rounded-none md:px-0 md:py-0">← Back</button>
                     </div>
                     <form id="soap-form" class="space-y-4 pb-10">
                         <input type="hidden" id="edit-note-id">
