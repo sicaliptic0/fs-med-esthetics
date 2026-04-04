@@ -1338,20 +1338,51 @@
                 return;
             }
 
+            const patientId = document.getElementById('admin-book-patient').value;
+            const date      = document.getElementById('admin-book-date').value;
+            const time      = document.getElementById('admin-book-time').value;
             const selectedTreatmentLabels = selectedTreatmentIds.map(id => getTreatmentLabelById(id));
-            const appt = {
-                patient_id: document.getElementById('admin-book-patient').value,
-                service_type: selectedTreatmentLabels.join(', '),
+
+            const { error } = await _supabase.from('appointments').insert([{
+                patient_id:       patientId,
+                service_type:     selectedTreatmentLabels.join(', '),
                 service_type_ids: selectedTreatmentIds,
-                appointment_date: document.getElementById('admin-book-date').value,
-                appointment_time: document.getElementById('admin-book-time').value,
-                status: 'confirmed'
-            };
-            await _supabase.from('appointments').insert([appt]);
+                appointment_date: date,
+                appointment_time: time,
+                status:           'confirmed'
+            }]);
+
+            if (error) {
+                alert("Could not create appointment: " + error.message);
+                return;
+            }
+
+            // Send confirmation email to patient if they have an email registered
+            const { data: patientData } = await _supabase
+                .from('profiles')
+                .select('first_name, last_name, email')
+                .eq('id', patientId)
+                .single();
+
+            if (patientData?.email) {
+                const patientName = [patientData.first_name, patientData.last_name].filter(v => String(v||'').trim()).join(' ') || 'Patient';
+                await _supabase.functions.invoke('notify-appointment-event', {
+                    body: {
+                        event_type:       'appointment_status_update',
+                        patient_id:       patientId,
+                        patient_name:     patientName,
+                        appointment_date: date,
+                        appointment_time: time,
+                        status:           'confirmed',
+                        instructions:     'Your appointment has been scheduled and confirmed by our team. We look forward to seeing you!'
+                    }
+                });
+            }
+
             e.target.reset();
             syncAdminTreatmentsSelectedSummary();
             closeAdminBooking();
-            if (document.getElementById('appointments-view').classList.contains('hidden') === false) {
+            if (!document.getElementById('appointments-view').classList.contains('hidden')) {
                 fetchAppointments();
             }
         };

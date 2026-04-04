@@ -943,11 +943,7 @@
                 });
                 if (notifyErr) {
                     console.error('Booking email notification error:', notifyErr.message);
-                    alert(
-                        currentLang === 'en'
-                            ? `Booking saved, but alert email failed: ${notifyErr.message}`
-                            : `La cita se guardó, pero falló la alerta por correo: ${notifyErr.message}`
-                    );
+                    // Non-blocking: booking was saved successfully, email failure is silent
                 }
 
                 showSuccessModal(); // New Aesthetic Feedback
