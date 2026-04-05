@@ -1055,12 +1055,20 @@
                 return;
             }
 
+            // Fetch patient email to notify them
+            const { data: patientProfile } = await _supabase
+                .from('profiles')
+                .select('email')
+                .eq('id', patientId)
+                .single();
+
             const { error: mailErr } = await _supabase.functions.invoke('notify-appointment-event', {
                 body: {
                     event_type: 'appointment_status_update',
                     appointment_id: apptId,
                     patient_id: patientId,
                     patient_name: patientName,
+                    patient_email: patientProfile?.email || null,
                     appointment_date: apptAfterUpdate?.appointment_date,
                     appointment_time: apptAfterUpdate?.appointment_time,
                     status: status,
@@ -1068,7 +1076,7 @@
                 }
             });
             if (mailErr) {
-                alert("Appointment updated, but email failed: " + mailErr.message);
+                console.error('Appointment updated, but email failed:', mailErr.message);
             }
 
             closeAppointmentDecisionModal();
