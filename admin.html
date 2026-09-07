@@ -138,12 +138,12 @@
                 </button>
             </div>
 
-            <!-- Desktop: absolute close button -->
-            <button onclick="closeHistoryModal()" class="hidden md:block absolute top-6 right-8 text-2xl opacity-40 hover:opacity-100 z-20">&times;</button>
-
-            <div class="mb-4 md:mb-6 z-10">
-                <h3 class="text-2xl md:text-3xl italic">Clinical History: <span id="history-patient-name" class="font-bold"></span><span id="history-patient-age" class="text-lg font-normal opacity-50 ml-3"></span></h3>
-                <p class="text-[10px] uppercase tracking-widest opacity-40">Longitudinal Medical Record</p>
+            <div class="mb-4 md:mb-6 z-20 flex items-start justify-between md:sticky md:top-0 md:bg-white md:pb-4">
+                <div>
+                    <h3 class="text-2xl md:text-3xl italic">Clinical History: <span id="history-patient-name" class="font-bold"></span><span id="history-patient-age" class="text-lg font-normal opacity-50 ml-3"></span></h3>
+                    <p class="text-[10px] uppercase tracking-widest opacity-40">Longitudinal Medical Record</p>
+                </div>
+                <button onclick="closeHistoryModal()" class="hidden md:block text-2xl opacity-40 hover:opacity-100 ml-4 flex-shrink-0">&times;</button>
             </div>
 
             <!-- Clinic Affiliation Bar -->
@@ -637,6 +637,19 @@
         </div>
     </div>
 
+    <!-- ===== UNSAVED CHANGES MODAL ===== -->
+    <div id="unsaved-changes-modal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-[200] p-6 backdrop-blur-sm">
+        <div class="bg-white p-8 max-w-sm w-full rounded-2xl shadow-2xl relative">
+            <h3 class="text-xl italic mb-2">Cambios sin guardar</h3>
+            <p class="text-sm opacity-60 mb-6">Tienes cambios sin guardar en esta ficha clínica. ¿Qué deseas hacer?</p>
+            <div class="flex flex-col gap-3">
+                <button id="unsaved-save-btn" class="w-full bg-[#2A2330] text-white py-3 uppercase text-[10px] tracking-widest font-bold hover:bg-[#B76E88] transition rounded-lg">Guardar y Salir</button>
+                <button id="unsaved-discard-btn" class="w-full border border-red-300 text-red-500 py-3 uppercase text-[10px] tracking-widest font-bold hover:bg-red-50 transition rounded-lg">Salir sin Guardar</button>
+                <button id="unsaved-cancel-btn" class="w-full text-[10px] uppercase tracking-widest font-bold opacity-50 hover:opacity-100 transition py-2">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         /* SUPABASE SCHEMA REQUIRED:
@@ -657,6 +670,8 @@
         let currentPatientClinic = [];
         let currentAdmissionId = null;
         let notesById = {};
+        let admissionDirty = false;
+        let soapDirty = false;
         let soapPhotosState = {
             patient: [],
             marking: [],
@@ -1240,6 +1255,8 @@
         // --- CLINICAL HISTORY (SOAP) LOGIC ---
         async function openHistory(patientId, name, dob) {
             currentPatientId = patientId;
+            admissionDirty = false;
+            soapDirty = false;
             document.getElementById('history-patient-name').innerText = name;
             const ageSpan = document.getElementById('history-patient-age');
             if (ageSpan) ageSpan.innerText = dob ? '· ' + calcAge(dob) : '';
@@ -1285,9 +1302,20 @@
             }
         }
 
-        function toggleSoapForm(show, note = null) {
+        async function toggleSoapForm(show, note = null) {
+            if (!show && soapDirty) {
+                const choice = await askUnsavedChanges();
+                if (choice === 'cancel') return;
+                if (choice === 'save') {
+                    await submitSoapForm(); // hides the form + reloads notes on success; on failure it stays open so the error is visible
+                    return;
+                }
+                // choice === 'discard' falls through and hides the form below
+            }
+
             const container = document.getElementById('soap-form-container');
             container.classList.toggle('hidden', !show);
+            if (show) soapDirty = false;
 
             if (show) {
                 if (note) {
@@ -1415,13 +1443,12 @@
             }
         }
 
-        document.getElementById('soap-form').onsubmit = async (e) => {
-            e.preventDefault();
+        async function submitSoapForm() {
             const id = document.getElementById('edit-note-id').value;
             const proceduresRealizedIds = getSelectedSoapProcedureIds();
-            if (!validatePhotoInputLimit('soap-patient-photos', soapPhotosState.patient.length)) return;
-            if (!validatePhotoInputLimit('soap-marking-photos', soapPhotosState.marking.length)) return;
-            if (!validatePhotoInputLimit('soap-post-photos', soapPhotosState.post.length)) return;
+            if (!validatePhotoInputLimit('soap-patient-photos', soapPhotosState.patient.length)) return false;
+            if (!validatePhotoInputLimit('soap-marking-photos', soapPhotosState.marking.length)) return false;
+            if (!validatePhotoInputLimit('soap-post-photos', soapPhotosState.post.length)) return false;
 
             let photoStateToSave = {
                 patient: [...soapPhotosState.patient],
@@ -1441,7 +1468,7 @@
                 photoStateToSave.post = [...photoStateToSave.post, ...uploadedPost];
             } catch (uploadErr) {
                 alert("Photo upload error: " + uploadErr.message);
-                return;
+                return false;
             }
 
             const noteData = {
@@ -1464,14 +1491,59 @@
             else result = await _supabase.from('clinical_history').insert([noteData]);
 
             if (!result.error) {
+                soapDirty = false;
                 toggleSoapForm(false);
                 loadNotes();
+                return true;
             } else {
                 alert("Database Error: " + result.error.message);
+                return false;
             }
+        }
+
+        document.getElementById('soap-form').onsubmit = async (e) => {
+            e.preventDefault();
+            await submitSoapForm();
         };
 
-        function closeHistoryModal() { document.getElementById('history-modal').classList.remove('modal-open'); }
+        function askUnsavedChanges() {
+            return new Promise(resolve => {
+                const modal = document.getElementById('unsaved-changes-modal');
+                modal.classList.remove('hidden');
+                const saveBtn = document.getElementById('unsaved-save-btn');
+                const discardBtn = document.getElementById('unsaved-discard-btn');
+                const cancelBtn = document.getElementById('unsaved-cancel-btn');
+                function cleanup(choice) {
+                    modal.classList.add('hidden');
+                    saveBtn.onclick = null;
+                    discardBtn.onclick = null;
+                    cancelBtn.onclick = null;
+                    resolve(choice);
+                }
+                saveBtn.onclick = () => cleanup('save');
+                discardBtn.onclick = () => cleanup('discard');
+                cancelBtn.onclick = () => cleanup('cancel');
+            });
+        }
+
+        document.getElementById('admission-section').addEventListener('input', () => { admissionDirty = true; });
+        document.getElementById('admission-section').addEventListener('change', () => { admissionDirty = true; });
+        document.getElementById('soap-form').addEventListener('input', () => { soapDirty = true; });
+        document.getElementById('soap-form').addEventListener('change', () => { soapDirty = true; });
+
+        async function closeHistoryModal() {
+            if (admissionDirty || soapDirty) {
+                const choice = await askUnsavedChanges();
+                if (choice === 'cancel') return;
+                if (choice === 'save') {
+                    if (soapDirty && !(await submitSoapForm())) return;
+                    if (admissionDirty && !(await saveAdmissionHistory())) return;
+                }
+            }
+            admissionDirty = false;
+            soapDirty = false;
+            document.getElementById('history-modal').classList.remove('modal-open');
+        }
 
         // --- ADMIN BOOKING LOGIC ---
         function openAdminBooking() { document.getElementById('admin-booking-modal').classList.remove('hidden'); }
@@ -1888,7 +1960,7 @@
         }
 
         async function saveAdmissionHistory() {
-            if (!currentPatientId) return;
+            if (!currentPatientId) return false;
 
             const getChecked = (className) => Array.from(document.querySelectorAll('.' + className + ':checked')).map(cb => cb.value);
 
@@ -1941,9 +2013,12 @@
 
             if (error) {
                 alert('Error guardando historia de ingreso: ' + error.message);
+                return false;
             } else {
+                admissionDirty = false;
                 const ind = document.getElementById('adm-save-indicator');
                 if (ind) { ind.classList.remove('hidden'); setTimeout(() => ind.classList.add('hidden'), 3000); }
+                return true;
             }
         }
 
