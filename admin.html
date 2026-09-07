@@ -290,7 +290,19 @@
                             <button type="button" onclick="addAdmOtherRow('adm-reasons-other-container')" class="text-[9px] uppercase tracking-widest font-bold text-[#B76E88] border border-[#B76E88] px-3 py-1 rounded-full hover:bg-[#B76E88] hover:text-white transition">+ Otro motivo</button>
                             <div>
                                 <label class="text-[9px] uppercase font-bold opacity-40 mb-1 block">Evento Próximo (2–4 semanas)</label>
-                                <input type="date" id="adm-event-date" style="padding:8px;font-size:12px;width:100%;max-width:220px;border:1px solid #EDE1E7;border-radius:8px;background:#fff;outline-color:#B76E88;">
+                                <div class="flex gap-2 flex-wrap">
+                                    <select id="adm-event-flag" style="padding:8px;font-size:12px;border:1px solid #EDE1E7;border-radius:8px;background:#fff;outline-color:#B76E88;">
+                                        <option value="">—</option>
+                                        <option value="yes">Sí</option>
+                                        <option value="no">No</option>
+                                    </select>
+                                    <select id="adm-event-weeks" style="padding:8px;font-size:12px;border:1px solid #EDE1E7;border-radius:8px;background:#fff;outline-color:#B76E88;">
+                                        <option value="2">2 semanas</option>
+                                        <option value="3">3 semanas</option>
+                                        <option value="4">4 semanas</option>
+                                    </select>
+                                </div>
+                                <p id="adm-event-date-legacy" class="hidden text-[10px] opacity-40 italic mt-1"></p>
                             </div>
                         </div>
                     </details>
@@ -1728,7 +1740,7 @@
             { id: 'fine_lines_wrinkles', label: 'Líneas Finas y Arrugas' },
             { id: 'volume_loss', label: 'Pérdida de Volumen Facial' },
             { id: 'skin_laxity', label: 'Flacidez Cutánea' },
-            { id: 'hyperpigmentation', label: 'Hiperpigmentación / Melasma' },
+            { id: 'hyperpigmentation', label: 'Hiperpigmentación (manchas en la piel) / Melasma' },
             { id: 'redness_rosacea', label: 'Enrojecimiento / Rosácea' },
             { id: 'skin_texture', label: 'Textura de Piel / Poros' },
             { id: 'acne_breakouts', label: 'Acné / Brotes Activos' },
@@ -1737,6 +1749,12 @@
             { id: 'double_chin', label: 'Papada' },
             { id: 'uneven_tone', label: 'Tono de Piel Desigual' },
             { id: 'asymmetry', label: 'Asimetría / Balance Facial' },
+            { id: 'hair_removal', label: 'Depilación' },
+            { id: 'body_laxity', label: 'Flacidez Corporal (Abdomen, Brazos, Piernas, Espalda)' },
+            { id: 'overweight_obesity', label: 'Sobrepeso u Obesidad' },
+            { id: 'alopecia', label: 'Alopecia' },
+            { id: 'yellow_teeth', label: 'Dientes Amarillos' },
+            { id: 'keloid_scarring', label: 'Cicatriz Queloidea' },
         ];
         const ADM_MEDICAL_CONDITIONS = [
             { id: 'hypertension', label: 'Hipertensión' },
@@ -1940,9 +1958,10 @@
             ['adm-fitzpatrick','adm-glogau','adm-skin-type','adm-merz','adm-merz-nasolabial','adm-merz-marionette','adm-merz-midface','adm-merz-brow','adm-pregnancy'].forEach(id => {
                 const el = document.getElementById(id); if (el) el.value = '';
             });
-            ['adm-scars','adm-personal-history','adm-addr1','adm-addr2','adm-city','adm-state','adm-zip','adm-ec-name','adm-ec-relationship','adm-ec-phone-number','adm-event-date'].forEach(id => {
+            ['adm-scars','adm-personal-history','adm-addr1','adm-addr2','adm-city','adm-state','adm-zip','adm-ec-name','adm-ec-relationship','adm-ec-phone-number','adm-event-flag'].forEach(id => {
                 const el = document.getElementById(id); if (el) el.value = '';
             });
+            { const legacy = document.getElementById('adm-event-date-legacy'); if (legacy) { legacy.classList.add('hidden'); legacy.innerText = ''; } }
             { const ecCountry = document.getElementById('adm-ec-phone-country'); if (ecCountry) ecCountry.value = '+1'; }
             { const legacy = document.getElementById('adm-address-legacy'); if (legacy) { legacy.classList.add('hidden'); legacy.innerText = ''; } }
             ['adm-isotretinoin','adm-topical-retinoid','adm-photo-antibiotics'].forEach(id => {
@@ -1990,7 +2009,15 @@
             { const ecCountry = document.getElementById('adm-ec-phone-country'); if (ecCountry) ecCountry.value = data.emergency_contact_phone_country_code || '+1'; }
             set('adm-ec-phone-number', data.emergency_contact_phone);
             set('adm-pregnancy', data.pregnancy_or_nursing);
-            set('adm-event-date', data.upcoming_event_date);
+            if (data.upcoming_event_flag === true) {
+                set('adm-event-flag', 'yes');
+                if (data.upcoming_event_weeks) set('adm-event-weeks', data.upcoming_event_weeks);
+            } else if (data.upcoming_event_flag === false) {
+                set('adm-event-flag', 'no');
+            } else if (data.upcoming_event_date) {
+                const legacy = document.getElementById('adm-event-date-legacy');
+                if (legacy) { legacy.innerText = 'Evento (formato antiguo): ' + data.upcoming_event_date; legacy.classList.remove('hidden'); }
+            }
 
             document.getElementById('adm-isotretinoin').checked = !!data.retinoid_isotretinoin_recent;
             document.getElementById('adm-topical-retinoid').checked = !!data.retinoid_topical_recent;
@@ -2055,7 +2082,8 @@
                 emergency_contact_phone_country_code: document.getElementById('adm-ec-phone-country').value || '+1',
                 emergency_contact_phone: document.getElementById('adm-ec-phone-number').value.trim() || null,
                 pregnancy_or_nursing:  document.getElementById('adm-pregnancy').value || null,
-                upcoming_event_date:   document.getElementById('adm-event-date').value || null,
+                upcoming_event_flag:   document.getElementById('adm-event-flag').value === 'yes',
+                upcoming_event_weeks:  document.getElementById('adm-event-flag').value === 'yes' ? document.getElementById('adm-event-weeks').value : null,
 
                 consultation_reasons:       getChecked('adm-reason'),
                 consultation_reasons_other: getAdmOtherValues('adm-reasons-other-container'),

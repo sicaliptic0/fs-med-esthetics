@@ -151,7 +151,18 @@
             </div>
             <div>
                 <label class="block text-[10px] uppercase tracking-widest text-[#B76E88] font-bold mb-2" data-en="Do you have an event within the next 2–4 weeks? (wedding, photo shoot, vacation)" data-es="¿Tienes algún evento en las próximas 2–4 semanas? (boda, sesión de fotos, vacaciones)">Do you have an event within the next 2–4 weeks?</label>
-                <input type="date" id="m2-event-date" class="field-input max-w-xs">
+                <div class="flex gap-3 max-w-xs">
+                    <label class="radio-card flex-1 text-center" data-group="m2-event-flag" data-value="yes"><input type="radio" name="m2-event-flag" value="yes" class="hidden"><span data-en="Yes" data-es="Sí">Yes</span></label>
+                    <label class="radio-card flex-1 text-center" data-group="m2-event-flag" data-value="no"><input type="radio" name="m2-event-flag" value="no" class="hidden"><span data-en="No" data-es="No">No</span></label>
+                </div>
+                <div id="m2-event-weeks-block" class="hidden mt-3 max-w-xs">
+                    <label class="block text-[10px] uppercase tracking-widest opacity-60 mb-1" data-en="How many weeks away?" data-es="¿Cuántas semanas faltan?">How many weeks away?</label>
+                    <select id="m2-event-weeks" class="field-input">
+                        <option value="2" data-en="2 weeks" data-es="2 semanas">2 weeks</option>
+                        <option value="3" data-en="3 weeks" data-es="3 semanas">3 weeks</option>
+                        <option value="4" data-en="4 weeks" data-es="4 semanas">4 weeks</option>
+                    </select>
+                </div>
             </div>
         </div>
 
@@ -356,7 +367,7 @@
         { id: 'fine_lines_wrinkles', en: 'Fine Lines & Wrinkles (Dynamic / Static)', es: 'Líneas Finas y Arrugas (Dinámicas / Estáticas)' },
         { id: 'volume_loss', en: 'Loss of Facial Volume / Hollows', es: 'Pérdida de Volumen Facial / Hundimientos' },
         { id: 'skin_laxity', en: 'Skin Laxity / Sagging (Jowls, Neck, Midface)', es: 'Flacidez Cutánea (Papada, Cuello, Tercio Medio)' },
-        { id: 'hyperpigmentation', en: 'Hyperpigmentation / Sun Damage / Melasma', es: 'Hiperpigmentación / Daño Solar / Melasma' },
+        { id: 'hyperpigmentation', en: 'Hyperpigmentation (skin spots) / Sun Damage / Melasma', es: 'Hiperpigmentación (manchas en la piel) / Daño Solar / Melasma' },
         { id: 'redness_rosacea', en: 'Redness / Broken Capillaries / Rosacea', es: 'Enrojecimiento / Capilares Rotos / Rosácea' },
         { id: 'skin_texture', en: 'Skin Texture / Enlarged Pores / Roughness', es: 'Textura de Piel / Poros Dilatados / Aspereza' },
         { id: 'acne_breakouts', en: 'Acne / Active Breakouts / Congested Pores', es: 'Acné / Brotes Activos / Poros Congestionados' },
@@ -365,6 +376,12 @@
         { id: 'double_chin', en: 'Double Chin / Submental Fullness', es: 'Papada / Plenitud Submentoniana' },
         { id: 'uneven_tone', en: 'Uneven Skin Tone / Dullness', es: 'Tono de Piel Desigual / Opacidad' },
         { id: 'asymmetry', en: 'Asymmetry / Facial Balance', es: 'Asimetría / Balance Facial' },
+        { id: 'hair_removal', en: 'Hair Removal', es: 'Depilación' },
+        { id: 'body_laxity', en: 'Body Laxity (Abdomen, Arms, Legs, Back)', es: 'Flacidez Corporal (Abdomen, Brazos, Piernas, Espalda)' },
+        { id: 'overweight_obesity', en: 'Overweight or Obesity', es: 'Sobrepeso u Obesidad' },
+        { id: 'alopecia', en: 'Alopecia (Hair Loss)', es: 'Alopecia' },
+        { id: 'yellow_teeth', en: 'Yellow / Discolored Teeth', es: 'Dientes Amarillos' },
+        { id: 'keloid_scarring', en: 'Keloid Scarring', es: 'Cicatriz Queloidea' },
     ];
 
     const MEDICAL_CONDITIONS = [
@@ -686,6 +703,28 @@
         const el = document.querySelector(`input[name="${groupName}"]:checked`);
         return el ? el.value : null;
     }
+
+    // Generic click handler for manually-authored Sí/No (and similar) radio-card pairs
+    // that aren't built via renderRadioGroup/renderMerzGroups (e.g. m1-pregnancy,
+    // m2-event-flag). Dispatches a bubbling 'radiocard:change' event so callers can
+    // react (e.g. reveal a follow-up dropdown) without each one wiring its own listener.
+    document.addEventListener('click', (e) => {
+        const card = e.target.closest('.radio-card[data-group]');
+        if (!card) return;
+        const group = card.dataset.group;
+        document.querySelectorAll(`.radio-card[data-group="${group}"]`).forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        const input = card.querySelector('input[type="radio"]');
+        if (input) input.checked = true;
+        card.dispatchEvent(new CustomEvent('radiocard:change', { bubbles: true }));
+    });
+
+    document.addEventListener('radiocard:change', (e) => {
+        const card = e.target;
+        if (card.dataset && card.dataset.group === 'm2-event-flag') {
+            document.getElementById('m2-event-weeks-block').classList.toggle('hidden', card.dataset.value !== 'yes');
+        }
+    });
 
     function setRadioValue(containerId, groupName, value) {
         if (!value) return;
@@ -1027,7 +1066,8 @@
 
             consultation_reasons: getCheckedValues('concern-checkbox'),
             consultation_reasons_other: getOtherValues('m2-other-container'),
-            upcoming_event_date: document.getElementById('m2-event-date').value || null,
+            upcoming_event_flag: getRadioValue('m2-event-flag') === 'yes',
+            upcoming_event_weeks: getRadioValue('m2-event-flag') === 'yes' ? document.getElementById('m2-event-weeks').value : null,
 
             medical_conditions: getCheckedValues('medical-checkbox'),
             medical_conditions_other: getOtherValues('m3-other-container'),
@@ -1084,7 +1124,15 @@
             document.getElementById('m2-other-container').classList.remove('hidden');
             data.consultation_reasons_other.forEach(v => addOtherRow('m2-other-container', v));
         }
-        if (data.upcoming_event_date) document.getElementById('m2-event-date').value = data.upcoming_event_date;
+        if (data.upcoming_event_flag) {
+            const yesCard = document.querySelector('.radio-card[data-group="m2-event-flag"][data-value="yes"]');
+            if (yesCard) { yesCard.classList.add('selected'); yesCard.querySelector('input').checked = true; }
+            document.getElementById('m2-event-weeks-block').classList.remove('hidden');
+            if (data.upcoming_event_weeks) document.getElementById('m2-event-weeks').value = data.upcoming_event_weeks;
+        } else if (data.upcoming_event_flag === false) {
+            const noCard = document.querySelector('.radio-card[data-group="m2-event-flag"][data-value="no"]');
+            if (noCard) { noCard.classList.add('selected'); noCard.querySelector('input').checked = true; }
+        }
 
         setCheckedValues('medical-checkbox', data.medical_conditions);
         if (Array.isArray(data.medical_conditions_other) && data.medical_conditions_other.length) {
