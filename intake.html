@@ -256,7 +256,7 @@
             <div>
                 <span class="text-[10px] uppercase tracking-[0.3em] text-[#B76E88] font-semibold" data-en="Module 6" data-es="Módulo 6">Module 6</span>
                 <h2 class="text-3xl text-[#2A2330]" data-en="Previous Aesthetic Treatments" data-es="Antecedentes Estéticos Previos">Previous Aesthetic Treatments</h2>
-                <p class="text-sm font-light opacity-70 mt-1" data-en="Check any you've had before. Selecting one will ask a few quick details." data-es="Marca los que te hayas hecho antes. Al seleccionar uno te pediremos algunos detalles rápidos.">Check any you've had before.</p>
+                <p class="text-sm font-light opacity-70 mt-1" data-en="For each treatment below, answer Yes or No. If you answer Yes, a few quick follow-up questions will appear." data-es="Para cada tratamiento a continuación, responde Sí o No. Si respondes Sí, aparecerán algunas preguntas rápidas adicionales.">For each treatment below, answer Yes or No.</p>
             </div>
             <div id="m6-categories" class="space-y-3"></div>
             <div>
@@ -446,80 +446,90 @@
         { id: 'biopolymer_injections', en: 'Biopolymer / Permanent Filler Injections', es: 'Inyecciones de Biopolímeros / Rellenos Permanentes' },
     ];
 
-    const AESTHETIC_CATEGORIES = [
-        { header: { en: 'Neuromodulators (Neurotoxins)', es: 'Neuromoduladores (Toxina Botulínica)' },
-          items: [
-            { id: 'botox', en: 'Botox', es: 'Botox' },
-            { id: 'dysport', en: 'Dysport', es: 'Dysport' },
-            { id: 'xeomin', en: 'Xeomin', es: 'Xeomin' },
-            { id: 'daxxify', en: 'Daxxify', es: 'Daxxify' },
-            { id: 'jeuveau', en: 'Jeuveau', es: 'Jeuveau' },
-          ] },
-        { header: { en: 'Dermal Fillers (Hyaluronic Acid)', es: 'Rellenos Dérmicos (Ácido Hialurónico)' },
-          items: [
-            { id: 'juvederm', en: 'Juvéderm', es: 'Juvéderm' },
-            { id: 'restylane', en: 'Restylane', es: 'Restylane' },
-            { id: 'belotero', en: 'Belotero', es: 'Belotero' },
-            { id: 'rha_collection', en: 'RHA Collection', es: 'RHA Collection' },
-          ] },
-        { header: { en: 'Biostimulators', es: 'Bioestimuladores' },
-          items: [
-            { id: 'sculptra', en: 'Sculptra (PLLA)', es: 'Sculptra (PLLA)' },
-            { id: 'radiesse', en: 'Radiesse (CaHA)', es: 'Radiesse (CaHA)' },
-          ] },
-        { header: { en: 'Permanent / Semi-Permanent Fillers', es: 'Rellenos Permanentes / Semipermanentes' },
-          items: [
-            { id: 'bellafill', en: 'Bellafill / Artefill', es: 'Bellafill / Artefill' },
-            { id: 'silicone_biopolymers', en: 'Silicone / Biopolymers', es: 'Silicona / Biopolímeros' },
-          ] },
-        { header: { en: 'Threads', es: 'Hilos' },
-          items: [
-            { id: 'pdo_threads', en: 'PDO Threads (Lifting / Mono)', es: 'Hilos PDO (Lifting / Mono)' },
-            { id: 'plla_pcl_threads', en: 'PLLA / PCL Threads', es: 'Hilos PLLA / PCL' },
-          ] },
-        { header: { en: 'Laser — Ablative', es: 'Láser — Ablativo' },
-          items: [
-            { id: 'fractional_co2', en: 'Fractional CO2', es: 'CO2 Fraccionado' },
-            { id: 'erbium_yag', en: 'Erbium (Erbium:YAG)', es: 'Erbio (Erbium:YAG)' },
-          ] },
-        { header: { en: 'Laser — Non-Ablative', es: 'Láser — No Ablativo' },
-          items: [
-            { id: 'clear_brilliant', en: 'Clear + Brilliant', es: 'Clear + Brilliant' },
-            { id: 'fraxel_1550', en: 'Fraxel 1550', es: 'Fraxel 1550' },
-            { id: 'halo', en: 'Halo', es: 'Halo' },
-            { id: 'genesis', en: 'Genesis', es: 'Genesis' },
-          ] },
-        { header: { en: 'Laser — Vascular / Pigment', es: 'Láser — Vascular / Pigmento' },
-          items: [
-            { id: 'ipl_photofacial', en: 'IPL (Photofacial)', es: 'IPL (Fotofacial)' },
-            { id: 'vbeam_pdl', en: 'VBeam / Pulsed Dye Laser', es: 'VBeam / Láser de Colorante Pulsado' },
-            { id: 'picosure_picoway', en: 'PicoSure / PicoWay', es: 'PicoSure / PicoWay' },
-          ] },
-        { header: { en: 'Skin Tightening / Ultrasound / RF', es: 'Reafirmación / Ultrasonido / RF' },
-          items: [
-            { id: 'morpheus8', en: 'Morpheus8', es: 'Morpheus8' },
-            { id: 'sylfirm_x', en: 'Sylfirm X', es: 'Sylfirm X' },
-            { id: 'sofwave', en: 'Sofwave', es: 'Sofwave' },
-            { id: 'ultherapy', en: 'Ultherapy', es: 'Ultherapy' },
-            { id: 'thermage', en: 'Thermage', es: 'Thermage' },
-          ] },
-        { header: { en: 'Chemical Peels', es: 'Peelings Químicos' },
-          items: [
-            { id: 'superficial_peel', en: 'Superficial (Glycolic, Salicylic)', es: 'Superficial (Glicólico, Salicílico)' },
-            { id: 'medium_peel', en: 'Medium (Jessner, TCA, VI Peel)', es: 'Medio (Jessner, TCA, VI Peel)' },
-            { id: 'deep_phenol_peel', en: 'Deep (Phenol)', es: 'Profundo (Fenol)' },
-          ] },
-        { header: { en: 'Microneedling / PRP / PRF', es: 'Microneedling / PRP / PRF' },
-          items: [
-            { id: 'microneedling_prp', en: 'Microneedling / PRP / PRF', es: 'Microneedling / PRP / PRF' },
-          ] },
-        { header: { en: 'History of Filler Complications', es: 'Antecedentes de Complicaciones con Rellenos' },
-          items: [
-            { id: 'vascular_occlusion', en: 'Vascular Occlusion', es: 'Oclusión Vascular' },
-            { id: 'delayed_granulomas', en: 'Delayed Granulomas', es: 'Granulomas Tardíos' },
-            { id: 'migration_necrosis', en: 'Migration / Necrosis', es: 'Migración / Necrosis' },
-            { id: 'biofilm_infection', en: 'Biofilm / Infection', es: 'Biofilm / Infección' },
-          ] },
+    // ---------- MODULE 6 (v2): shared dropdown option sets ----------
+    const TIMES_PERFORMED_OPTIONS = [
+        { v: '1', en: '1', es: '1' }, { v: '2', en: '2', es: '2' }, { v: '3', en: '3', es: '3' },
+        { v: '4', en: '4', es: '4' }, { v: '5', en: '5', es: '5' }, { v: '6', en: '6', es: '6' },
+        { v: 'more_than_6', en: 'More than 6', es: 'Más de 6' },
+    ];
+    const TIME_SINCE_STANDARD = [
+        { v: '1_month', en: '1 month ago', es: 'Hace 1 mes' },
+        { v: '3_months', en: '3 months ago', es: 'Hace 3 meses' },
+        { v: '6_months', en: '6 months ago', es: 'Hace 6 meses' },
+        { v: '9_months', en: '9 months ago', es: 'Hace 9 meses' },
+        { v: '1_year', en: '1 year ago', es: 'Hace 1 año' },
+        { v: 'more_than_1_year', en: 'More than 1 year ago', es: 'Hace más de 1 año' },
+        { v: 'more_than_2_years', en: 'More than 2 years ago', es: 'Hace más de 2 años' },
+    ];
+    const TIME_SINCE_SHORT = [
+        { v: '6_months', en: '6 months ago', es: 'Hace 6 meses' },
+        { v: '1_year', en: '1 year ago', es: 'Hace 1 año' },
+        { v: '2_years', en: '2 years ago', es: 'Hace 2 años' },
+        { v: 'more_than_2_years', en: 'More than 2 years ago', es: 'Hace más de 2 años' },
+    ];
+    const LASER_TYPES = [
+        { v: 'fractional_co2', en: 'Fractional CO2', es: 'CO2 Fraccionado' },
+        { v: 'erbium_yag', en: 'Erbium (Erbium:YAG)', es: 'Erbio (Erbium:YAG)' },
+        { v: 'clear_brilliant', en: 'Clear + Brilliant', es: 'Clear + Brilliant' },
+        { v: 'fraxel_1550', en: 'Fraxel 1550', es: 'Fraxel 1550' },
+        { v: 'halo', en: 'Halo', es: 'Halo' },
+        { v: 'genesis', en: 'Genesis', es: 'Genesis' },
+        { v: 'ipl_photofacial', en: 'IPL (Photofacial)', es: 'IPL (Fotofacial)' },
+        { v: 'vbeam_pdl', en: 'VBeam / Pulsed Dye Laser', es: 'VBeam / Láser de Colorante Pulsado' },
+        { v: 'picosure_picoway', en: 'PicoSure / PicoWay', es: 'PicoSure / PicoWay' },
+        { v: 'other', en: 'Other', es: 'Otro' },
+        { v: 'dont_remember', en: "I don't remember", es: 'No recuerdo' },
+    ];
+    const AREA_FACE_NECK_HANDS_UNDERARMS_OTHER = [
+        { v: 'face', en: 'Face', es: 'Cara' }, { v: 'neck', en: 'Neck', es: 'Cuello' },
+        { v: 'hands', en: 'Hands', es: 'Manos' }, { v: 'underarms', en: 'Underarms', es: 'Axilas' },
+        { v: 'other', en: 'Other', es: 'Otro' },
+    ];
+    const AREA_FILLER = [
+        { v: 'cheeks', en: 'Cheeks', es: 'Pómulos' }, { v: 'lips', en: 'Lips', es: 'Labios' },
+        { v: 'chin', en: 'Chin', es: 'Mentón' }, { v: 'nose', en: 'Nose', es: 'Nariz' },
+        { v: 'jawline', en: 'Jawline', es: 'Mandíbula' }, { v: 'other', en: 'Other', es: 'Otro' },
+    ];
+    const AREA_FACE_HANDS_NECK_OTHER = [
+        { v: 'face', en: 'Face', es: 'Cara' }, { v: 'hands', en: 'Hands', es: 'Manos' },
+        { v: 'neck', en: 'Neck', es: 'Cuello' }, { v: 'other', en: 'Other', es: 'Otro' },
+    ];
+    const AREA_FACE_NECK_OTHER = [
+        { v: 'face', en: 'Face', es: 'Cara' }, { v: 'neck', en: 'Neck', es: 'Cuello' },
+        { v: 'other', en: 'Other', es: 'Otro' },
+    ];
+    const AREA_FACE_NECK_HANDS_BODY = [
+        { v: 'face', en: 'Face', es: 'Cara' }, { v: 'neck', en: 'Neck', es: 'Cuello' },
+        { v: 'hands', en: 'Hands', es: 'Manos' }, { v: 'body', en: 'Body', es: 'Cuerpo' },
+    ];
+    const AREA_FACE_NECK_BODY_OTHER = [
+        { v: 'face', en: 'Face', es: 'Cara' }, { v: 'neck', en: 'Neck', es: 'Cuello' },
+        { v: 'body', en: 'Body', es: 'Cuerpo' }, { v: 'other', en: 'Other', es: 'Otro' },
+    ];
+    const AREA_FACE_NECK_HANDS_OTHER = [
+        { v: 'face', en: 'Face', es: 'Cara' }, { v: 'neck', en: 'Neck', es: 'Cuello' },
+        { v: 'hands', en: 'Hands', es: 'Manos' }, { v: 'other', en: 'Other', es: 'Otro' },
+    ];
+
+    const AESTHETIC_CATEGORIES_V2 = [
+        { id: 'neuromodulators', header: { en: 'Botox – Neuromodulators (Botulinum Toxin)', es: 'Botox – Neuromoduladores (Toxina Botulínica)' },
+          hasTimesPerformed: true, areaOptions: AREA_FACE_NECK_HANDS_UNDERARMS_OTHER, areaFreeText: false, timeSinceOptions: TIME_SINCE_STANDARD, hasComplicationQuestion: false, hasLaserTypeQuestion: false },
+        { id: 'dermal_fillers', header: { en: 'Dermal Fillers', es: 'Rellenos Dérmicos' },
+          hasTimesPerformed: true, areaOptions: AREA_FILLER, areaFreeText: false, timeSinceOptions: TIME_SINCE_STANDARD, hasComplicationQuestion: true, hasLaserTypeQuestion: false },
+        { id: 'biostimulators', header: { en: 'Biostimulators (Sculptra, Radiesse, other)', es: 'Bioestimuladores (Sculptra, Radiesse, otro)' },
+          hasTimesPerformed: true, areaOptions: AREA_FACE_HANDS_NECK_OTHER, areaFreeText: false, timeSinceOptions: TIME_SINCE_STANDARD, hasComplicationQuestion: true, hasLaserTypeQuestion: false },
+        { id: 'permanent_fillers', header: { en: 'Permanent or Semi-Permanent Fillers (Biopolymers, other)', es: 'Rellenos Permanentes o Semipermanentes (Biopolímeros, otros)' },
+          hasTimesPerformed: false, areaOptions: null, areaFreeText: true, timeSinceOptions: TIME_SINCE_SHORT, hasComplicationQuestion: false, hasLaserTypeQuestion: false },
+        { id: 'threads', header: { en: 'Threads', es: 'Hilos' },
+          hasTimesPerformed: true, areaOptions: AREA_FACE_NECK_OTHER, areaFreeText: false, timeSinceOptions: TIME_SINCE_STANDARD, hasComplicationQuestion: false, hasLaserTypeQuestion: false },
+        { id: 'laser', header: { en: 'Laser', es: 'Láser' },
+          hasTimesPerformed: true, areaOptions: AREA_FACE_NECK_HANDS_BODY, areaFreeText: false, timeSinceOptions: TIME_SINCE_STANDARD, hasComplicationQuestion: false, hasLaserTypeQuestion: true },
+        { id: 'skin_tightening_rf', header: { en: 'Skin Tightening / Ultrasound / RF', es: 'Reafirmación / Ultrasonido / RF' },
+          hasTimesPerformed: true, areaOptions: AREA_FACE_NECK_BODY_OTHER, areaFreeText: false, timeSinceOptions: TIME_SINCE_STANDARD, hasComplicationQuestion: false, hasLaserTypeQuestion: false },
+        { id: 'chemical_peel', header: { en: 'Chemical Peel', es: 'Peeling Químico' },
+          hasTimesPerformed: true, areaOptions: AREA_FACE_NECK_HANDS_OTHER, areaFreeText: false, timeSinceOptions: TIME_SINCE_STANDARD, hasComplicationQuestion: false, hasLaserTypeQuestion: false },
+        { id: 'microneedling', header: { en: 'Microneedling (/PRP/PRF)', es: 'Microneedling (/PRP/PRF)' },
+          hasTimesPerformed: true, areaOptions: AREA_FACE_NECK_BODY_OTHER, areaFreeText: false, timeSinceOptions: TIME_SINCE_STANDARD, hasComplicationQuestion: false, hasLaserTypeQuestion: false },
     ];
 
     const FITZPATRICK_TYPES = [
@@ -754,8 +764,22 @@
 
     document.addEventListener('radiocard:change', (e) => {
         const card = e.target;
-        if (card.dataset && card.dataset.group === 'm2-event-flag') {
+        if (!card.dataset) return;
+        const group = card.dataset.group || '';
+        if (group === 'm2-event-flag') {
             document.getElementById('m2-event-weeks-block').classList.toggle('hidden', card.dataset.value !== 'yes');
+        } else if (group.startsWith('m6-cat-')) {
+            const catId = group.slice('m6-cat-'.length);
+            const subform = document.querySelector(`.m6-subform[data-for="${catId}"]`);
+            if (subform) subform.classList.toggle('hidden', card.dataset.value !== 'yes');
+        } else if (group.startsWith('m6-reaction-')) {
+            const catId = group.slice('m6-reaction-'.length);
+            const desc = document.querySelector(`.m6-reaction-desc[data-for="${catId}"]`);
+            if (desc) desc.classList.toggle('hidden', card.dataset.value !== 'yes');
+        } else if (group.startsWith('m6-complication-')) {
+            const catId = group.slice('m6-complication-'.length);
+            const desc = document.querySelector(`.m6-complication-desc[data-for="${catId}"]`);
+            if (desc) desc.classList.toggle('hidden', card.dataset.value !== 'yes');
         }
     });
 
@@ -814,81 +838,155 @@
         });
     }
 
-    // ---------- MODULE 6: AESTHETIC HISTORY ----------
-    function renderAestheticCategories() {
+    // ---------- MODULE 6 (v2): AESTHETIC HISTORY ----------
+    // aesthetic_history stays a jsonb array of row objects, one row per category
+    // answered "Sí" (a "No" answer produces no row at all, same convention as the
+    // old unchecked-checkbox-means-no-row behavior). Row shape:
+    //   { item_id, item_label, times_performed, treated_area, last_treatment_period,
+    //     laser_type, had_complication, complication_description, had_reaction,
+    //     adverse_reactions, brand_product }
+    // brand_product is always null for new rows — kept only so legacy (pre-redesign)
+    // rows saved under the old brand-checkbox model still round-trip through
+    // admin.html without losing data.
+    function renderAestheticCategoriesV2() {
         const container = document.getElementById('m6-categories');
-        container.innerHTML = AESTHETIC_CATEGORIES.map((cat, ci) => `
-            <details class="acc-section border border-[#EDE1E7] rounded-xl bg-white overflow-hidden">
-                <summary class="flex items-center justify-between px-4 py-3">
-                    <span class="text-sm font-medium" data-en="${escapeAttr(cat.header.en)}" data-es="${escapeAttr(cat.header.es)}">${cat.header.en}</span>
-                    <svg class="acc-chevron w-4 h-4 text-[#B76E88] transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                </summary>
-                <div class="border-t border-[#EDE1E7] p-4 space-y-3">
-                    ${cat.items.map(it => `
-                        <div>
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="checkbox" class="aesthetic-item-checkbox accent-[#B76E88]" value="${it.id}" onchange="toggleAestheticSubform(this)">
-                                <span class="text-sm" data-en="${escapeAttr(it.en)}" data-es="${escapeAttr(it.es)}">${it.en}</span>
-                            </label>
-                            <div class="aesthetic-subform hidden pl-7 mt-2 pb-1 grid grid-cols-1 md:grid-cols-2 gap-2" data-for="${it.id}">
-                                <input type="text" class="af-date field-input" data-en-ph="Approximate date" data-es-ph="Fecha aproximada">
-                                <input type="text" class="af-area field-input" data-en-ph="Treated area" data-es-ph="Área tratada">
-                                <input type="text" class="af-brand field-input" data-en-ph="Brand / product (if known)" data-es-ph="Marca / producto (si lo sabes)">
-                                <input type="text" class="af-reactions field-input" data-en-ph="Any adverse reactions?" data-es-ph="¿Alguna reacción adversa?">
-                            </div>
+        container.innerHTML = AESTHETIC_CATEGORIES_V2.map(cat => {
+            const timesBlock = cat.hasTimesPerformed ? `
+                <div>
+                    <label class="block text-[9px] uppercase tracking-widest opacity-50 mb-1" data-en="How many times?" data-es="¿Cuántas veces?">How many times?</label>
+                    <select class="m6-times field-input" data-for="${cat.id}"></select>
+                </div>` : '';
+            const areaBlock = cat.areaFreeText ? `
+                <div>
+                    <label class="block text-[9px] uppercase tracking-widest opacity-50 mb-1" data-en="Treated area" data-es="Área tratada">Treated area</label>
+                    <input type="text" class="m6-area-text field-input" data-for="${cat.id}" data-en-ph="Describe" data-es-ph="Describe">
+                </div>` : `
+                <div>
+                    <label class="block text-[9px] uppercase tracking-widest opacity-50 mb-1" data-en="Treated area" data-es="Área tratada">Treated area</label>
+                    <select class="m6-area field-input" data-for="${cat.id}"></select>
+                </div>`;
+            const laserBlock = cat.hasLaserTypeQuestion ? `
+                <div>
+                    <label class="block text-[9px] uppercase tracking-widest opacity-50 mb-1" data-en="Type of laser" data-es="Tipo de láser">Type of laser</label>
+                    <select class="m6-laser-type field-input" data-for="${cat.id}"></select>
+                </div>` : '';
+            const complicationBlock = cat.hasComplicationQuestion ? `
+                <div>
+                    <label class="block text-[9px] uppercase tracking-widest opacity-50 mb-1" data-en="Did you have any complication?" data-es="¿Presentó alguna complicación?">Did you have any complication?</label>
+                    <div class="flex gap-2 max-w-xs">
+                        <label class="radio-card flex-1 text-center py-1.5 text-xs" data-group="m6-complication-${cat.id}" data-value="yes"><input type="radio" name="m6-complication-${cat.id}" value="yes" class="hidden"><span data-en="Yes" data-es="Sí">Yes</span></label>
+                        <label class="radio-card flex-1 text-center py-1.5 text-xs" data-group="m6-complication-${cat.id}" data-value="no"><input type="radio" name="m6-complication-${cat.id}" value="no" class="hidden"><span data-en="No" data-es="No">No</span></label>
+                    </div>
+                    <input type="text" class="m6-complication-desc hidden field-input mt-2" data-for="${cat.id}" data-en-ph="Describe the complication" data-es-ph="Describe la complicación">
+                </div>` : '';
+            return `
+            <div class="border border-[#EDE1E7] rounded-xl bg-white overflow-hidden">
+                <div class="p-4">
+                    <div class="flex items-center justify-between gap-3 flex-wrap">
+                        <span class="text-sm font-medium" data-en="${escapeAttr(cat.header.en)}" data-es="${escapeAttr(cat.header.es)}">${cat.header.en}</span>
+                        <div class="flex gap-2">
+                            <label class="radio-card px-4 py-1.5 text-xs" data-group="m6-cat-${cat.id}" data-value="yes"><input type="radio" name="m6-cat-${cat.id}" value="yes" class="hidden"><span data-en="Yes" data-es="Sí">Yes</span></label>
+                            <label class="radio-card px-4 py-1.5 text-xs" data-group="m6-cat-${cat.id}" data-value="no"><input type="radio" name="m6-cat-${cat.id}" value="no" class="hidden"><span data-en="No" data-es="No">No</span></label>
                         </div>
-                    `).join('')}
+                    </div>
+                    <div class="m6-subform hidden mt-4 space-y-3 border-t border-[#EDE1E7] pt-4" data-for="${cat.id}">
+                        ${timesBlock}
+                        ${areaBlock}
+                        <div>
+                            <label class="block text-[9px] uppercase tracking-widest opacity-50 mb-1" data-en="How long ago was the last time?" data-es="¿Hace cuánto fue la última vez?">How long ago was the last time?</label>
+                            <select class="m6-time-since field-input" data-for="${cat.id}"></select>
+                        </div>
+                        ${laserBlock}
+                        ${complicationBlock}
+                        <div>
+                            <label class="block text-[9px] uppercase tracking-widest opacity-50 mb-1" data-en="Did you have any reaction to this treatment?" data-es="¿Presentó alguna reacción a este tratamiento?">Did you have any reaction to this treatment?</label>
+                            <div class="flex gap-2 max-w-xs">
+                                <label class="radio-card flex-1 text-center py-1.5 text-xs" data-group="m6-reaction-${cat.id}" data-value="yes"><input type="radio" name="m6-reaction-${cat.id}" value="yes" class="hidden"><span data-en="Yes" data-es="Sí">Yes</span></label>
+                                <label class="radio-card flex-1 text-center py-1.5 text-xs" data-group="m6-reaction-${cat.id}" data-value="no"><input type="radio" name="m6-reaction-${cat.id}" value="no" class="hidden"><span data-en="No" data-es="No">No</span></label>
+                            </div>
+                            <input type="text" class="m6-reaction-desc hidden field-input mt-2" data-for="${cat.id}" data-en-ph="Describe the reaction" data-es-ph="Describe la reacción">
+                        </div>
+                    </div>
                 </div>
-            </details>
-        `).join('');
+            </div>`;
+        }).join('');
+
+        AESTHETIC_CATEGORIES_V2.forEach(cat => {
+            if (cat.hasTimesPerformed) populateSelect(container.querySelector(`.m6-times[data-for="${cat.id}"]`), TIMES_PERFORMED_OPTIONS, { valueKey: 'v' });
+            if (!cat.areaFreeText) populateSelect(container.querySelector(`.m6-area[data-for="${cat.id}"]`), cat.areaOptions, { valueKey: 'v' });
+            populateSelect(container.querySelector(`.m6-time-since[data-for="${cat.id}"]`), cat.timeSinceOptions, { valueKey: 'v' });
+            if (cat.hasLaserTypeQuestion) populateSelect(container.querySelector(`.m6-laser-type[data-for="${cat.id}"]`), LASER_TYPES, { valueKey: 'v' });
+        });
         applyPlaceholders();
+        applyLanguage();
     }
 
-    function toggleAestheticSubform(checkbox) {
-        const wrapper = checkbox.closest('label').nextElementSibling;
-        if (wrapper && wrapper.classList.contains('aesthetic-subform')) {
-            wrapper.classList.toggle('hidden', !checkbox.checked);
-        }
-    }
-
-    function getAestheticHistoryData() {
+    function getAestheticHistoryDataV2() {
         const rows = [];
-        document.querySelectorAll('.aesthetic-item-checkbox:checked').forEach(cb => {
-            const label = cb.closest('label').querySelector('span').innerText;
-            const subform = cb.closest('label').nextElementSibling;
+        AESTHETIC_CATEGORIES_V2.forEach(cat => {
+            if (getRadioValue(`m6-cat-${cat.id}`) !== 'yes') return;
+            const subform = document.querySelector(`.m6-subform[data-for="${cat.id}"]`);
+            const reactionYes = getRadioValue(`m6-reaction-${cat.id}`) === 'yes';
+            const complicationYes = cat.hasComplicationQuestion && getRadioValue(`m6-complication-${cat.id}`) === 'yes';
             rows.push({
-                item_id: cb.value,
-                item_label: label,
-                approximate_date: subform?.querySelector('.af-date')?.value.trim() || '',
-                treated_area: subform?.querySelector('.af-area')?.value.trim() || '',
-                brand_product: subform?.querySelector('.af-brand')?.value.trim() || '',
-                adverse_reactions: subform?.querySelector('.af-reactions')?.value.trim() || '',
+                item_id: cat.id,
+                item_label: t(cat.header),
+                times_performed: cat.hasTimesPerformed ? (subform.querySelector('.m6-times').value || null) : null,
+                treated_area: cat.areaFreeText ? (subform.querySelector('.m6-area-text').value.trim() || null) : (subform.querySelector('.m6-area').value || null),
+                last_treatment_period: subform.querySelector('.m6-time-since').value || null,
+                laser_type: cat.hasLaserTypeQuestion ? (subform.querySelector('.m6-laser-type').value || null) : null,
+                had_complication: cat.hasComplicationQuestion ? complicationYes : null,
+                complication_description: complicationYes ? (subform.querySelector('.m6-complication-desc').value.trim() || null) : null,
+                had_reaction: reactionYes,
+                adverse_reactions: reactionYes ? (subform.querySelector('.m6-reaction-desc').value.trim() || null) : null,
+                brand_product: null,
             });
         });
         const otherVal = document.getElementById('m6-other-input').value.trim();
         if (otherVal) {
-            rows.push({ item_id: 'other', item_label: otherVal, approximate_date: '', treated_area: '', brand_product: '', adverse_reactions: '' });
+            rows.push({ item_id: 'other', item_label: otherVal, times_performed: null, treated_area: null, last_treatment_period: null, laser_type: null, had_complication: null, complication_description: null, had_reaction: null, adverse_reactions: null, brand_product: null });
         }
         return rows;
     }
 
-    function setAestheticHistoryData(rows) {
+    function setAestheticHistoryDataV2(rows) {
         const safe = Array.isArray(rows) ? rows : [];
         safe.forEach(row => {
             if (row.item_id === 'other') {
                 document.getElementById('m6-other-input').value = row.item_label || '';
                 return;
             }
-            const cb = document.querySelector(`.aesthetic-item-checkbox[value="${row.item_id}"]`);
-            if (!cb) return;
-            cb.checked = true;
-            toggleAestheticSubform(cb);
-            const subform = cb.closest('label').nextElementSibling;
-            if (subform) {
-                subform.querySelector('.af-date').value = row.approximate_date || '';
-                subform.querySelector('.af-area').value = row.treated_area || '';
-                subform.querySelector('.af-brand').value = row.brand_product || '';
-                subform.querySelector('.af-reactions').value = row.adverse_reactions || '';
+            const cat = AESTHETIC_CATEGORIES_V2.find(c => c.id === row.item_id);
+            if (!cat) return; // legacy (pre-redesign) row with an old brand id — no v2 slot to restore it into
+            const yesCard = document.querySelector(`.radio-card[data-group="m6-cat-${cat.id}"][data-value="yes"]`);
+            if (yesCard) { yesCard.classList.add('selected'); yesCard.querySelector('input').checked = true; }
+            const subform = document.querySelector(`.m6-subform[data-for="${cat.id}"]`);
+            if (!subform) return;
+            subform.classList.remove('hidden');
+            if (cat.hasTimesPerformed && row.times_performed) subform.querySelector('.m6-times').value = row.times_performed;
+            if (row.treated_area) {
+                if (cat.areaFreeText) subform.querySelector('.m6-area-text').value = row.treated_area;
+                else subform.querySelector('.m6-area').value = row.treated_area;
+            }
+            if (row.last_treatment_period) subform.querySelector('.m6-time-since').value = row.last_treatment_period;
+            if (cat.hasLaserTypeQuestion && row.laser_type) subform.querySelector('.m6-laser-type').value = row.laser_type;
+            if (cat.hasComplicationQuestion && (row.had_complication === true || row.had_complication === false)) {
+                const val = row.had_complication ? 'yes' : 'no';
+                const card = document.querySelector(`.radio-card[data-group="m6-complication-${cat.id}"][data-value="${val}"]`);
+                if (card) { card.classList.add('selected'); card.querySelector('input').checked = true; }
+                if (val === 'yes') {
+                    const desc = document.querySelector(`.m6-complication-desc[data-for="${cat.id}"]`);
+                    if (desc) { desc.classList.remove('hidden'); desc.value = row.complication_description || ''; }
+                }
+            }
+            if (row.had_reaction === true || row.had_reaction === false) {
+                const val = row.had_reaction ? 'yes' : 'no';
+                const card = document.querySelector(`.radio-card[data-group="m6-reaction-${cat.id}"][data-value="${val}"]`);
+                if (card) { card.classList.add('selected'); card.querySelector('input').checked = true; }
+                if (val === 'yes') {
+                    const desc = document.querySelector(`.m6-reaction-desc[data-for="${cat.id}"]`);
+                    if (desc) { desc.classList.remove('hidden'); desc.value = row.adverse_reactions || ''; }
+                }
             }
         });
     }
@@ -1116,7 +1214,7 @@
             surgical_history_general: getCheckedValues('surgical-general-checkbox'),
             surgical_history_other: getOtherSurgicalValues(),
 
-            aesthetic_history: getAestheticHistoryData(),
+            aesthetic_history: getAestheticHistoryDataV2(),
 
             fitzpatrick: getRadioValue('m7-fitzpatrick'),
             skin_type: getRadioValue('m7-skintype'),
@@ -1197,7 +1295,7 @@
 
         let aesthetic = data.aesthetic_history;
         if (typeof aesthetic === 'string') { try { aesthetic = JSON.parse(aesthetic); } catch(_) { aesthetic = []; } }
-        setAestheticHistoryData(aesthetic);
+        setAestheticHistoryDataV2(aesthetic);
 
         if (data.fitzpatrick) setRadioValue('m7-fitzpatrick', 'm7-fitzpatrick', data.fitzpatrick);
         if (data.skin_type) setRadioValue('m7-skintype', 'm7-skintype', data.skin_type);
@@ -1297,7 +1395,7 @@
         enforceNoneExclusivity('allergy-checkbox', 'none_allergies');
         renderCheckGroup('m5-facial', SURGICAL_FACIAL, 'surgical-facial-checkbox');
         renderCheckGroup('m5-general', SURGICAL_GENERAL, 'surgical-general-checkbox');
-        renderAestheticCategories();
+        renderAestheticCategoriesV2();
         renderRadioGroup('m7-fitzpatrick', FITZPATRICK_TYPES, 'm7-fitzpatrick', true);
         renderRadioGroup('m7-skintype', SKIN_TYPES, 'm7-skintype', false);
         renderRadioGroup('m7-glogau', GLOGAU_TYPES, 'm7-glogau', false);

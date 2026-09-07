@@ -364,14 +364,6 @@
                             <label class="text-[9px] uppercase font-bold opacity-40">Antecedentes Estéticos</label>
                             <button type="button" onclick="addAestheticRow()" class="text-[9px] uppercase tracking-widest font-bold text-[#B76E88] border border-[#B76E88] px-3 py-1 rounded-full hover:bg-[#B76E88] hover:text-white transition">+ Agregar</button>
                         </div>
-                        <div id="aesthetic-header-row" class="grid gap-2 mb-1 px-1 hidden md:grid" style="grid-template-columns: 1.6fr 1.3fr 1.3fr 1.4fr 1.4fr auto;">
-                            <span class="text-[8px] uppercase tracking-widest opacity-40 font-bold">Procedimiento</span>
-                            <span class="text-[8px] uppercase tracking-widest opacity-40 font-bold">Área</span>
-                            <span class="text-[8px] uppercase tracking-widest opacity-40 font-bold">Fecha Aprox.</span>
-                            <span class="text-[8px] uppercase tracking-widest opacity-40 font-bold">Marca/Producto</span>
-                            <span class="text-[8px] uppercase tracking-widest opacity-40 font-bold">Reacciones Adversas</span>
-                            <span></span>
-                        </div>
                         <div id="aesthetic-history-rows" class="space-y-2">
                             <p class="aesthetic-empty text-xs opacity-30 italic text-center py-2">Sin antecedentes estéticos registrados.</p>
                         </div>
@@ -1812,8 +1804,26 @@
             { id: 'cholecystectomy_appendectomy_hernia', label: 'Colecistectomía / Apendicectomía / Hernia' },
             { id: 'biopolymer_injections', label: 'Biopolímeros / Rellenos Permanentes' },
         ];
-        const ADM_AESTHETIC_ITEMS = [
-            { v: '', l: 'Procedimiento...' },
+        // AESTHETIC_HISTORY JSON SHAPE (v2) — one row per category the patient answered
+        // "Sí" to (matches intake.html's Module 6 rewrite): { item_id, item_label,
+        // times_performed, treated_area, last_treatment_period, laser_type,
+        // had_complication, complication_description, had_reaction, adverse_reactions,
+        // brand_product }. Legacy (pre-redesign) rows used specific brand ids
+        // (botox, juvederm, etc.) with only { treated_area, approximate_date,
+        // brand_product, adverse_reactions } populated — still selectable below under
+        // "Marcas (legado)" so old records keep displaying/editing correctly.
+        const ADM_AESTHETIC_CATEGORIES_V2 = [
+            { v: 'neuromodulators', l: 'Botox – Neuromoduladores' },
+            { v: 'dermal_fillers', l: 'Rellenos Dérmicos' },
+            { v: 'biostimulators', l: 'Bioestimuladores (Sculptra, Radiesse, otro)' },
+            { v: 'permanent_fillers', l: 'Rellenos Permanentes/Semipermanentes (Biopolímeros)' },
+            { v: 'threads', l: 'Hilos' },
+            { v: 'laser', l: 'Láser' },
+            { v: 'skin_tightening_rf', l: 'Reafirmación/Ultrasonido/RF' },
+            { v: 'chemical_peel', l: 'Peeling Químico' },
+            { v: 'microneedling', l: 'Microneedling (/PRP/PRF)' },
+        ];
+        const ADM_AESTHETIC_ITEMS_LEGACY = [
             { v: 'botox', l: 'Botox' }, { v: 'dysport', l: 'Dysport' }, { v: 'xeomin', l: 'Xeomin' }, { v: 'daxxify', l: 'Daxxify' }, { v: 'jeuveau', l: 'Jeuveau' },
             { v: 'juvederm', l: 'Juvéderm' }, { v: 'restylane', l: 'Restylane' }, { v: 'belotero', l: 'Belotero' }, { v: 'rha_collection', l: 'RHA Collection' },
             { v: 'sculptra', l: 'Sculptra (PLLA)' }, { v: 'radiesse', l: 'Radiesse (CaHA)' },
@@ -1927,20 +1937,44 @@
             // paciente guarda {item_id, treated_area}. Aceptamos ambas formas al leer.
             const itemId = data.item_id ?? data.procedure ?? '';
             const area = data.treated_area ?? data.area ?? '';
+            const yesNoOptions = (val) => `<option value="">—</option><option value="yes" ${val === true ? 'selected' : ''}>Sí</option><option value="no" ${val === false ? 'selected' : ''}>No</option>`;
 
             const rowDiv = document.createElement('div');
-            rowDiv.className = 'aesthetic-row grid gap-2 items-center';
-            rowDiv.style.gridTemplateColumns = '1.6fr 1.3fr 1.3fr 1.4fr 1.4fr auto';
+            rowDiv.className = 'aesthetic-row border border-[#EDE1E7] rounded-lg p-3 space-y-2';
 
             rowDiv.innerHTML = `
-                <select class="aest-item" style="${fieldStyle}">
-                    ${ADM_AESTHETIC_ITEMS.map(o => `<option value="${o.v}" ${itemId === o.v ? 'selected' : ''}>${o.l}</option>`).join('')}
-                </select>
-                <input class="aest-area" type="text" value="${escapeHtml(area)}" placeholder="Área tratada" style="${fieldStyle}">
-                <input class="aest-date" type="text" value="${escapeHtml(data.approximate_date || '')}" placeholder="Fecha aprox." style="${fieldStyle}">
-                <input class="aest-brand" type="text" value="${escapeHtml(data.brand_product || '')}" placeholder="Marca/Producto" style="${fieldStyle}">
-                <input class="aest-reactions" type="text" value="${escapeHtml(data.adverse_reactions || '')}" placeholder="Reacciones adversas" style="${fieldStyle}">
-                <button type="button" onclick="this.closest('.aesthetic-row').remove()" class="text-red-400 hover:text-red-600 font-bold text-xl leading-none px-1">&times;</button>
+                <div class="flex items-center gap-2">
+                    <select class="aest-item" style="${fieldStyle}flex:1;">
+                        <option value="">Categoría / Procedimiento...</option>
+                        <optgroup label="Categorías (2026+)">
+                            ${ADM_AESTHETIC_CATEGORIES_V2.map(o => `<option value="${o.v}" ${itemId === o.v ? 'selected' : ''}>${o.l}</option>`).join('')}
+                        </optgroup>
+                        <optgroup label="Marcas específicas (legado)">
+                            ${ADM_AESTHETIC_ITEMS_LEGACY.map(o => `<option value="${o.v}" ${itemId === o.v ? 'selected' : ''}>${o.l}</option>`).join('')}
+                        </optgroup>
+                    </select>
+                    <button type="button" onclick="this.closest('.aesthetic-row').remove()" class="text-red-400 hover:text-red-600 font-bold text-xl leading-none px-1">&times;</button>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    <input class="aest-times" type="text" value="${escapeHtml(data.times_performed || '')}" placeholder="Cuántas veces" style="${fieldStyle}">
+                    <input class="aest-area" type="text" value="${escapeHtml(area)}" placeholder="Área tratada" style="${fieldStyle}">
+                    <input class="aest-time-since" type="text" value="${escapeHtml(data.last_treatment_period || '')}" placeholder="Última vez (ej: hace 6 meses)" style="${fieldStyle}">
+                    <input class="aest-laser-type" type="text" value="${escapeHtml(data.laser_type || '')}" placeholder="Tipo de láser (si aplica)" style="${fieldStyle}">
+                    <input class="aest-brand" type="text" value="${escapeHtml(data.brand_product || '')}" placeholder="Marca/Producto (legado)" style="${fieldStyle}">
+                    <input class="aest-date" type="text" value="${escapeHtml(data.approximate_date || '')}" placeholder="Fecha aprox. (legado)" style="${fieldStyle}">
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[9px] uppercase opacity-40 block mb-1">¿Reacción?</label>
+                        <select class="aest-had-reaction" style="${fieldStyle}" onchange="this.nextElementSibling.classList.toggle('hidden', this.value !== 'yes')">${yesNoOptions(data.had_reaction)}</select>
+                        <input class="aest-reactions ${data.had_reaction === true ? '' : 'hidden'}" type="text" value="${escapeHtml(data.adverse_reactions || '')}" placeholder="Describe la reacción" style="${fieldStyle}margin-top:4px;">
+                    </div>
+                    <div>
+                        <label class="text-[9px] uppercase opacity-40 block mb-1">¿Complicación?</label>
+                        <select class="aest-had-complication" style="${fieldStyle}" onchange="this.nextElementSibling.classList.toggle('hidden', this.value !== 'yes')">${yesNoOptions(data.had_complication)}</select>
+                        <input class="aest-complication-desc ${data.had_complication === true ? '' : 'hidden'}" type="text" value="${escapeHtml(data.complication_description || '')}" placeholder="Describe la complicación" style="${fieldStyle}margin-top:4px;">
+                    </div>
+                </div>
             `;
             container.appendChild(rowDiv);
         }
@@ -1949,13 +1983,22 @@
             return Array.from(document.querySelectorAll('#aesthetic-history-rows .aesthetic-row')).map(row => {
                 const itemId = row.querySelector('.aest-item').value;
                 const itemLabel = row.querySelector('.aest-item').selectedOptions[0]?.text || '';
+                const toBool = (v) => v === 'yes' ? true : (v === 'no' ? false : null);
+                const hadReaction = toBool(row.querySelector('.aest-had-reaction').value);
+                const hadComplication = toBool(row.querySelector('.aest-had-complication').value);
                 return {
                     item_id: itemId,
                     item_label: itemLabel,
+                    times_performed: row.querySelector('.aest-times').value.trim() || null,
                     treated_area: row.querySelector('.aest-area').value.trim(),
+                    last_treatment_period: row.querySelector('.aest-time-since').value.trim() || null,
+                    laser_type: row.querySelector('.aest-laser-type').value.trim() || null,
                     approximate_date: row.querySelector('.aest-date').value.trim(),
                     brand_product: row.querySelector('.aest-brand').value.trim(),
+                    had_reaction: hadReaction,
                     adverse_reactions: row.querySelector('.aest-reactions').value.trim(),
+                    had_complication: hadComplication,
+                    complication_description: row.querySelector('.aest-complication-desc').value.trim() || null,
                 };
             }).filter(r => r.item_id || r.treated_area);
         }
