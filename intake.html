@@ -502,6 +502,107 @@
         { v: 4, en: 'Very Severe', es: 'Muy Severa' },
     ];
 
+    // ---------- SHARED UTILITIES ----------
+    const US_STATES = [
+        { code: 'AL', en: 'Alabama', es: 'Alabama' }, { code: 'AK', en: 'Alaska', es: 'Alaska' },
+        { code: 'AZ', en: 'Arizona', es: 'Arizona' }, { code: 'AR', en: 'Arkansas', es: 'Arkansas' },
+        { code: 'CA', en: 'California', es: 'California' }, { code: 'CO', en: 'Colorado', es: 'Colorado' },
+        { code: 'CT', en: 'Connecticut', es: 'Connecticut' }, { code: 'DE', en: 'Delaware', es: 'Delaware' },
+        { code: 'DC', en: 'District of Columbia', es: 'Distrito de Columbia' },
+        { code: 'FL', en: 'Florida', es: 'Florida' }, { code: 'GA', en: 'Georgia', es: 'Georgia' },
+        { code: 'HI', en: 'Hawaii', es: 'Hawái' }, { code: 'ID', en: 'Idaho', es: 'Idaho' },
+        { code: 'IL', en: 'Illinois', es: 'Illinois' }, { code: 'IN', en: 'Indiana', es: 'Indiana' },
+        { code: 'IA', en: 'Iowa', es: 'Iowa' }, { code: 'KS', en: 'Kansas', es: 'Kansas' },
+        { code: 'KY', en: 'Kentucky', es: 'Kentucky' }, { code: 'LA', en: 'Louisiana', es: 'Luisiana' },
+        { code: 'ME', en: 'Maine', es: 'Maine' }, { code: 'MD', en: 'Maryland', es: 'Maryland' },
+        { code: 'MA', en: 'Massachusetts', es: 'Massachusetts' }, { code: 'MI', en: 'Michigan', es: 'Míchigan' },
+        { code: 'MN', en: 'Minnesota', es: 'Minnesota' }, { code: 'MS', en: 'Mississippi', es: 'Misisipi' },
+        { code: 'MO', en: 'Missouri', es: 'Misuri' }, { code: 'MT', en: 'Montana', es: 'Montana' },
+        { code: 'NE', en: 'Nebraska', es: 'Nebraska' }, { code: 'NV', en: 'Nevada', es: 'Nevada' },
+        { code: 'NH', en: 'New Hampshire', es: 'New Hampshire' }, { code: 'NJ', en: 'New Jersey', es: 'Nueva Jersey' },
+        { code: 'NM', en: 'New Mexico', es: 'Nuevo México' }, { code: 'NY', en: 'New York', es: 'Nueva York' },
+        { code: 'NC', en: 'North Carolina', es: 'Carolina del Norte' }, { code: 'ND', en: 'North Dakota', es: 'Dakota del Norte' },
+        { code: 'OH', en: 'Ohio', es: 'Ohio' }, { code: 'OK', en: 'Oklahoma', es: 'Oklahoma' },
+        { code: 'OR', en: 'Oregon', es: 'Oregón' }, { code: 'PA', en: 'Pennsylvania', es: 'Pensilvania' },
+        { code: 'RI', en: 'Rhode Island', es: 'Rhode Island' }, { code: 'SC', en: 'South Carolina', es: 'Carolina del Sur' },
+        { code: 'SD', en: 'South Dakota', es: 'Dakota del Sur' }, { code: 'TN', en: 'Tennessee', es: 'Tennessee' },
+        { code: 'TX', en: 'Texas', es: 'Texas' }, { code: 'UT', en: 'Utah', es: 'Utah' },
+        { code: 'VT', en: 'Vermont', es: 'Vermont' }, { code: 'VA', en: 'Virginia', es: 'Virginia' },
+        { code: 'WA', en: 'Washington', es: 'Washington' }, { code: 'WV', en: 'West Virginia', es: 'Virginia Occidental' },
+        { code: 'WI', en: 'Wisconsin', es: 'Wisconsin' }, { code: 'WY', en: 'Wyoming', es: 'Wyoming' },
+        { code: 'PR', en: 'Puerto Rico', es: 'Puerto Rico' }, { code: 'GU', en: 'Guam', es: 'Guam' },
+        { code: 'VI', en: 'U.S. Virgin Islands', es: 'Islas Vírgenes de EE. UU.' },
+        { code: 'AS', en: 'American Samoa', es: 'Samoa Americana' },
+        { code: 'MP', en: 'Northern Mariana Islands', es: 'Islas Marianas del Norte' },
+    ];
+
+    const COUNTRY_CODES = [
+        { iso: 'US', dial: '+1', en: 'United States', es: 'Estados Unidos' },
+        { iso: 'CA', dial: '+1', en: 'Canada', es: 'Canadá' },
+        { iso: 'MX', dial: '+52', en: 'Mexico', es: 'México' },
+        { iso: 'GT', dial: '+502', en: 'Guatemala', es: 'Guatemala' },
+        { iso: 'BZ', dial: '+501', en: 'Belize', es: 'Belice' },
+        { iso: 'SV', dial: '+503', en: 'El Salvador', es: 'El Salvador' },
+        { iso: 'HN', dial: '+504', en: 'Honduras', es: 'Honduras' },
+        { iso: 'NI', dial: '+505', en: 'Nicaragua', es: 'Nicaragua' },
+        { iso: 'CR', dial: '+506', en: 'Costa Rica', es: 'Costa Rica' },
+        { iso: 'PA', dial: '+507', en: 'Panama', es: 'Panamá' },
+        { iso: 'CU', dial: '+53', en: 'Cuba', es: 'Cuba' },
+        { iso: 'DO', dial: '+1', en: 'Dominican Republic', es: 'República Dominicana' },
+        { iso: 'PR', dial: '+1', en: 'Puerto Rico', es: 'Puerto Rico' },
+        { iso: 'HT', dial: '+509', en: 'Haiti', es: 'Haití' },
+        { iso: 'CO', dial: '+57', en: 'Colombia', es: 'Colombia' },
+        { iso: 'VE', dial: '+58', en: 'Venezuela', es: 'Venezuela' },
+        { iso: 'EC', dial: '+593', en: 'Ecuador', es: 'Ecuador' },
+        { iso: 'PE', dial: '+51', en: 'Peru', es: 'Perú' },
+        { iso: 'BO', dial: '+591', en: 'Bolivia', es: 'Bolivia' },
+        { iso: 'PY', dial: '+595', en: 'Paraguay', es: 'Paraguay' },
+        { iso: 'CL', dial: '+56', en: 'Chile', es: 'Chile' },
+        { iso: 'AR', dial: '+54', en: 'Argentina', es: 'Argentina' },
+        { iso: 'UY', dial: '+598', en: 'Uruguay', es: 'Uruguay' },
+        { iso: 'BR', dial: '+55', en: 'Brazil', es: 'Brasil' },
+        { iso: 'ES', dial: '+34', en: 'Spain', es: 'España' },
+        { iso: 'PT', dial: '+351', en: 'Portugal', es: 'Portugal' },
+        { iso: 'FR', dial: '+33', en: 'France', es: 'Francia' },
+        { iso: 'IT', dial: '+39', en: 'Italy', es: 'Italia' },
+        { iso: 'DE', dial: '+49', en: 'Germany', es: 'Alemania' },
+        { iso: 'GB', dial: '+44', en: 'United Kingdom', es: 'Reino Unido' },
+    ];
+    const DEFAULT_COUNTRY_ISO = 'US';
+
+    // Lightweight, dependency-free phone validation: digit-count bounds per country.
+    // Not full E.164 validation, but catches "not a real phone number" input without
+    // adding a library. iso keys with no explicit rule fall back to the generic default.
+    const PHONE_DIGIT_RULES = {
+        US: { min: 10, max: 10 }, CA: { min: 10, max: 10 }, DO: { min: 10, max: 10 }, PR: { min: 10, max: 10 },
+        MX: { min: 10, max: 10 }, BR: { min: 10, max: 11 }, GB: { min: 10, max: 10 },
+    };
+    function validatePhoneNumber(iso, rawValue) {
+        const digits = String(rawValue || '').replace(/\D/g, '');
+        const rule = PHONE_DIGIT_RULES[iso] || { min: 6, max: 14 };
+        return digits.length >= rule.min && digits.length <= rule.max;
+    }
+
+    function calculateAge(dobIso) {
+        if (!dobIso) return null;
+        const dob = new Date(dobIso + 'T00:00:00');
+        if (isNaN(dob.getTime())) return null;
+        const today = new Date();
+        if (dob > today) return null;
+        let age = today.getFullYear() - dob.getFullYear();
+        const m = today.getMonth() - dob.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+        return age;
+    }
+
+    function populateSelect(selectEl, options, { valueKey = 'code', placeholder } = {}) {
+        if (!selectEl) return;
+        const placeholderHtml = placeholder ? `<option value="">${escapeAttr(t(placeholder))}</option>` : '';
+        selectEl.innerHTML = placeholderHtml + options.map(o =>
+            `<option value="${escapeAttr(o[valueKey])}">${escapeAttr(t(o))}</option>`
+        ).join('');
+    }
+
     // ---------- HELPERS ----------
     function escapeAttr(value) {
         return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
