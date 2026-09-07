@@ -192,12 +192,12 @@
             </div>
 
             <div>
-                <h4 class="text-[10px] uppercase tracking-widest text-[#B76E88] font-bold mb-3" data-en="Blood Thinners, NSAIDs & Supplements" data-es="Anticoagulantes, AINEs y Suplementos">Blood Thinners, NSAIDs & Supplements</h4>
+                <h4 class="text-[10px] uppercase tracking-widest text-[#B76E88] font-bold mb-3" data-en="Have you taken any of these blood thinners in the last 7–10 days?" data-es="¿Ha tomado alguno de estos anticoagulantes en los últimos 7–10 días?">Have you taken any of these blood thinners in the last 7–10 days?</h4>
                 <div id="m4-blood-thinners" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
             </div>
 
             <div class="bg-[#FBF0F3] border border-[#EDE1E7] rounded-xl p-5 space-y-4">
-                <h4 class="text-[10px] uppercase tracking-widest text-[#B76E88] font-bold" data-en="Retinoids & Photosensitizing Drugs" data-es="Retinoides y Fármacos Fotosensibilizantes">Retinoids & Photosensitizing Drugs</h4>
+                <h4 class="text-[10px] uppercase tracking-widest text-[#B76E88] font-bold" data-en="Have you recently used any of these photosensitizing medications?" data-es="¿Ha usado alguno de estos medicamentos fotosensibilizantes recientemente?">Have you recently used any of these photosensitizing medications?</h4>
                 <label class="flex items-start gap-3 cursor-pointer">
                     <input type="checkbox" id="m4-isotretinoin" class="mt-1 accent-[#B76E88]">
                     <span class="text-sm" data-en="Oral Isotretinoin (Accutane) taken within the last 6–12 months?" data-es="¿Isotretinoína oral (Accutane) tomada en los últimos 6–12 meses?">Oral Isotretinoin (Accutane) taken within the last 6–12 months?</span>
@@ -213,7 +213,7 @@
             </div>
 
             <div>
-                <h4 class="text-[10px] uppercase tracking-widest text-[#B76E88] font-bold mb-3" data-en="Allergies" data-es="Alergias">Allergies</h4>
+                <h4 class="text-sm uppercase tracking-widest text-[#B76E88] font-bold mb-3" data-en="Do you have any of the following allergies? Select all that apply." data-es="¿Presenta alguna de las siguientes alergias? Selecciona las que correspondan">Do you have any of the following allergies? Select all that apply.</h4>
                 <div id="m4-allergies" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
                 <div class="mt-3">
                     <div class="flex items-center gap-2 mb-2">
@@ -411,6 +411,7 @@
         { id: 'aspirin', en: 'Aspirin / Baby Aspirin (81mg)', es: 'Aspirina / Aspirina Infantil (81mg)' },
         { id: 'daily_nsaids', en: 'Daily NSAIDs (Ibuprofen, Aleve)', es: 'AINEs Diarios (Ibuprofeno, Aleve)' },
         { id: 'bruising_supplements', en: 'High-Dose Supplements (Fish Oil, Vitamin E, Ginkgo, Garlic)', es: 'Suplementos en Dosis Alta (Aceite de Pescado, Vitamina E, Ginkgo, Ajo)' },
+        { id: 'none_blood_thinners', en: 'None of the above', es: 'Ninguna de las anteriores' },
     ];
 
     const ALLERGY_OPTIONS = [
@@ -420,6 +421,7 @@
         { id: 'chlorhexidine_iodine_alcohol', en: 'Chlorhexidine / Iodine / Alcohol', es: 'Clorhexidina / Yodo / Alcohol' },
         { id: 'albumin_milk_protein', en: "Human Albumin / Cow's Milk Protein", es: 'Albúmina Humana / Proteína de Leche de Vaca' },
         { id: 'bee_wasp_stings', en: 'Bee / Wasp Stings', es: 'Picaduras de Abeja / Avispa' },
+        { id: 'none_allergies', en: 'No known allergies', es: 'Ninguna alergia conocida' },
     ];
 
     const SURGICAL_FACIAL = [
@@ -671,6 +673,30 @@
                 <span class="text-sm" data-en="${escapeAttr(o.en)}" data-es="${escapeAttr(o.es)}">${o.en}</span>
             </label>
         `).join('');
+    }
+
+    // Checking a "None of the above" / "No known allergies" option in a checkbox
+    // group clears every other option in that group, and vice versa — avoids the
+    // ambiguity of a patient just leaving everything blank.
+    function enforceNoneExclusivity(groupClass, noneValue) {
+        document.addEventListener('change', (e) => {
+            if (!e.target.classList || !e.target.classList.contains(groupClass)) return;
+            const all = document.querySelectorAll('.' + groupClass);
+            if (e.target.value === noneValue && e.target.checked) {
+                all.forEach(cb => {
+                    if (cb !== e.target) {
+                        cb.checked = false;
+                        cb.closest('.check-card')?.classList.remove('checked');
+                    }
+                });
+            } else if (e.target.value !== noneValue && e.target.checked) {
+                const noneCb = document.querySelector(`.${groupClass}[value="${noneValue}"]`);
+                if (noneCb) {
+                    noneCb.checked = false;
+                    noneCb.closest('.check-card')?.classList.remove('checked');
+                }
+            }
+        });
     }
 
     function renderRadioGroup(containerId, options, groupName, colorSwatch) {
@@ -1264,6 +1290,8 @@
         renderCheckGroup('m3-conditions', MEDICAL_CONDITIONS, 'medical-checkbox');
         renderCheckGroup('m4-blood-thinners', BLOOD_THINNERS, 'blood-thinner-checkbox');
         renderCheckGroup('m4-allergies', ALLERGY_OPTIONS, 'allergy-checkbox');
+        enforceNoneExclusivity('blood-thinner-checkbox', 'none_blood_thinners');
+        enforceNoneExclusivity('allergy-checkbox', 'none_allergies');
         renderCheckGroup('m5-facial', SURGICAL_FACIAL, 'surgical-facial-checkbox');
         renderCheckGroup('m5-general', SURGICAL_GENERAL, 'surgical-general-checkbox');
         renderAestheticCategories();
