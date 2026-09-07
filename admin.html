@@ -252,11 +252,23 @@
                     <details class="border border-[#EDE1E7] rounded-lg">
                         <summary class="px-3 py-2 text-[9px] uppercase font-bold text-[#B76E88] cursor-pointer">Contacto de Emergencia y Dirección</summary>
                         <div class="p-3 pt-1 space-y-3">
-                            <input type="text" id="adm-address" placeholder="Dirección física" style="padding:8px;font-size:12px;width:100%;border:1px solid #EDE1E7;border-radius:8px;background:#fff;outline-color:#B76E88;">
+                            <div class="space-y-2">
+                                <input type="text" id="adm-addr1" placeholder="Dirección 1" style="padding:8px;font-size:12px;width:100%;border:1px solid #EDE1E7;border-radius:8px;background:#fff;outline-color:#B76E88;">
+                                <input type="text" id="adm-addr2" placeholder="Dirección 2" style="padding:8px;font-size:12px;width:100%;border:1px solid #EDE1E7;border-radius:8px;background:#fff;outline-color:#B76E88;">
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                                    <input type="text" id="adm-city" placeholder="Ciudad" style="padding:8px;font-size:12px;width:100%;border:1px solid #EDE1E7;border-radius:8px;background:#fff;outline-color:#B76E88;">
+                                    <select id="adm-state" style="padding:8px;font-size:12px;width:100%;border:1px solid #EDE1E7;border-radius:8px;background:#fff;outline-color:#B76E88;"></select>
+                                    <input type="text" id="adm-zip" placeholder="Código Postal" style="padding:8px;font-size:12px;width:100%;border:1px solid #EDE1E7;border-radius:8px;background:#fff;outline-color:#B76E88;">
+                                </div>
+                                <p id="adm-address-legacy" class="hidden text-[10px] opacity-40 italic"></p>
+                            </div>
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
                                 <input type="text" id="adm-ec-name" placeholder="Nombre" style="padding:8px;font-size:12px;width:100%;border:1px solid #EDE1E7;border-radius:8px;background:#fff;outline-color:#B76E88;">
                                 <input type="text" id="adm-ec-relationship" placeholder="Relación" style="padding:8px;font-size:12px;width:100%;border:1px solid #EDE1E7;border-radius:8px;background:#fff;outline-color:#B76E88;">
-                                <input type="tel" id="adm-ec-phone" placeholder="Teléfono" style="padding:8px;font-size:12px;width:100%;border:1px solid #EDE1E7;border-radius:8px;background:#fff;outline-color:#B76E88;">
+                                <div class="flex gap-1">
+                                    <select id="adm-ec-phone-country" style="flex:0 0 4.5rem;padding:8px;font-size:11px;border:1px solid #EDE1E7;border-radius:8px;background:#fff;outline-color:#B76E88;"></select>
+                                    <input type="tel" id="adm-ec-phone-number" placeholder="Teléfono" style="flex:1;min-width:0;padding:8px;font-size:12px;border:1px solid #EDE1E7;border-radius:8px;background:#fff;outline-color:#B76E88;">
+                                </div>
                             </div>
                             <div>
                                 <label class="text-[9px] uppercase font-bold opacity-40 mb-1 block">¿Embarazada / Lactando / Buscando concebir?</label>
@@ -1678,6 +1690,40 @@
         // --- ADMISSION HISTORY ---
         // Mismos códigos que usa intake.html, para que los datos que llena el paciente
         // y los que edita el admin usen exactamente el mismo vocabulario.
+        const ADM_US_STATES = [
+            { code: 'AL', label: 'Alabama' }, { code: 'AK', label: 'Alaska' }, { code: 'AZ', label: 'Arizona' },
+            { code: 'AR', label: 'Arkansas' }, { code: 'CA', label: 'California' }, { code: 'CO', label: 'Colorado' },
+            { code: 'CT', label: 'Connecticut' }, { code: 'DE', label: 'Delaware' }, { code: 'DC', label: 'Distrito de Columbia' },
+            { code: 'FL', label: 'Florida' }, { code: 'GA', label: 'Georgia' }, { code: 'HI', label: 'Hawái' },
+            { code: 'ID', label: 'Idaho' }, { code: 'IL', label: 'Illinois' }, { code: 'IN', label: 'Indiana' },
+            { code: 'IA', label: 'Iowa' }, { code: 'KS', label: 'Kansas' }, { code: 'KY', label: 'Kentucky' },
+            { code: 'LA', label: 'Luisiana' }, { code: 'ME', label: 'Maine' }, { code: 'MD', label: 'Maryland' },
+            { code: 'MA', label: 'Massachusetts' }, { code: 'MI', label: 'Míchigan' }, { code: 'MN', label: 'Minnesota' },
+            { code: 'MS', label: 'Misisipi' }, { code: 'MO', label: 'Misuri' }, { code: 'MT', label: 'Montana' },
+            { code: 'NE', label: 'Nebraska' }, { code: 'NV', label: 'Nevada' }, { code: 'NH', label: 'New Hampshire' },
+            { code: 'NJ', label: 'Nueva Jersey' }, { code: 'NM', label: 'Nuevo México' }, { code: 'NY', label: 'Nueva York' },
+            { code: 'NC', label: 'Carolina del Norte' }, { code: 'ND', label: 'Dakota del Norte' }, { code: 'OH', label: 'Ohio' },
+            { code: 'OK', label: 'Oklahoma' }, { code: 'OR', label: 'Oregón' }, { code: 'PA', label: 'Pensilvania' },
+            { code: 'RI', label: 'Rhode Island' }, { code: 'SC', label: 'Carolina del Sur' }, { code: 'SD', label: 'Dakota del Sur' },
+            { code: 'TN', label: 'Tennessee' }, { code: 'TX', label: 'Texas' }, { code: 'UT', label: 'Utah' },
+            { code: 'VT', label: 'Vermont' }, { code: 'VA', label: 'Virginia' }, { code: 'WA', label: 'Washington' },
+            { code: 'WV', label: 'Virginia Occidental' }, { code: 'WI', label: 'Wisconsin' }, { code: 'WY', label: 'Wyoming' },
+            { code: 'PR', label: 'Puerto Rico' }, { code: 'GU', label: 'Guam' }, { code: 'VI', label: 'Islas Vírgenes de EE. UU.' },
+            { code: 'AS', label: 'Samoa Americana' }, { code: 'MP', label: 'Islas Marianas del Norte' },
+        ];
+        const ADM_COUNTRY_CODES = [
+            { dial: '+1', label: 'Estados Unidos' }, { dial: '+1', label: 'Canadá' }, { dial: '+52', label: 'México' },
+            { dial: '+502', label: 'Guatemala' }, { dial: '+501', label: 'Belice' }, { dial: '+503', label: 'El Salvador' },
+            { dial: '+504', label: 'Honduras' }, { dial: '+505', label: 'Nicaragua' }, { dial: '+506', label: 'Costa Rica' },
+            { dial: '+507', label: 'Panamá' }, { dial: '+53', label: 'Cuba' }, { dial: '+1', label: 'República Dominicana' },
+            { dial: '+1', label: 'Puerto Rico' }, { dial: '+509', label: 'Haití' }, { dial: '+57', label: 'Colombia' },
+            { dial: '+58', label: 'Venezuela' }, { dial: '+593', label: 'Ecuador' }, { dial: '+51', label: 'Perú' },
+            { dial: '+591', label: 'Bolivia' }, { dial: '+595', label: 'Paraguay' }, { dial: '+56', label: 'Chile' },
+            { dial: '+54', label: 'Argentina' }, { dial: '+598', label: 'Uruguay' }, { dial: '+55', label: 'Brasil' },
+            { dial: '+34', label: 'España' }, { dial: '+351', label: 'Portugal' }, { dial: '+33', label: 'Francia' },
+            { dial: '+39', label: 'Italia' }, { dial: '+49', label: 'Alemania' }, { dial: '+44', label: 'Reino Unido' },
+        ];
+
         const ADM_CONCERN_OPTIONS = [
             { id: 'fine_lines_wrinkles', label: 'Líneas Finas y Arrugas' },
             { id: 'volume_loss', label: 'Pérdida de Volumen Facial' },
@@ -1771,6 +1817,18 @@
             renderAdmCheckboxList('adm-allergies-list', ADM_ALLERGY_OPTIONS, 'adm-allergy');
             renderAdmCheckboxList('adm-surgical-facial-list', ADM_SURGICAL_FACIAL, 'adm-surgical-facial');
             renderAdmCheckboxList('adm-surgical-general-list', ADM_SURGICAL_GENERAL, 'adm-surgical-general');
+
+            const stateSelect = document.getElementById('adm-state');
+            if (stateSelect && !stateSelect.dataset.populated) {
+                stateSelect.innerHTML = '<option value="">Estado...</option>' + ADM_US_STATES.map(s => `<option value="${s.code}">${escapeHtml(s.label)}</option>`).join('');
+                stateSelect.dataset.populated = 'true';
+            }
+            const ecCountrySelect = document.getElementById('adm-ec-phone-country');
+            if (ecCountrySelect && !ecCountrySelect.dataset.populated) {
+                ecCountrySelect.innerHTML = ADM_COUNTRY_CODES.map(c => `<option value="${c.dial}">${escapeHtml(c.label)}</option>`).join('');
+                ecCountrySelect.value = '+1';
+                ecCountrySelect.dataset.populated = 'true';
+            }
         }
 
         function addAdmOtherRow(containerId, value = '') {
@@ -1882,9 +1940,11 @@
             ['adm-fitzpatrick','adm-glogau','adm-skin-type','adm-merz','adm-merz-nasolabial','adm-merz-marionette','adm-merz-midface','adm-merz-brow','adm-pregnancy'].forEach(id => {
                 const el = document.getElementById(id); if (el) el.value = '';
             });
-            ['adm-scars','adm-personal-history','adm-address','adm-ec-name','adm-ec-relationship','adm-ec-phone','adm-event-date'].forEach(id => {
+            ['adm-scars','adm-personal-history','adm-addr1','adm-addr2','adm-city','adm-state','adm-zip','adm-ec-name','adm-ec-relationship','adm-ec-phone-number','adm-event-date'].forEach(id => {
                 const el = document.getElementById(id); if (el) el.value = '';
             });
+            { const ecCountry = document.getElementById('adm-ec-phone-country'); if (ecCountry) ecCountry.value = '+1'; }
+            { const legacy = document.getElementById('adm-address-legacy'); if (legacy) { legacy.classList.add('hidden'); legacy.innerText = ''; } }
             ['adm-isotretinoin','adm-topical-retinoid','adm-photo-antibiotics'].forEach(id => {
                 const el = document.getElementById(id); if (el) el.checked = false;
             });
@@ -1916,10 +1976,19 @@
             set('adm-merz-brow', data.merz_brow);
             set('adm-scars', data.scars_spots);
             set('adm-personal-history', data.personal_history);
-            set('adm-address', data.address);
+            set('adm-addr1', data.address_line1);
+            set('adm-addr2', data.address_line2);
+            set('adm-city', data.city);
+            set('adm-state', data.state);
+            set('adm-zip', data.zip);
+            if (!data.address_line1 && data.address) {
+                const legacy = document.getElementById('adm-address-legacy');
+                if (legacy) { legacy.innerText = 'Dirección (formato antiguo): ' + data.address; legacy.classList.remove('hidden'); }
+            }
             set('adm-ec-name', data.emergency_contact_name);
             set('adm-ec-relationship', data.emergency_contact_relationship);
-            set('adm-ec-phone', data.emergency_contact_phone);
+            { const ecCountry = document.getElementById('adm-ec-phone-country'); if (ecCountry) ecCountry.value = data.emergency_contact_phone_country_code || '+1'; }
+            set('adm-ec-phone-number', data.emergency_contact_phone);
             set('adm-pregnancy', data.pregnancy_or_nursing);
             set('adm-event-date', data.upcoming_event_date);
 
@@ -1976,10 +2045,15 @@
                 merz_brow:             document.getElementById('adm-merz-brow').value || null,
                 scars_spots:           document.getElementById('adm-scars').value.trim() || null,
                 personal_history:      document.getElementById('adm-personal-history').value.trim() || null,
-                address:               document.getElementById('adm-address').value.trim() || null,
+                address_line1:         document.getElementById('adm-addr1').value.trim() || null,
+                address_line2:         document.getElementById('adm-addr2').value.trim() || null,
+                city:                  document.getElementById('adm-city').value.trim() || null,
+                state:                 document.getElementById('adm-state').value || null,
+                zip:                   document.getElementById('adm-zip').value.trim() || null,
                 emergency_contact_name: document.getElementById('adm-ec-name').value.trim() || null,
                 emergency_contact_relationship: document.getElementById('adm-ec-relationship').value.trim() || null,
-                emergency_contact_phone: document.getElementById('adm-ec-phone').value.trim() || null,
+                emergency_contact_phone_country_code: document.getElementById('adm-ec-phone-country').value || '+1',
+                emergency_contact_phone: document.getElementById('adm-ec-phone-number').value.trim() || null,
                 pregnancy_or_nursing:  document.getElementById('adm-pregnancy').value || null,
                 upcoming_event_date:   document.getElementById('adm-event-date').value || null,
 
