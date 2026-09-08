@@ -188,13 +188,18 @@
                         </div>
                         <div>
                             <label class="text-[9px] uppercase font-bold opacity-40 mb-1 block">Glogau</label>
-                            <select id="adm-glogau" style="padding:8px;font-size:12px;width:100%;border:1px solid #EDE1E7;border-radius:8px;background:#fff;outline-color:#B76E88;">
-                                <option value="">—</option>
-                                <option value="I">I · Mild</option>
-                                <option value="II">II · Moderate</option>
-                                <option value="III">III · Advanced</option>
-                                <option value="IV">IV · Severe</option>
-                            </select>
+                            <div class="flex items-start gap-2">
+                                <select id="adm-glogau" onchange="updateAdmGlogauImage()" style="padding:8px;font-size:12px;width:100%;border:1px solid #EDE1E7;border-radius:8px;background:#fff;outline-color:#B76E88;">
+                                    <option value="">—</option>
+                                    <option value="I">I · Mild</option>
+                                    <option value="II">II · Moderate</option>
+                                    <option value="III">III · Advanced</option>
+                                    <option value="IV">IV · Severe</option>
+                                </select>
+                                <div id="adm-glogau-image-container" class="hidden border border-[#EDE1E7] rounded-lg overflow-hidden flex-shrink-0" style="width:60px;height:74px;">
+                                    <img id="adm-glogau-image" src="" alt="Glogau" style="width:100%;height:100%;object-fit:contain;">
+                                </div>
+                            </div>
                         </div>
                         <div>
                             <label class="text-[9px] uppercase font-bold opacity-40 mb-1 block">Tipo de Piel</label>
@@ -220,28 +225,53 @@
                         </div>
                     </div>
 
-                    <!-- Escalas Merz por sub-área -->
+                    <!-- Escalas Merz por sub-área (2026+: exactamente 4 escalas fijas, con imagen de referencia) -->
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                         <div>
-                            <label class="text-[9px] uppercase font-bold opacity-40 mb-1 block">Merz · Surco Nasogeniano</label>
+                            <label class="text-[9px] uppercase font-bold opacity-40 mb-1 block">Merz · Frente y Entrecejo</label>
+                            <select id="adm-merz-forehead-glabella" style="padding:8px;font-size:12px;width:100%;border:1px solid #EDE1E7;border-radius:8px;background:#fff;outline-color:#B76E88;">
+                                <option value="">—</option><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+                            </select>
+                            <div class="overflow-x-auto mt-1 border border-[#EDE1E7] rounded"><img src="images/merzfrenteyentrecejo.png" alt="Frente y Entrecejo" style="min-width:280px;height:auto;"></div>
+                        </div>
+                        <div>
+                            <label class="text-[9px] uppercase font-bold opacity-40 mb-1 block">Merz · Ojeras</label>
+                            <select id="adm-merz-under-eye" style="padding:8px;font-size:12px;width:100%;border:1px solid #EDE1E7;border-radius:8px;background:#fff;outline-color:#B76E88;">
+                                <option value="">—</option><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+                            </select>
+                            <div class="overflow-x-auto mt-1 border border-[#EDE1E7] rounded"><img src="images/merzojera.png" alt="Ojeras" style="min-width:280px;height:auto;"></div>
+                        </div>
+                        <div>
+                            <label class="text-[9px] uppercase font-bold opacity-40 mb-1 block">Merz · Pliegues Nasolabiales</label>
                             <select id="adm-merz-nasolabial" style="padding:8px;font-size:12px;width:100%;border:1px solid #EDE1E7;border-radius:8px;background:#fff;outline-color:#B76E88;">
                                 <option value="">—</option><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
                             </select>
+                            <div class="overflow-x-auto mt-1 border border-[#EDE1E7] rounded"><img src="images/merznasolabial.png" alt="Nasolabial" style="min-width:280px;height:auto;"></div>
                         </div>
                         <div>
-                            <label class="text-[9px] uppercase font-bold opacity-40 mb-1 block">Merz · Líneas de Marioneta</label>
+                            <label class="text-[9px] uppercase font-bold opacity-40 mb-1 block">Merz · Manos</label>
+                            <select id="adm-merz-hands" style="padding:8px;font-size:12px;width:100%;border:1px solid #EDE1E7;border-radius:8px;background:#fff;outline-color:#B76E88;">
+                                <option value="">—</option><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+                            </select>
+                            <div class="overflow-x-auto mt-1 border border-[#EDE1E7] rounded"><img src="images/merzmanos.png" alt="Manos" style="min-width:280px;height:auto;"></div>
+                        </div>
+                    </div>
+                    <!-- Escalas Merz legado (ya no se le piden al paciente; solo visibles/editables para registros previos al rediseño) -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div>
+                            <label class="text-[9px] uppercase font-bold opacity-30 mb-1 block">Merz · Líneas de Marioneta (legado)</label>
                             <select id="adm-merz-marionette" style="padding:8px;font-size:12px;width:100%;border:1px solid #EDE1E7;border-radius:8px;background:#fff;outline-color:#B76E88;">
                                 <option value="">—</option><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
                             </select>
                         </div>
                         <div>
-                            <label class="text-[9px] uppercase font-bold opacity-40 mb-1 block">Merz · Volumen Tercio Medio</label>
+                            <label class="text-[9px] uppercase font-bold opacity-30 mb-1 block">Merz · Volumen Tercio Medio (legado)</label>
                             <select id="adm-merz-midface" style="padding:8px;font-size:12px;width:100%;border:1px solid #EDE1E7;border-radius:8px;background:#fff;outline-color:#B76E88;">
                                 <option value="">—</option><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
                             </select>
                         </div>
                         <div>
-                            <label class="text-[9px] uppercase font-bold opacity-40 mb-1 block">Merz · Cejas / Frente</label>
+                            <label class="text-[9px] uppercase font-bold opacity-30 mb-1 block">Merz · Cejas / Frente (legado)</label>
                             <select id="adm-merz-brow" style="padding:8px;font-size:12px;width:100%;border:1px solid #EDE1E7;border-radius:8px;background:#fff;outline-color:#B76E88;">
                                 <option value="">—</option><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
                             </select>
@@ -684,6 +714,7 @@
 
         let currentPatientId = null;
         let currentPatientClinic = [];
+        let currentPatientSex = null;
         let currentAdmissionId = null;
         let notesById = {};
         let admissionDirty = false;
@@ -1280,11 +1311,12 @@
             // Load clinic affiliation for this patient
             const { data: profileData } = await _supabase
                 .from('profiles')
-                .select('clinic_affiliation')
+                .select('clinic_affiliation, sex')
                 .eq('id', patientId)
                 .single();
 
             currentPatientClinic = Array.isArray(profileData?.clinic_affiliation) ? profileData.clinic_affiliation : [];
+            currentPatientSex = profileData?.sex || null;
             const cbFs = document.getElementById('clinic-fs');
             const cbViva = document.getElementById('clinic-viva');
             if (cbFs) cbFs.checked = currentPatientClinic.includes('fs');
@@ -1728,6 +1760,24 @@
             { dial: '+39', label: 'Italia' }, { dial: '+49', label: 'Alemania' }, { dial: '+44', label: 'Reino Unido' },
         ];
 
+        const ADM_GLOGAU_NUM = { I: 1, II: 2, III: 3, IV: 4 };
+        function getAdmGlogauImageFilename(glogauId, sex) {
+            const num = ADM_GLOGAU_NUM[glogauId];
+            if (!num) return null;
+            const genderSuffix = String(sex || '').toLowerCase().startsWith('f') ? 'm' : 'h';
+            return `images/g${num}${genderSuffix}.png`;
+        }
+        function updateAdmGlogauImage() {
+            const glogauId = document.getElementById('adm-glogau').value;
+            const container = document.getElementById('adm-glogau-image-container');
+            const img = document.getElementById('adm-glogau-image');
+            if (!container || !img) return;
+            const filename = glogauId ? getAdmGlogauImageFilename(glogauId, currentPatientSex) : null;
+            if (!filename) { container.classList.add('hidden'); return; }
+            img.src = filename;
+            container.classList.remove('hidden');
+        }
+
         const ADM_CONCERN_OPTIONS = [
             { id: 'fine_lines_wrinkles', label: 'Líneas Finas y Arrugas' },
             { id: 'volume_loss', label: 'Pérdida de Volumen Facial' },
@@ -2006,9 +2056,10 @@
         async function loadAdmissionHistory(patientId) {
             currentAdmissionId = null;
             // Reset fields
-            ['adm-fitzpatrick','adm-glogau','adm-skin-type','adm-merz','adm-merz-nasolabial','adm-merz-marionette','adm-merz-midface','adm-merz-brow','adm-pregnancy'].forEach(id => {
+            ['adm-fitzpatrick','adm-glogau','adm-skin-type','adm-merz','adm-merz-forehead-glabella','adm-merz-under-eye','adm-merz-nasolabial','adm-merz-hands','adm-merz-marionette','adm-merz-midface','adm-merz-brow','adm-pregnancy'].forEach(id => {
                 const el = document.getElementById(id); if (el) el.value = '';
             });
+            updateAdmGlogauImage();
             ['adm-scars','adm-personal-history','adm-addr1','adm-addr2','adm-city','adm-state','adm-zip','adm-ec-name','adm-ec-relationship','adm-ec-phone-number','adm-event-flag'].forEach(id => {
                 const el = document.getElementById(id); if (el) el.value = '';
             });
@@ -2038,9 +2089,13 @@
             const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
             set('adm-fitzpatrick', data.fitzpatrick);
             set('adm-glogau', data.glogau);
+            updateAdmGlogauImage();
             set('adm-skin-type', data.skin_type);
             set('adm-merz', data.merz_scale);
+            set('adm-merz-forehead-glabella', data.merz_forehead_glabella);
+            set('adm-merz-under-eye', data.merz_under_eye);
             set('adm-merz-nasolabial', data.merz_nasolabial);
+            set('adm-merz-hands', data.merz_hands);
             set('adm-merz-marionette', data.merz_marionette);
             set('adm-merz-midface', data.merz_midface);
             set('adm-merz-brow', data.merz_brow);
@@ -2117,7 +2172,10 @@
                 glogau:                document.getElementById('adm-glogau').value || null,
                 skin_type:             document.getElementById('adm-skin-type').value || null,
                 merz_scale:            document.getElementById('adm-merz').value || null,
+                merz_forehead_glabella: document.getElementById('adm-merz-forehead-glabella').value || null,
+                merz_under_eye:        document.getElementById('adm-merz-under-eye').value || null,
                 merz_nasolabial:       document.getElementById('adm-merz-nasolabial').value || null,
+                merz_hands:            document.getElementById('adm-merz-hands').value || null,
                 merz_marionette:       document.getElementById('adm-merz-marionette').value || null,
                 merz_midface:          document.getElementById('adm-merz-midface').value || null,
                 merz_brow:             document.getElementById('adm-merz-brow').value || null,
