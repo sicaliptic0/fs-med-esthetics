@@ -2086,7 +2086,9 @@
             if (!data) return;
             currentAdmissionId = data.id;
 
-            const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+            // val === 0 is a real, valid Merz score ("No Alteration") — must not be
+            // coerced away by `val || ''` like a truly empty value would be.
+            const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = (val === null || val === undefined) ? '' : val; };
             set('adm-fitzpatrick', data.fitzpatrick);
             set('adm-glogau', data.glogau);
             updateAdmGlogauImage();
