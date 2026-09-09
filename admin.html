@@ -34,6 +34,7 @@
         .photo-thumb { width: 82px; height: 82px; object-fit: cover; border-radius: 10px; border: 1px solid #EDE1E7; cursor: pointer; }
         .clinic-badge-fs { background-color: #EDE1E7; color: #2A2330; font-size: 8px; padding: 2px 8px; border-radius: 99px; font-weight: bold; text-transform: uppercase; }
         .clinic-badge-viva { background-color: #E0F0EA; color: #065F46; font-size: 8px; padding: 2px 8px; border-radius: 99px; font-weight: bold; text-transform: uppercase; }
+        .clinic-badge-divine { background-color: #EDE9FE; color: #5B21B6; font-size: 8px; padding: 2px 8px; border-radius: 99px; font-weight: bold; text-transform: uppercase; }
         /* History modal display toggle — avoids md:flex vs hidden conflict */
         #history-modal { display: none; }
         #history-modal.modal-open { display: block; }
@@ -92,10 +93,11 @@
                     <table class="w-full text-left min-w-[600px]">
                         <thead class="bg-gray-50 text-[10px] uppercase tracking-widest opacity-60">
                             <tr>
-                                <th class="p-6">Patient Name</th>
-                                <th class="p-6">Age</th>
+                                <th class="p-6 cursor-pointer select-none hover:text-[#B76E88]" onclick="sortPatients('name')">Patient Name <span class="sort-icon" data-key="name"></span></th>
+                                <th class="p-6 cursor-pointer select-none hover:text-[#B76E88]" onclick="sortPatients('age')">Age <span class="sort-icon" data-key="age"></span></th>
                                 <th class="p-6 col-desktop">Email</th>
                                 <th class="p-6 col-desktop">Phone</th>
+                                <th class="p-6 cursor-pointer select-none hover:text-[#B76E88]" onclick="sortPatients('visit')">Fecha de Atención <span class="sort-icon" data-key="visit"></span></th>
                                 <th class="p-6">Clinic</th>
                                 <th class="p-6">Actions</th>
                             </tr>
@@ -213,11 +215,15 @@
                 <span class="text-[9px] uppercase tracking-widest text-[#B76E88] font-bold">Clinic:</span>
                 <label class="flex items-center gap-2 cursor-pointer text-sm">
                     <input type="checkbox" id="clinic-fs" onchange="saveClinicAffiliation()" class="accent-[#B76E88]">
-                    FS Med-Esthetics
+                    Piel SPA
                 </label>
                 <label class="flex items-center gap-2 cursor-pointer text-sm">
                     <input type="checkbox" id="clinic-viva" onchange="saveClinicAffiliation()" class="accent-[#065F46]">
                     Viva Skin
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer text-sm">
+                    <input type="checkbox" id="clinic-divine" onchange="saveClinicAffiliation()" class="accent-[#7C3AED]">
+                    Divine Bliss
                 </label>
             </div>
 
@@ -617,11 +623,15 @@
                     <div class="flex items-center gap-6 flex-wrap">
                         <label class="flex items-center gap-2 cursor-pointer text-sm">
                             <input type="checkbox" id="np-clinic-fs" class="accent-[#B76E88]">
-                            FS Med-Esthetics
+                            Piel SPA
                         </label>
                         <label class="flex items-center gap-2 cursor-pointer text-sm">
                             <input type="checkbox" id="np-clinic-viva" class="accent-[#065F46]">
                             Viva Skin
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer text-sm">
+                            <input type="checkbox" id="np-clinic-divine" class="accent-[#7C3AED]">
+                            Divine Bliss
                         </label>
                     </div>
                 </div>
@@ -688,11 +698,15 @@
                     <div class="flex items-center gap-6 flex-wrap">
                         <label class="flex items-center gap-2 cursor-pointer text-sm">
                             <input type="checkbox" id="ep-clinic-fs" class="accent-[#B76E88]">
-                            FS Med-Esthetics
+                            Piel SPA
                         </label>
                         <label class="flex items-center gap-2 cursor-pointer text-sm">
                             <input type="checkbox" id="ep-clinic-viva" class="accent-[#065F46]">
                             Viva Skin
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer text-sm">
+                            <input type="checkbox" id="ep-clinic-divine" class="accent-[#7C3AED]">
+                            Divine Bliss
                         </label>
                     </div>
                 </div>
@@ -1183,10 +1197,30 @@
         }
 
         // --- PATIENT FETCHING ---
+        // Patient list state: fetched once, then sorted/re-rendered client-side
+        // (Supabase's JS client has no easy GROUP BY MAX() for "last attended
+        // date," so it's computed here from a lightweight clinical_history
+        // fetch instead of a per-patient round trip).
+        let allPatients = [];
+        let patientSortKey = 'registered';
+        let patientSortDir = 'asc';
+
         async function fetchPatients() {
-            const { data, error } = await _supabase.from('profiles').select('id, first_name, last_name, dob, sex, phone, email, clinic_affiliation').order('last_name');
+            const { data, error } = await _supabase.from('profiles').select('id, first_name, last_name, dob, sex, phone, email, clinic_affiliation, created_at');
             if (error) { console.error("Fetch Patients Error:", error); return; }
-            renderPatientTable(data || []);
+
+            const { data: encounters, error: encError } = await _supabase
+                .from('clinical_history')
+                .select('patient_id, visit_date')
+                .order('visit_date', { ascending: false });
+            if (encError) console.error('Fetch encounters for patient list error:', encError.message);
+            const lastVisitByPatient = {};
+            (encounters || []).forEach(e => {
+                if (e.patient_id && !lastVisitByPatient[e.patient_id]) lastVisitByPatient[e.patient_id] = e.visit_date;
+            });
+
+            allPatients = (data || []).map(p => ({ ...p, last_visit_date: lastVisitByPatient[p.id] || null }));
+            renderSortedPatients();
 
             const select = document.getElementById('admin-book-patient');
             if (select) {
@@ -1197,7 +1231,7 @@
                     return merged || 'Patient';
                 };
                 select.innerHTML = '<option value="">Select Patient...</option>' +
-                    data.map(p => `<option value="${p.id}">${fullName(p)}</option>`).join('');
+                    allPatients.map(p => `<option value="${p.id}">${fullName(p)}</option>`).join('');
             }
         }
 
@@ -1211,12 +1245,70 @@
             return age >= 0 ? age + ' yrs' : '-';
         }
 
+        function calcAgeYears(dob) {
+            if (!dob) return null;
+            const today = new Date();
+            const birth = new Date(dob);
+            let age = today.getFullYear() - birth.getFullYear();
+            const m = today.getMonth() - birth.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+            return age >= 0 ? age : null;
+        }
+
+        function formatVisitDate(dateStr) {
+            if (!dateStr) return '—';
+            const d = new Date(dateStr + 'T00:00:00');
+            if (Number.isNaN(d.getTime())) return dateStr;
+            return d.toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+
+        // Clicking a column header toggles asc/desc if it's already the active
+        // column, otherwise switches to that column starting ascending.
+        function sortPatients(key) {
+            if (patientSortKey === key) {
+                patientSortDir = patientSortDir === 'asc' ? 'desc' : 'asc';
+            } else {
+                patientSortKey = key;
+                patientSortDir = 'asc';
+            }
+            renderSortedPatients();
+        }
+
+        function renderSortedPatients() {
+            const dir = patientSortDir === 'asc' ? 1 : -1;
+            const missingLast = dir === 1 ? Infinity : -Infinity; // patients missing the sorted field always sink to the end, regardless of direction
+            const sorted = [...allPatients].sort((a, b) => {
+                let va, vb;
+                if (patientSortKey === 'name') {
+                    va = `${a.last_name || ''} ${a.first_name || ''}`.trim().toLowerCase();
+                    vb = `${b.last_name || ''} ${b.first_name || ''}`.trim().toLowerCase();
+                } else if (patientSortKey === 'age') {
+                    va = calcAgeYears(a.dob); va = va === null ? missingLast : va;
+                    vb = calcAgeYears(b.dob); vb = vb === null ? missingLast : vb;
+                } else if (patientSortKey === 'visit') {
+                    va = a.last_visit_date ? new Date(a.last_visit_date).getTime() : missingLast;
+                    vb = b.last_visit_date ? new Date(b.last_visit_date).getTime() : missingLast;
+                } else { // 'registered' — the order patients signed up, oldest first by default
+                    va = a.created_at ? new Date(a.created_at).getTime() : missingLast;
+                    vb = b.created_at ? new Date(b.created_at).getTime() : missingLast;
+                }
+                if (va < vb) return -1 * dir;
+                if (va > vb) return 1 * dir;
+                return 0;
+            });
+            renderPatientTable(sorted);
+            document.querySelectorAll('.sort-icon').forEach(el => {
+                el.innerText = el.dataset.key === patientSortKey ? (patientSortDir === 'asc' ? '▲' : '▼') : '';
+            });
+        }
+
         function renderPatientTable(patients) {
             document.getElementById('patient-table-body').innerHTML = patients.map(p => {
                 const clinicAff = Array.isArray(p.clinic_affiliation) ? p.clinic_affiliation : [];
                 let clinicBadges = '';
-                if (clinicAff.includes('fs')) clinicBadges += `<span class="clinic-badge-fs">FS Med</span> `;
-                if (clinicAff.includes('viva')) clinicBadges += `<span class="clinic-badge-viva">Viva Skin</span>`;
+                if (clinicAff.includes('fs')) clinicBadges += `<span class="clinic-badge-fs">Piel SPA</span> `;
+                if (clinicAff.includes('viva')) clinicBadges += `<span class="clinic-badge-viva">Viva Skin</span> `;
+                if (clinicAff.includes('divine')) clinicBadges += `<span class="clinic-badge-divine">Divine Bliss</span>`;
                 if (!clinicBadges) clinicBadges = `<span class="opacity-30 text-xs">—</span>`;
 
                 return `
@@ -1225,6 +1317,7 @@
                     <td class="p-6 text-xs">${calcAge(p.dob)}</td>
                     <td class="p-6 text-xs col-desktop">${escapeHtml(p.email || '-')}</td>
                     <td class="p-6 text-xs col-desktop">${escapeHtml(p.phone || '-')}</td>
+                    <td class="p-6 text-xs">${formatVisitDate(p.last_visit_date)}</td>
                     <td class="p-6 text-xs">${clinicBadges}</td>
                     <td class="p-6">
                         <div class="flex items-center gap-3 flex-wrap">
@@ -1449,6 +1542,7 @@
                 alert('Recomendación(es) enviada(s) al paciente.');
             }
             closeSendRecommendationModal();
+            loadNotes();
         }
 
         // --- APPOINTMENTS FETCHING ---
@@ -1607,8 +1701,10 @@
             currentPatientSex = profileData?.sex || null;
             const cbFs = document.getElementById('clinic-fs');
             const cbViva = document.getElementById('clinic-viva');
+            const cbDivine = document.getElementById('clinic-divine');
             if (cbFs) cbFs.checked = currentPatientClinic.includes('fs');
             if (cbViva) cbViva.checked = currentPatientClinic.includes('viva');
+            if (cbDivine) cbDivine.checked = currentPatientClinic.includes('divine');
 
             // Collapse admission section on open (collapsed by default)
             const admSection = document.getElementById('admission-section');
@@ -1625,9 +1721,11 @@
             if (!currentPatientId) return;
             const fsChecked = document.getElementById('clinic-fs')?.checked;
             const vivaChecked = document.getElementById('clinic-viva')?.checked;
+            const divineChecked = document.getElementById('clinic-divine')?.checked;
             const affiliation = [];
             if (fsChecked) affiliation.push('fs');
             if (vivaChecked) affiliation.push('viva');
+            if (divineChecked) affiliation.push('divine');
             currentPatientClinic = affiliation;
             const { error } = await _supabase
                 .from('profiles')
@@ -1730,6 +1828,22 @@
                 if (n && n.id) notesById[n.id] = n;
             });
 
+            // Sent-recommendations log, grouped by the encounter they were sent
+            // from — shown inline on each encounter card so it's obvious at a
+            // glance what's already been sent, and when.
+            const { data: sentMessages, error: messagesError } = await _supabase
+                .from('patient_messages')
+                .select('id, subject, created_at, encounter_id')
+                .eq('patient_id', currentPatientId)
+                .order('created_at', { ascending: false });
+            if (messagesError) console.error('Load sent messages error:', messagesError.message);
+            const messagesByEncounter = {};
+            (sentMessages || []).forEach(m => {
+                if (!m.encounter_id) return;
+                if (!messagesByEncounter[m.encounter_id]) messagesByEncounter[m.encounter_id] = [];
+                messagesByEncounter[m.encounter_id].push(m);
+            });
+
             container.innerHTML = data.map(n => `
                 <div class="p-6 bg-white border border-[#EDE1E7] rounded-xl shadow-sm relative group hover:border-[#B76E88] transition-colors">
                     <div class="flex justify-between items-start mb-4 border-b border-gray-50 pb-3">
@@ -1763,6 +1877,18 @@
                     })()}
                     ${Array.isArray(n.procedures_realized_ids) && n.procedures_realized_ids.length ? `<div class="mt-5 pt-4 border-t border-gray-50 text-[10px]"><span class="font-bold text-[#B76E88] uppercase tracking-widest text-[8px] mr-2">Procedures:</span> <span class="italic text-gray-500">${escapeHtml(formatTreatmentIds(n.procedures_realized_ids))}</span></div>` : ''}
                     ${n.suggestions ? `<div class="mt-5 pt-4 border-t border-gray-50 text-[10px]"><span class="font-bold text-[#B76E88] uppercase tracking-widest text-[8px] mr-2">Suggestions:</span> <span class="italic text-gray-500">${escapeHtml(n.suggestions)}</span></div>` : ''}
+                    ${(messagesByEncounter[n.id] || []).length ? `
+                        <div class="mt-5 pt-4 border-t border-gray-50 text-[10px]">
+                            <span class="font-bold text-[#B76E88] uppercase tracking-widest text-[8px] block mb-2">✉️ Recomendaciones Enviadas</span>
+                            <div class="space-y-1">
+                                ${messagesByEncounter[n.id].map(m => `
+                                    <div class="flex items-center justify-between gap-3 text-gray-500">
+                                        <span class="italic">${escapeHtml(m.subject || 'Recomendación')}</span>
+                                        <span class="opacity-60 whitespace-nowrap">${new Date(m.created_at).toLocaleString()}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>` : ''}
                 </div>
             `).join('');
         }
@@ -1986,8 +2112,9 @@
             const phone = document.getElementById('np-phone').value.trim() || null;
             const email = document.getElementById('np-email').value.trim() || null;
             const clinicAff = [];
-            if (document.getElementById('np-clinic-fs').checked)   clinicAff.push('fs');
-            if (document.getElementById('np-clinic-viva').checked) clinicAff.push('viva');
+            if (document.getElementById('np-clinic-fs').checked)     clinicAff.push('fs');
+            if (document.getElementById('np-clinic-viva').checked)   clinicAff.push('viva');
+            if (document.getElementById('np-clinic-divine').checked) clinicAff.push('divine');
 
             const newId = crypto.randomUUID();
 
@@ -2776,8 +2903,9 @@
             }
 
             const clinicAff = Array.isArray(p.clinic_affiliation) ? p.clinic_affiliation : [];
-            document.getElementById('ep-clinic-fs').checked   = clinicAff.includes('fs');
-            document.getElementById('ep-clinic-viva').checked = clinicAff.includes('viva');
+            document.getElementById('ep-clinic-fs').checked     = clinicAff.includes('fs');
+            document.getElementById('ep-clinic-viva').checked   = clinicAff.includes('viva');
+            document.getElementById('ep-clinic-divine').checked = clinicAff.includes('divine');
 
             document.getElementById('edit-patient-modal').classList.remove('hidden');
         }
@@ -2801,8 +2929,9 @@
             const phone = document.getElementById('ep-phone').value.trim() || null;
             const email = document.getElementById('ep-email').value.trim() || null;
             const clinicAff = [];
-            if (document.getElementById('ep-clinic-fs').checked)   clinicAff.push('fs');
-            if (document.getElementById('ep-clinic-viva').checked) clinicAff.push('viva');
+            if (document.getElementById('ep-clinic-fs').checked)     clinicAff.push('fs');
+            if (document.getElementById('ep-clinic-viva').checked)   clinicAff.push('viva');
+            if (document.getElementById('ep-clinic-divine').checked) clinicAff.push('divine');
 
             const { error } = await _supabase
                 .from('profiles')

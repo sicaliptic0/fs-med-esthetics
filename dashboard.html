@@ -577,10 +577,6 @@
         }
 
         async function loadMessages() {
-            const listEl = document.getElementById('messages-list');
-            const emptyEl = document.getElementById('messages-empty');
-            if (!listEl || !emptyEl) return;
-
             const { data: { user }, error: authError } = await _supabase.auth.getUser();
             if (authError || !user) return;
 
@@ -591,6 +587,19 @@
                 .order('created_at', { ascending: false });
 
             currentMessages = (!error && data) ? data : [];
+            renderMessagesList();
+        }
+
+        // Re-renders both message surfaces (the full list and the dashboard
+        // landing-page preview) from the current in-memory currentMessages —
+        // shared by loadMessages (after a fresh fetch) and markMessagesRead
+        // (after flipping read_at locally), so the unread highlight/badge
+        // disappears immediately instead of only after a page reload.
+        function renderMessagesList() {
+            const listEl = document.getElementById('messages-list');
+            const emptyEl = document.getElementById('messages-empty');
+            if (!listEl || !emptyEl) return;
+
             updateMessagesUnreadBadge();
             renderRecentMessagesPreview();
 
@@ -660,7 +669,7 @@
             const { error } = await _supabase.from('patient_messages').update({ read_at: nowIso }).in('id', unreadIds);
             if (error) { console.error('Mark messages read error:', error.message); return; }
             currentMessages.forEach(m => { if (!m.read_at) m.read_at = nowIso; });
-            updateMessagesUnreadBadge();
+            renderMessagesList();
         }
 
         window.cancelMyAppointment = async (appointmentId) => {
