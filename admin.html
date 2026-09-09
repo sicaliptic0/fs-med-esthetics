@@ -62,6 +62,7 @@
                 <span>Appointments</span>
                 <span id="pending-badge" class="hidden bg-amber-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full leading-none">0</span>
             </a>
+            <a onclick="switchAdminView('recommendations-view', this)" class="nav-link block px-4 py-3 opacity-60 hover:opacity-100 text-[10px] uppercase tracking-widest">Recommendations</a>
         </nav>
         <button onclick="logout()" class="text-[10px] uppercase tracking-widest opacity-40 hover:opacity-100 transition mt-auto">Logout</button>
     </aside>
@@ -124,7 +125,67 @@
                 </div>
             </div>
         </div>
+
+        <!-- Recommendations View -->
+        <div id="recommendations-view" class="flex-1 overflow-y-auto p-4 md:p-8 hidden">
+            <div class="max-w-5xl mx-auto space-y-6">
+                <div class="flex items-center justify-between">
+                    <p class="text-sm opacity-60 max-w-md">Plantillas reutilizables de recomendaciones. Se envían a un paciente desde su Historia Clínica.</p>
+                    <button onclick="openRecommendationEditor()" class="bg-[#B76E88] text-white px-5 py-2 text-[10px] uppercase tracking-widest font-bold rounded-full shadow-sm hover:bg-[#9C5570] transition flex-shrink-0">+ Nueva Recomendación</button>
+                </div>
+                <div id="recommendations-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                <p id="recommendations-empty" class="hidden text-center text-sm opacity-40 italic py-10">Aún no has creado ninguna recomendación.</p>
+            </div>
+        </div>
     </main>
+
+    <!-- ===== RECOMMENDATION TEMPLATE EDITOR MODAL ===== -->
+    <div id="recommendation-editor-modal" class="fixed inset-0 z-[70] hidden bg-black/40 backdrop-blur-sm items-center justify-center p-4">
+        <div class="bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl p-6 md:p-8">
+            <div class="flex items-center justify-between mb-4">
+                <h3 id="rec-editor-title" class="text-2xl italic">Nueva Recomendación</h3>
+                <button onclick="closeRecommendationEditor()" class="text-2xl opacity-40 hover:opacity-100">&times;</button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="text-[10px] uppercase font-bold opacity-50 mb-1 block">Título</label>
+                    <input type="text" id="rec-editor-input-title" placeholder="Ej: Cuidados post-tratamiento con láser" style="padding:10px;font-size:13px;width:100%;border:1px solid #EDE1E7;border-radius:8px;background:#fff;outline-color:#B76E88;">
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] uppercase font-bold opacity-50 mb-1 block">Texto</label>
+                        <textarea id="rec-editor-input-body" rows="12" oninput="updateRecommendationPreview()" placeholder="Escribe párrafos normales.&#10;&#10;Usa &quot;- &quot; al inicio de cada línea para una lista con viñetas:&#10;- Punto uno&#10;- Punto dos&#10;&#10;Usa &quot;1. &quot; para una lista numerada:&#10;1. Paso uno&#10;2. Paso dos" style="padding:10px;font-size:13px;width:100%;border:1px solid #EDE1E7;border-radius:8px;background:#fff;outline-color:#B76E88;resize:vertical;font-family:monospace;"></textarea>
+                        <p class="text-[10px] opacity-40 mt-1">Líneas en blanco separan párrafos. "- " = viñetas, "1. " = lista numerada.</p>
+                    </div>
+                    <div>
+                        <label class="text-[10px] uppercase font-bold opacity-50 mb-1 block">Vista Previa</label>
+                        <div class="border border-[#EDE1E7] rounded-lg p-4 bg-[#FDFBFC] text-sm" style="min-height:280px;">
+                            <h4 id="rec-preview-title" class="italic text-[#B76E88] font-bold mb-2">—</h4>
+                            <div id="rec-preview-body" class="leading-relaxed"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between gap-3 pt-2">
+                    <button id="rec-editor-delete-btn" onclick="deleteRecommendationTemplate()" class="hidden text-[10px] uppercase tracking-widest font-bold text-red-500 hover:text-red-700">Eliminar</button>
+                    <button onclick="saveRecommendationTemplate()" class="ml-auto bg-[#2A2330] text-white px-6 py-3 uppercase text-[10px] tracking-widest font-bold hover:bg-[#B76E88] transition rounded-lg">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SEND RECOMMENDATION MODAL (from a patient's History) ===== -->
+    <div id="send-recommendation-modal" class="fixed inset-0 z-[70] hidden bg-black/40 backdrop-blur-sm items-center justify-center p-4">
+        <div class="bg-white w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl shadow-2xl p-6 md:p-8">
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="text-2xl italic">Enviar Recomendación</h3>
+                <button onclick="closeSendRecommendationModal()" class="text-2xl opacity-40 hover:opacity-100">&times;</button>
+            </div>
+            <p class="text-xs opacity-50 mb-4">Selecciona una o más — se guardarán en su portal y se le enviará un correo con todas juntas.</p>
+            <div id="send-recommendation-list" class="space-y-2"></div>
+            <p id="send-recommendation-empty" class="hidden text-center text-sm opacity-40 italic py-6">No hay recomendaciones creadas todavía. Ve a "Recommendations" en el menú para crear una.</p>
+            <button onclick="sendSelectedRecommendations()" class="w-full mt-5 bg-[#B76E88] text-white py-3 uppercase text-[10px] tracking-widest font-bold hover:bg-[#9C5570] transition rounded-lg">Enviar al Paciente</button>
+        </div>
+    </div>
 
     <!-- ===== HISTORY MODAL ===== -->
     <div id="history-modal" class="fixed inset-0 z-50 overflow-y-auto bg-white md:bg-black/60 md:backdrop-blur-sm md:items-center md:justify-center md:p-4">
@@ -431,8 +492,9 @@
             </div>
 
             <div class="flex flex-col relative z-10 flex-shrink-0">
-                <div class="flex justify-between items-center mb-6">
+                <div class="flex justify-between items-center mb-6 gap-2 flex-wrap">
                     <button id="add-note-btn" onclick="toggleSoapForm(true)" class="bg-[#B76E88] text-white px-6 py-2 text-[10px] uppercase tracking-widest font-bold rounded-full shadow-sm hover:bg-[#9C5570] transition">Add New Encounter</button>
+                    <button onclick="openSendRecommendationModal()" class="bg-white border border-[#B76E88] text-[#B76E88] px-6 py-2 text-[10px] uppercase tracking-widest font-bold rounded-full shadow-sm hover:bg-[#B76E88] hover:text-white transition">✉️ Enviar Recomendación</button>
                 </div>
 
                 <div id="notes-container" class="pr-2 md:pr-4 space-y-6 pb-10"></div>
@@ -1103,13 +1165,17 @@
         function switchAdminView(viewId, element) {
             document.getElementById('patients-view').classList.add('hidden');
             document.getElementById('appointments-view').classList.add('hidden');
+            document.getElementById('recommendations-view').classList.add('hidden');
             document.getElementById(viewId).classList.remove('hidden');
 
             document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active-link'));
             element.classList.add('active-link');
-            document.getElementById('view-title').innerText = viewId === 'patients-view' ? 'Patient Database' : 'Appointment Queue';
+            document.getElementById('view-title').innerText = viewId === 'patients-view' ? 'Patient Database'
+                : viewId === 'appointments-view' ? 'Appointment Queue'
+                : 'Recommendation Templates';
 
             if (viewId === 'appointments-view') fetchAppointments();
+            else if (viewId === 'recommendations-view') fetchRecommendationTemplates();
             else fetchPatients();
 
             closeMobileSidebar();
@@ -1184,6 +1250,186 @@
             } else {
                 badge.classList.add('hidden');
             }
+        }
+
+        // --- RECOMMENDATION TEMPLATES (admin-managed library) ---
+        let recommendationTemplates = [];
+        let editingRecommendationId = null;
+
+        // Lightweight "Markdown-lite" convention, shared (independently, since
+        // these are static files with no module system) with dashboard.html and
+        // the send-patient-recommendations edge function: a line starting with
+        // "- "/"* " joins a bullet list, a line starting with "1. " joins a
+        // numbered list, a blank line breaks whatever's open, and any other
+        // line is plain paragraph text (line breaks preserved). Lists don't
+        // need a blank line before them — "Recommendations:" immediately
+        // followed by "- item" lines still renders as heading + real list.
+        function renderRecommendationBody(raw) {
+            const lines = String(raw || '').split('\n');
+            const html = [];
+            let list = null; // { type: 'ul' | 'ol', items: [] }
+            let para = [];
+            const flushPara = () => {
+                if (para.length) { html.push('<p style="margin:6px 0;">' + para.map(escapeHtml).join('<br>') + '</p>'); para = []; }
+            };
+            const flushList = () => {
+                if (list) { html.push(`<${list.type} style="margin:6px 0; padding-left:20px;">` + list.items.map(i => `<li>${escapeHtml(i)}</li>`).join('') + `</${list.type}>`); list = null; }
+            };
+            lines.forEach(rawLine => {
+                const line = rawLine.trim();
+                if (!line) { flushPara(); flushList(); return; }
+                const bullet = line.match(/^[-*]\s+(.*)$/);
+                const numbered = line.match(/^\d+\.\s+(.*)$/);
+                if (bullet) {
+                    flushPara();
+                    if (!list || list.type !== 'ul') { flushList(); list = { type: 'ul', items: [] }; }
+                    list.items.push(bullet[1]);
+                } else if (numbered) {
+                    flushPara();
+                    if (!list || list.type !== 'ol') { flushList(); list = { type: 'ol', items: [] }; }
+                    list.items.push(numbered[1]);
+                } else {
+                    flushList();
+                    para.push(line);
+                }
+            });
+            flushPara();
+            flushList();
+            return html.join('');
+        }
+
+        async function fetchRecommendationTemplates() {
+            const { data, error } = await _supabase.from('recommendation_templates').select('*').order('created_at', { ascending: false });
+            const listEl = document.getElementById('recommendations-list');
+            const emptyEl = document.getElementById('recommendations-empty');
+            if (error) { console.error('Fetch recommendation templates error:', error.message); return; }
+            recommendationTemplates = data || [];
+            if (!recommendationTemplates.length) {
+                listEl.innerHTML = '';
+                emptyEl.classList.remove('hidden');
+                return;
+            }
+            emptyEl.classList.add('hidden');
+            listEl.innerHTML = recommendationTemplates.map(rec => `
+                <div class="bg-white border border-[#EDE1E7] rounded-xl p-4 shadow-sm">
+                    <div class="flex items-start justify-between gap-2 mb-2">
+                        <h4 class="italic text-[#B76E88] font-bold">${escapeHtml(rec.title)}</h4>
+                        <button onclick="openRecommendationEditor('${rec.id}')" class="text-[10px] uppercase tracking-widest font-bold text-[#2A2330] opacity-60 hover:opacity-100 flex-shrink-0">Editar</button>
+                    </div>
+                    <div class="text-xs opacity-70 leading-relaxed line-clamp-4" style="max-height:5.5em; overflow:hidden;">${renderRecommendationBody(rec.body)}</div>
+                </div>
+            `).join('');
+        }
+
+        function updateRecommendationPreview() {
+            const title = document.getElementById('rec-editor-input-title').value.trim();
+            const body = document.getElementById('rec-editor-input-body').value;
+            document.getElementById('rec-preview-title').innerText = title || '—';
+            document.getElementById('rec-preview-body').innerHTML = body.trim() ? renderRecommendationBody(body) : '<p class="opacity-30 italic">La vista previa aparecerá aquí...</p>';
+        }
+
+        function openRecommendationEditor(id) {
+            editingRecommendationId = id || null;
+            const rec = id ? recommendationTemplates.find(r => r.id === id) : null;
+            document.getElementById('rec-editor-title').innerText = rec ? 'Editar Recomendación' : 'Nueva Recomendación';
+            document.getElementById('rec-editor-input-title').value = rec?.title || '';
+            document.getElementById('rec-editor-input-body').value = rec?.body || '';
+            document.getElementById('rec-editor-delete-btn').classList.toggle('hidden', !rec);
+            updateRecommendationPreview();
+            document.getElementById('recommendation-editor-modal').classList.add('flex');
+            document.getElementById('recommendation-editor-modal').classList.remove('hidden');
+        }
+
+        function closeRecommendationEditor() {
+            document.getElementById('recommendation-editor-modal').classList.add('hidden');
+            document.getElementById('recommendation-editor-modal').classList.remove('flex');
+        }
+
+        async function saveRecommendationTemplate() {
+            const title = document.getElementById('rec-editor-input-title').value.trim();
+            const body = document.getElementById('rec-editor-input-body').value.trim();
+            if (!title || !body) { alert('El título y el texto son obligatorios.'); return; }
+
+            const payload = { title, body, updated_at: new Date().toISOString() };
+            let error;
+            if (editingRecommendationId) {
+                ({ error } = await _supabase.from('recommendation_templates').update(payload).eq('id', editingRecommendationId));
+            } else {
+                ({ error } = await _supabase.from('recommendation_templates').insert([payload]));
+            }
+            if (error) { alert('Error guardando: ' + error.message); return; }
+            closeRecommendationEditor();
+            fetchRecommendationTemplates();
+        }
+
+        async function deleteRecommendationTemplate() {
+            if (!editingRecommendationId) return;
+            if (!confirm('¿Eliminar esta recomendación? Esto no afecta los mensajes ya enviados a pacientes.')) return;
+            const { error } = await _supabase.from('recommendation_templates').delete().eq('id', editingRecommendationId);
+            if (error) { alert('Error eliminando: ' + error.message); return; }
+            closeRecommendationEditor();
+            fetchRecommendationTemplates();
+        }
+
+        // --- SEND RECOMMENDATION TO PATIENT (from their Clinical History) ---
+        async function openSendRecommendationModal() {
+            if (!currentPatientId) return;
+            if (!recommendationTemplates.length) {
+                await fetchRecommendationTemplates();
+            }
+            const listEl = document.getElementById('send-recommendation-list');
+            const emptyEl = document.getElementById('send-recommendation-empty');
+            if (!recommendationTemplates.length) {
+                listEl.innerHTML = '';
+                emptyEl.classList.remove('hidden');
+            } else {
+                emptyEl.classList.add('hidden');
+                listEl.innerHTML = recommendationTemplates.map(rec => `
+                    <label class="flex items-start gap-3 p-3 border border-[#EDE1E7] rounded-lg cursor-pointer hover:border-[#B76E88] transition">
+                        <input type="checkbox" class="send-rec-checkbox mt-1 accent-[#B76E88]" value="${rec.id}">
+                        <span>
+                            <span class="block font-semibold text-sm text-[#2A2330]">${escapeHtml(rec.title)}</span>
+                            <span class="block text-xs opacity-60 mt-1">${renderRecommendationBody(rec.body)}</span>
+                        </span>
+                    </label>
+                `).join('');
+            }
+            document.getElementById('send-recommendation-modal').classList.add('flex');
+            document.getElementById('send-recommendation-modal').classList.remove('hidden');
+        }
+
+        function closeSendRecommendationModal() {
+            document.getElementById('send-recommendation-modal').classList.add('hidden');
+            document.getElementById('send-recommendation-modal').classList.remove('flex');
+        }
+
+        async function sendSelectedRecommendations() {
+            const checked = Array.from(document.querySelectorAll('.send-rec-checkbox:checked')).map(cb => cb.value);
+            if (!checked.length) { alert('Selecciona al menos una recomendación.'); return; }
+            const selected = recommendationTemplates.filter(r => checked.includes(r.id));
+
+            const rows = selected.map(rec => ({
+                patient_id: currentPatientId,
+                subject: rec.title,
+                body: rec.body,
+            }));
+            const { error: insertError } = await _supabase.from('patient_messages').insert(rows);
+            if (insertError) { alert('Error guardando el mensaje: ' + insertError.message); return; }
+
+            const { error: mailError } = await _supabase.functions.invoke('send-patient-recommendations', {
+                body: {
+                    patient_id: currentPatientId,
+                    patient_name: currentPatientName,
+                    recommendations: selected.map(r => ({ title: r.title, body: r.body })),
+                },
+            });
+            if (mailError) {
+                console.error('Send recommendation email error:', mailError.message);
+                alert('Se guardó en el portal del paciente, pero no se pudo enviar el correo: ' + mailError.message);
+            } else {
+                alert('Recomendación(es) enviada(s) al paciente.');
+            }
+            closeSendRecommendationModal();
         }
 
         // --- APPOINTMENTS FETCHING ---
