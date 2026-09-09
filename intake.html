@@ -38,6 +38,12 @@
         .module-screen { animation: fadein 0.25s ease; }
         @keyframes fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
         #signature-pad { touch-action: none; }
+        .instruction-hint { background: #FBF0F3; border-left: 3px solid #B76E88; border-radius: 0.5rem; padding: 0.75rem 1rem; font-size: 0.85rem; line-height: 1.45; color: #5C4753; font-weight: 500; }
+        .section-hint { font-size: 0.78rem; color: #6B5A64; font-weight: 500; margin-bottom: 0.6rem; line-height: 1.4; }
+        .field-error { border-color: #D14343 !important; border-width: 2px !important; }
+        .field-error-group { border: 2px solid #D14343 !important; border-radius: 0.75rem; padding: 0.6rem; }
+        .field-error-msg { color: #D14343; font-size: 0.78rem; font-weight: 600; margin-top: 0.4rem; }
+        .step-circle { display:flex; align-items:center; justify-content:center; width:1.5rem; height:1.5rem; border-radius:9999px; border-width:2px; font-size:10px; font-weight:700; flex-shrink:0; transition: 0.2s; }
     </style>
 </head>
 <body class="min-h-screen pb-28">
@@ -46,16 +52,17 @@
         <div class="text-[13px] md:text-xl whitespace-nowrap">
             <span class="brand-piel">Piel</span> <span class="brand-spa">spa</span>
         </div>
-        <button id="lang-toggle" onclick="toggleLanguage()" class="text-[9px] md:text-[10px] tracking-widest text-[#B76E88] hover:text-[#2A2330] uppercase transition">EN / ES</button>
+        <div class="flex items-center gap-4">
+            <button id="lang-toggle" onclick="toggleLanguage()" class="text-[9px] md:text-[10px] tracking-widest text-[#B76E88] hover:text-[#2A2330] uppercase transition">EN / ES</button>
+            <button id="logout-btn" onclick="handleLogoutClick()" class="text-[9px] md:text-[10px] tracking-widest text-[#B76E88] hover:text-[#2A2330] uppercase transition" data-en="Log Out" data-es="Cerrar Sesión">Log Out</button>
+        </div>
     </header>
 
     <div class="max-w-2xl mx-auto px-4 md:px-6 pt-6">
-        <div class="flex justify-between items-center text-[10px] uppercase tracking-widest opacity-50 mb-2">
-            <span><span data-en="Step" data-es="Paso">Paso</span> <span id="progress-current">1</span> / 8</span>
-            <span id="progress-title" class="text-right"></span>
-        </div>
-        <div class="w-full h-1.5 bg-[#EDE1E7] rounded-full overflow-hidden">
-            <div id="progress-bar" class="h-full bg-[#B76E88] transition-all duration-300" style="width: 12.5%;"></div>
+        <div id="stepper" class="flex items-center mb-3"></div>
+        <div class="flex justify-between items-center gap-3">
+            <span id="progress-title" class="text-[11px] md:text-xs uppercase tracking-widest font-semibold text-[#2A2330]"></span>
+            <span id="progress-saved" class="hidden text-[10px] uppercase tracking-widest text-[#3A8C5F] font-bold whitespace-nowrap transition-opacity duration-500" style="opacity:0;">✓ <span data-en="Saved" data-es="Guardado">Saved</span></span>
         </div>
     </div>
 
@@ -67,6 +74,7 @@
                 <span class="text-[10px] uppercase tracking-[0.3em] text-[#B76E88] font-semibold" data-en="Module 1" data-es="Módulo 1">Module 1</span>
                 <h2 class="text-3xl text-[#2A2330]" data-en="Patient Information" data-es="Información del Paciente">Patient Information</h2>
                 <p class="text-sm font-light opacity-70 mt-1" data-en="Please confirm your details and complete a few additional items." data-es="Confirma tus datos y completa algunos campos adicionales.">Please confirm your details and complete a few additional items.</p>
+                <p class="text-[11px] uppercase tracking-widest font-semibold text-[#B76E88] mt-2" data-en="⏱ Takes about 10–15 minutes · Your progress is saved automatically as you go" data-es="⏱ Toma aproximadamente 10–15 minutos · Tu progreso se guarda automáticamente">Takes about 10–15 minutes · Your progress is saved automatically.</p>
             </div>
 
             <div class="bg-white border border-[#EDE1E7] rounded-xl p-5 space-y-2 text-sm">
@@ -95,7 +103,7 @@
                 </div>
                 <div id="m1-phone-field" class="hidden">
                     <label class="block text-[10px] uppercase tracking-widest opacity-60 mb-1" data-en="Phone" data-es="Teléfono">Phone</label>
-                    <input type="tel" id="m1-phone-input" class="field-input" data-en-ph="Phone Number" data-es-ph="Teléfono">
+                    <input type="tel" id="m1-phone-input" class="field-input" inputmode="tel" data-en-ph="Phone Number" data-es-ph="Teléfono">
                 </div>
             </div>
 
@@ -107,7 +115,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <input type="text" id="m1-city" class="field-input" data-en-ph="City" data-es-ph="Ciudad">
                         <select id="m1-state" class="field-input"></select>
-                        <input type="text" id="m1-zip" class="field-input" maxlength="10" data-en-ph="ZIP Code" data-es-ph="Código Postal">
+                        <input type="text" id="m1-zip" class="field-input" maxlength="10" inputmode="numeric" pattern="[0-9\-]*" data-en-ph="ZIP Code" data-es-ph="Código Postal">
                     </div>
                 </div>
             </div>
@@ -118,15 +126,15 @@
                     <input type="text" id="m1-ec-name" class="field-input" data-en-ph="Name" data-es-ph="Nombre">
                     <input type="text" id="m1-ec-relationship" class="field-input" data-en-ph="Relationship" data-es-ph="Relación">
                     <div class="flex gap-2">
-                        <select id="m1-ec-phone-country" class="field-input" style="flex: 0 0 5.5rem;"></select>
-                        <input type="tel" id="m1-ec-phone-number" class="field-input flex-1" data-en-ph="Phone Number" data-es-ph="Teléfono">
+                        <select id="m1-ec-phone-country" class="field-input text-center" style="flex: 0 0 6.5rem; padding-left:0.4rem; padding-right:0.4rem;"></select>
+                        <input type="tel" id="m1-ec-phone-number" class="field-input flex-1" inputmode="tel" data-en-ph="Phone Number" data-es-ph="Teléfono">
                     </div>
                 </div>
             </div>
 
             <div id="m1-pregnancy-block" class="hidden">
                 <label class="block text-[10px] uppercase tracking-widest text-[#B76E88] font-bold mb-2" data-en="Are you currently pregnant, trying to conceive, or breastfeeding?" data-es="¿Estás actualmente embarazada, buscando concebir, o amamantando?">Are you currently pregnant, trying to conceive, or breastfeeding?</label>
-                <div class="flex gap-3">
+                <div id="m1-pregnancy-options" class="flex gap-3">
                     <label class="radio-card flex-1 text-center" data-group="pregnancy" data-value="yes"><input type="radio" name="m1-pregnancy" value="yes" class="hidden"><span data-en="Yes" data-es="Sí">Yes</span></label>
                     <label class="radio-card flex-1 text-center" data-group="pregnancy" data-value="no"><input type="radio" name="m1-pregnancy" value="no" class="hidden"><span data-en="No" data-es="No">No</span></label>
                 </div>
@@ -138,7 +146,7 @@
             <div>
                 <span class="text-[10px] uppercase tracking-[0.3em] text-[#B76E88] font-semibold" data-en="Module 2" data-es="Módulo 2">Module 2</span>
                 <h2 class="text-3xl text-[#2A2330]" data-en="Reason for Visit & Goals" data-es="Motivo de Consulta y Objetivos">Reason for Visit & Goals</h2>
-                <p class="text-sm font-light opacity-70 mt-1" data-en="Select all that apply." data-es="Selecciona todas las que apliquen.">Select all that apply.</p>
+                <p class="instruction-hint mt-3" data-en="✅ Select one or more reasons that describe why you're consulting us today." data-es="✅ Selecciona uno o varios motivos por los cuales consultas hoy.">Select one or more reasons that describe why you're consulting us today.</p>
             </div>
             <div id="m2-concerns" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
             <div>
@@ -171,7 +179,7 @@
             <div>
                 <span class="text-[10px] uppercase tracking-[0.3em] text-[#B76E88] font-semibold" data-en="Module 3" data-es="Módulo 3">Module 3</span>
                 <h2 class="text-3xl text-[#2A2330]" data-en="Medical History" data-es="Historial Médico">Medical History</h2>
-                <p class="text-sm font-light opacity-70 mt-1" data-en="Select all conditions that apply to you." data-es="Selecciona todas las condiciones que apliquen.">Select all conditions that apply to you.</p>
+                <p class="instruction-hint mt-3" data-en="✅ Select every condition that applies to you. If none apply, choose “None of the above” below." data-es="✅ Selecciona todas las condiciones médicas que apliquen. Si ninguna aplica, elige “Ninguna de las anteriores” abajo.">Select every condition that applies to you. If none apply, choose "None of the above" below.</p>
             </div>
             <div id="m3-conditions" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
             <div>
@@ -189,31 +197,41 @@
             <div>
                 <span class="text-[10px] uppercase tracking-[0.3em] text-[#B76E88] font-semibold" data-en="Module 4" data-es="Módulo 4">Module 4</span>
                 <h2 class="text-3xl text-[#2A2330]" data-en="Medications, Supplements & Allergies" data-es="Medicamentos, Suplementos y Alergias">Medications, Supplements & Allergies</h2>
+                <p class="instruction-hint mt-3" data-en="💊 This section helps us prevent bleeding, sun-sensitivity, and allergic reactions during your treatment. Please answer every question below — if none apply, select “None of the above.”" data-es="💊 Esta sección nos ayuda a prevenir sangrado, sensibilidad al sol y reacciones alérgicas durante tu tratamiento. Por favor responde cada pregunta — si ninguna aplica, selecciona “Ninguna de las anteriores.”">This section helps us prevent bleeding, sun-sensitivity, and allergic reactions during your treatment.</p>
             </div>
 
             <div>
-                <h4 class="text-[10px] uppercase tracking-widest text-[#B76E88] font-bold mb-3" data-en="Have you taken any of these blood thinners in the last 7–10 days?" data-es="¿Ha tomado alguno de estos anticoagulantes en los últimos 7–10 días?">Have you taken any of these blood thinners in the last 7–10 days?</h4>
+                <h4 class="text-sm font-semibold text-[#2A2330] mb-1" data-en="🩸 Blood Thinners" data-es="🩸 Anticoagulantes">🩸 Blood Thinners</h4>
+                <p class="section-hint" data-en="Have you taken any of these in the last 7–10 days? Select one or more, or “None of the above.”" data-es="¿Ha tomado alguno de estos en los últimos 7–10 días? Selecciona uno o varios, o “Ninguna de las anteriores.”">Have you taken any of these in the last 7–10 days?</p>
                 <div id="m4-blood-thinners" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
             </div>
 
-            <div class="bg-[#FBF0F3] border border-[#EDE1E7] rounded-xl p-5 space-y-4">
-                <h4 class="text-[10px] uppercase tracking-widest text-[#B76E88] font-bold" data-en="Have you recently used any of these photosensitizing medications?" data-es="¿Ha usado alguno de estos medicamentos fotosensibilizantes recientemente?">Have you recently used any of these photosensitizing medications?</h4>
+            <div id="m4-photomed-group" class="bg-[#FBF0F3] border border-[#EDE1E7] rounded-xl p-5 space-y-4">
+                <div>
+                    <h4 class="text-sm font-semibold text-[#2A2330] mb-1" data-en="☀️ Photosensitizing Medications" data-es="☀️ Medicamentos Fotosensibilizantes">☀️ Photosensitizing Medications</h4>
+                    <p class="section-hint mb-0" data-en="Have you recently used any of these? Select one or more, or “None of the above.”" data-es="¿Ha usado alguno de estos recientemente? Selecciona uno o varios, o “Ninguna de las anteriores.”">Have you recently used any of these?</p>
+                </div>
                 <label class="flex items-start gap-3 cursor-pointer">
-                    <input type="checkbox" id="m4-isotretinoin" class="mt-1 accent-[#B76E88]">
+                    <input type="checkbox" id="m4-isotretinoin" class="photomed-checkbox mt-1 accent-[#B76E88]">
                     <span class="text-sm" data-en="Oral Isotretinoin (Accutane) taken within the last 6–12 months?" data-es="¿Isotretinoína oral (Accutane) tomada en los últimos 6–12 meses?">Oral Isotretinoin (Accutane) taken within the last 6–12 months?</span>
                 </label>
                 <label class="flex items-start gap-3 cursor-pointer">
-                    <input type="checkbox" id="m4-topical-retinoid" class="mt-1 accent-[#B76E88]">
+                    <input type="checkbox" id="m4-topical-retinoid" class="photomed-checkbox mt-1 accent-[#B76E88]">
                     <span class="text-sm" data-en="Topical Retinoids (Retin-A, Differin, Tazorac) used in the last 7 days?" data-es="¿Retinoides tópicos (Retin-A, Differin, Tazorac) usados en los últimos 7 días?">Topical Retinoids used in the last 7 days?</span>
                 </label>
                 <label class="flex items-start gap-3 cursor-pointer">
-                    <input type="checkbox" id="m4-photo-antibiotics" class="mt-1 accent-[#B76E88]">
+                    <input type="checkbox" id="m4-photo-antibiotics" class="photomed-checkbox mt-1 accent-[#B76E88]">
                     <span class="text-sm" data-en="Photosensitizing Antibiotics (Doxycycline, Minocycline, Bactrim)" data-es="Antibióticos fotosensibilizantes (Doxiciclina, Minociclina, Bactrim)">Photosensitizing Antibiotics</span>
+                </label>
+                <label class="flex items-start gap-3 cursor-pointer border-t border-[#EDE1E7] pt-4">
+                    <input type="checkbox" id="m4-photomed-none" value="none" class="photomed-checkbox mt-1 accent-[#B76E88]">
+                    <span class="text-sm font-medium" data-en="🚫 None of the above" data-es="🚫 Ninguna de las anteriores">None of the above</span>
                 </label>
             </div>
 
             <div>
-                <h4 class="text-sm uppercase tracking-widest text-[#B76E88] font-bold mb-3" data-en="Do you have any of the following allergies? Select all that apply." data-es="¿Presenta alguna de las siguientes alergias? Selecciona las que correspondan">Do you have any of the following allergies? Select all that apply.</h4>
+                <h4 class="text-sm font-semibold text-[#2A2330] mb-1" data-en="⚠️ Allergies" data-es="⚠️ Alergias">⚠️ Allergies</h4>
+                <p class="section-hint" data-en="Do you have any of the following allergies? Select one or more, or “No known allergies.”" data-es="¿Presenta alguna de las siguientes alergias? Selecciona una o varias, o “Ninguna alergia conocida.”">Do you have any of the following allergies?</p>
                 <div id="m4-allergies" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
                 <div class="mt-3">
                     <div class="flex items-center gap-2 mb-2">
@@ -231,14 +249,16 @@
             <div>
                 <span class="text-[10px] uppercase tracking-[0.3em] text-[#B76E88] font-semibold" data-en="Module 5" data-es="Módulo 5">Module 5</span>
                 <h2 class="text-3xl text-[#2A2330]" data-en="Surgical History" data-es="Antecedentes Quirúrgicos">Surgical History</h2>
-                <p class="text-sm font-light opacity-70 mt-1" data-en="You may select one or more options." data-es="Puedes seleccionar una o varias opciones.">You may select one or more options.</p>
+                <p class="instruction-hint mt-3" data-en="🏥 Answer both questions below. Select every surgery that applies, or “None” if it doesn't apply to you." data-es="🏥 Responde ambas preguntas a continuación. Selecciona cada cirugía que aplique, o “Ninguna” si no aplica en tu caso.">Answer both questions below. Select every surgery that applies, or "None" if it doesn't apply to you.</p>
             </div>
             <div>
-                <h4 class="text-[10px] uppercase tracking-widest text-[#B76E88] font-bold mb-3" data-en="Facial / Head & Neck Surgeries" data-es="Cirugías Faciales / Cabeza y Cuello">Facial / Head & Neck Surgeries</h4>
+                <h4 class="text-sm font-semibold text-[#2A2330] mb-1" data-en="Facial / Head & Neck Surgeries" data-es="Cirugías Faciales / Cabeza y Cuello">Facial / Head & Neck Surgeries</h4>
+                <p class="section-hint" data-en="Have you had any of these? Select one or more, or “None.”" data-es="¿Te has realizado alguna de estas? Selecciona una o varias, o “Ninguna.”">Have you had any of these?</p>
                 <div id="m5-facial" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
             </div>
             <div>
-                <h4 class="text-[10px] uppercase tracking-widest text-[#B76E88] font-bold mb-3" data-en="General & Body Surgeries" data-es="Cirugías Generales y Corporales">General & Body Surgeries</h4>
+                <h4 class="text-sm font-semibold text-[#2A2330] mb-1" data-en="General & Body Surgeries" data-es="Cirugías Generales y Corporales">General & Body Surgeries</h4>
+                <p class="section-hint" data-en="Have you had any of these? Select one or more, or “None.”" data-es="¿Te has realizado alguna de estas? Selecciona una o varias, o “Ninguna.”">Have you had any of these?</p>
                 <div id="m5-general" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
             </div>
             <div>
@@ -256,7 +276,7 @@
             <div>
                 <span class="text-[10px] uppercase tracking-[0.3em] text-[#B76E88] font-semibold" data-en="Module 6" data-es="Módulo 6">Module 6</span>
                 <h2 class="text-3xl text-[#2A2330]" data-en="Previous Aesthetic Treatments" data-es="Antecedentes Estéticos Previos">Previous Aesthetic Treatments</h2>
-                <p class="text-sm font-light opacity-70 mt-1" data-en="For each treatment below, answer Yes or No. If you answer Yes, a few quick follow-up questions will appear." data-es="Para cada tratamiento a continuación, responde Sí o No. Si respondes Sí, aparecerán algunas preguntas rápidas adicionales.">For each treatment below, answer Yes or No.</p>
+                <p class="instruction-hint mt-3" data-en="💉 For each treatment below, answer Yes or No. If you answer Yes, a few quick follow-up questions will appear." data-es="💉 Para cada tratamiento a continuación, responde Sí o No. Si respondes Sí, aparecerán algunas preguntas rápidas adicionales.">For each treatment below, answer Yes or No.</p>
             </div>
             <div id="m6-categories" class="space-y-3"></div>
             <div>
@@ -270,26 +290,28 @@
             <div>
                 <span class="text-[10px] uppercase tracking-[0.3em] text-[#B76E88] font-semibold" data-en="Module 7" data-es="Módulo 7">Module 7</span>
                 <h2 class="text-3xl text-[#2A2330]" data-en="Skin Classification" data-es="Clasificación Cutánea">Skin Classification</h2>
+                <p class="instruction-hint mt-3" data-en="🔬 This section is completed by clinical assessment. For each scale below, select the single option that best matches your skin." data-es="🔬 Esta sección se completa mediante valoración clínica. Para cada escala a continuación, selecciona la única opción que mejor describa tu piel.">This section is completed by clinical assessment. Select the single option that best matches your skin for each scale.</p>
             </div>
             <div>
-                <h4 class="text-[10px] uppercase tracking-widest text-[#B76E88] font-bold mb-3" data-en="Fitzpatrick Skin Phototype" data-es="Fototipo de Piel Fitzpatrick">Fitzpatrick Skin Phototype</h4>
+                <h4 class="text-sm font-semibold text-[#2A2330] mb-1" data-en="Fitzpatrick Skin Phototype" data-es="Fototipo de Piel Fitzpatrick">Fitzpatrick Skin Phototype</h4>
+                <p class="section-hint" data-en="Select the one description that best matches how your skin reacts to sun exposure." data-es="Selecciona la única descripción que mejor coincida con la forma en que tu piel reacciona al sol.">Select the one description that best matches how your skin reacts to sun exposure.</p>
                 <div id="m7-fitzpatrick" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
             </div>
             <div>
-                <h4 class="text-[10px] uppercase tracking-widest text-[#B76E88] font-bold mb-3" data-en="Skin Type" data-es="Tipo de Piel">Skin Type</h4>
+                <h4 class="text-sm font-semibold text-[#2A2330] mb-1" data-en="Skin Type" data-es="Tipo de Piel">Skin Type</h4>
+                <p class="section-hint" data-en="Select the one option that best describes your skin's general condition." data-es="Selecciona la única opción que mejor describa la condición general de tu piel.">Select the one option that best describes your skin's general condition.</p>
                 <div id="m7-skintype" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
             </div>
             <div>
-                <h4 class="text-[10px] uppercase tracking-widest text-[#B76E88] font-bold mb-3" data-en="Glogau Scale of Photoaging" data-es="Escala de Glogau de Fotoenvejecimiento">Glogau Scale of Photoaging</h4>
-                <div class="flex flex-col md:flex-row gap-4 items-start">
-                    <div id="m7-glogau" class="grid grid-cols-1 gap-3 flex-1"></div>
-                    <div id="m7-glogau-image-container" class="hidden border border-[#EDE1E7] rounded-lg overflow-hidden flex-shrink-0" style="width:160px; height:200px;">
-                        <img id="m7-glogau-image" src="" alt="Glogau reference" style="width:100%; height:100%; object-fit:contain;">
-                    </div>
-                </div>
+                <h4 class="text-sm font-semibold text-[#2A2330] mb-1" data-en="Glogau Scale of Photoaging" data-es="Escala de Glogau de Fotoenvejecimiento">Glogau Scale of Photoaging</h4>
+                <p class="section-hint" data-en="Compare each reference photo to your skin and select the single type that matches best." data-es="Compara cada foto de referencia con tu piel y selecciona el único tipo que más se parezca.">Compare each reference photo to your skin and select the single type that matches best.</p>
+                <div id="m7-glogau" class="grid grid-cols-1 gap-3"></div>
             </div>
             <div id="m7-merz-section" class="space-y-5">
-                <h4 class="text-[10px] uppercase tracking-widest text-[#B76E88] font-bold" data-en="Merz Scale (Focused Areas)" data-es="Escala de Merz (Zonas Focalizadas)">Merz Scale (Focused Areas)</h4>
+                <div>
+                    <h4 class="text-sm font-semibold text-[#2A2330] mb-1" data-en="Merz Scale (Focused Areas)" data-es="Escala de Merz (Zonas Focalizadas)">Merz Scale (Focused Areas)</h4>
+                    <p class="section-hint" data-en="For each area below, compare the reference image to your skin and select the matching severity level (0 = None to 4 = Very Severe)." data-es="Para cada zona a continuación, compara la imagen de referencia con tu piel y selecciona el nivel de severidad correspondiente (0 = Ninguna a 4 = Muy Severa).">For each area below, compare the reference image and select the matching severity level.</p>
+                </div>
                 <div id="m7-merz-groups" class="space-y-5"></div>
             </div>
         </div>
@@ -304,12 +326,12 @@
             <div class="bg-white border border-[#EDE1E7] rounded-xl p-5 max-h-40 overflow-y-auto text-xs opacity-70 leading-relaxed" data-en="Notice of Privacy Practices: We are committed to protecting the privacy of your health information in accordance with HIPAA. Your medical history, treatment records and clinical photographs are kept confidential and are only used for your care, internal quality review, and legally required purposes, unless you separately authorize additional uses below. You may request a copy of your records at any time. (Please review the full Notice of Privacy Practices provided at the clinic.)" data-es="Aviso de Prácticas de Privacidad: Nos comprometemos a proteger la privacidad de tu información de salud conforme a HIPAA. Tu historia clínica, registros de tratamiento y fotografías clínicas se mantienen confidenciales y solo se usan para tu atención, revisión interna de calidad, y fines legalmente requeridos, salvo que autorices usos adicionales abajo. Puedes solicitar una copia de tus registros en cualquier momento. (Revisa el Aviso de Prácticas de Privacidad completo disponible en la clínica.)">
                 Notice of Privacy Practices placeholder text.
             </div>
-            <label class="flex items-start gap-3 cursor-pointer">
+            <label id="m8-hipaa-row" class="flex items-start gap-3 cursor-pointer">
                 <input type="checkbox" id="m8-hipaa" class="mt-1 accent-[#B76E88]" required>
                 <span class="text-sm" data-en="I acknowledge and consent to the handling of my confidential medical information as described above." data-es="Reconozco y acepto el manejo de mi información médica confidencial como se describe arriba.">I acknowledge and consent to the handling of my confidential medical information as described above.</span>
             </label>
 
-            <label class="flex items-start gap-3 cursor-pointer">
+            <label id="m8-photo-required-row" class="flex items-start gap-3 cursor-pointer">
                 <input type="checkbox" id="m8-photo-required" class="mt-1 accent-[#B76E88]" required>
                 <span class="text-sm" data-en="Required: I consent to clinical intake and record keeping, including clinical photographs for my chart." data-es="Obligatorio: Consiento la toma de fotografías clínicas para mi expediente e historia clínica.">Required: I consent to clinical intake &amp; record keeping.</span>
             </label>
@@ -318,7 +340,7 @@
                 <span class="text-sm" data-en="Optional: I consent to the use of de-identified photos for social media / educational marketing." data-es="Opcional: Consiento el uso de fotos no identificables para redes sociales / marketing educativo.">Optional: de-identified social media / educational marketing.</span>
             </label>
 
-            <label class="flex items-start gap-3 cursor-pointer">
+            <label id="m8-accuracy-row" class="flex items-start gap-3 cursor-pointer">
                 <input type="checkbox" id="m8-accuracy" class="mt-1 accent-[#B76E88]" required>
                 <span class="text-sm" data-en="I confirm that the medical history provided above is complete, accurate, and up to date to the best of my knowledge." data-es="Confirmo que la historia médica proporcionada arriba está completa, es precisa y está actualizada a mi mejor conocimiento.">I confirm that the medical history provided above is complete and accurate.</span>
             </label>
@@ -356,6 +378,24 @@
     const TOTAL_MODULES = 8;
     let currentUser = null;
     let currentAdmissionId = null;
+    // Guards against accidental data loss: true only right before a deliberate,
+    // already-confirmed navigation away from the intake (successful submit,
+    // confirmed logout, or an auth/completed-intake redirect at load time).
+    let allowUnload = false;
+    window.addEventListener('beforeunload', (e) => {
+        if (allowUnload) return;
+        e.preventDefault();
+        e.returnValue = '';
+    });
+
+    function handleLogoutClick() {
+        const confirmed = confirm(currentLang === 'en'
+            ? 'If you leave now, any unsaved changes on this screen will be lost. Do you want to continue?'
+            : 'Si sales ahora, los cambios no guardados en esta pantalla se perderán. ¿Deseas continuar?');
+        if (!confirmed) return;
+        allowUnload = true;
+        _supabase.auth.signOut().finally(() => { window.location.href = 'index.html'; });
+    }
 
     const MODULE_TITLES = {
         1: { en: 'Patient Information', es: 'Información del Paciente' },
@@ -410,6 +450,7 @@
         { id: 'psoriasis', en: '🩹 Psoriasis', es: '🩹 Psoriasis' },
         { id: 'atopic_dermatitis', en: '🧴 Atopic Dermatitis (Eczema)', es: '🧴 Dermatitis Atópica' },
         { id: 'seborrheic_dermatitis', en: '🧴 Seborrheic Dermatitis', es: '🧴 Dermatitis Seborreica' },
+        { id: 'none_medical_conditions', en: '🚫 None of the above', es: '🚫 Ninguna de las anteriores' },
     ];
 
     const BLOOD_THINNERS = [
@@ -438,6 +479,7 @@
         { id: 'thyroidectomy', en: 'Thyroidectomy (Total / Partial)', es: 'Tiroidectomía (Total / Parcial)' },
         { id: 'maxillofacial_orthognathic', en: 'Maxillofacial / Orthognathic Surgery', es: 'Cirugía Maxilofacial / Ortognática' },
         { id: 'biopolymer_injections', en: 'Biopolymer / Permanent Filler Injections', es: 'Inyecciones de Biopolímeros / Rellenos Permanentes' },
+        { id: 'none_facial_surgery', en: '🚫 None of the above', es: '🚫 Ninguna de las anteriores' },
     ];
 
     const SURGICAL_GENERAL = [
@@ -449,6 +491,7 @@
         { id: 'abdominoplasty', en: 'Abdominoplasty (Tummy Tuck)', es: 'Abdominoplastia' },
         { id: 'cholecystectomy_appendectomy_hernia', en: 'Cholecystectomy / Appendectomy / Hernia Repair', es: 'Colecistectomía / Apendicectomía / Reparación de Hernia' },
         { id: 'biopolymer_injections', en: 'Biopolymer / Permanent Filler Injections', es: 'Inyecciones de Biopolímeros / Rellenos Permanentes' },
+        { id: 'none_general_surgery', en: '🚫 None of the above', es: '🚫 Ninguna de las anteriores' },
     ];
 
     // ---------- MODULE 6 (v2): shared dropdown option sets ----------
@@ -679,12 +722,22 @@
         return age;
     }
 
-    function populateSelect(selectEl, options, { valueKey = 'code', placeholder } = {}) {
+    function populateSelect(selectEl, options, { valueKey = 'code', placeholder, labelFn } = {}) {
         if (!selectEl) return;
         const placeholderHtml = placeholder ? `<option value="">${escapeAttr(t(placeholder))}</option>` : '';
         selectEl.innerHTML = placeholderHtml + options.map(o =>
-            `<option value="${escapeAttr(o[valueKey])}">${escapeAttr(t(o))}</option>`
+            `<option value="${escapeAttr(o[valueKey])}">${escapeAttr(labelFn ? labelFn(o) : t(o))}</option>`
         ).join('');
+    }
+
+    // Renders a country's ISO-3166 alpha-2 code as its flag emoji (regional
+    // indicator symbols) so phone-code dropdowns can show a compact "🇺🇸 +1"
+    // instead of the full country name — the country select field is too
+    // narrow (next to the phone number input) for a full name to stay legible.
+    function isoToFlagEmoji(iso) {
+        if (!iso || iso.length !== 2) return '';
+        const codePoints = [...iso.toUpperCase()].map(c => 0x1F1E6 + (c.charCodeAt(0) - 65));
+        return String.fromCodePoint(...codePoints);
     }
 
     // ---------- HELPERS ----------
@@ -795,8 +848,6 @@
             const catId = group.slice('m6-complication-'.length);
             const desc = document.querySelector(`.m6-complication-desc[data-for="${catId}"]`);
             if (desc) desc.classList.toggle('hidden', card.dataset.value !== 'yes');
-        } else if (group === 'm7-glogau') {
-            updateGlogauImage();
         }
     });
 
@@ -809,16 +860,33 @@
         return sexSpan ? sexSpan.innerText : '';
     }
 
-    function updateGlogauImage() {
-        const glogauId = getRadioValue('m7-glogau');
-        const container = document.getElementById('m7-glogau-image-container');
-        const img = document.getElementById('m7-glogau-image');
-        if (!container || !img) return;
-        if (!glogauId) { container.classList.add('hidden'); return; }
-        const filename = getGlogauImageFilename(glogauId, getPatientSex());
-        if (!filename) { container.classList.add('hidden'); return; }
-        img.src = filename;
-        container.classList.remove('hidden');
+    // Renders all 4 Glogau types with their reference photo inline on every
+    // card (rather than revealing a single photo only after the patient picks
+    // a type) so the patient can compare all options side by side before
+    // choosing. Re-run whenever the patient's sex becomes known/changes,
+    // since the reference photo set differs by sex.
+    function renderGlogauGroup() {
+        const container = document.getElementById('m7-glogau');
+        const previousValue = getRadioValue('m7-glogau');
+        const sex = getPatientSex();
+        container.innerHTML = GLOGAU_TYPES.map(o => {
+            const filename = getGlogauImageFilename(o.id, sex);
+            return `
+            <label class="radio-card flex items-center gap-4" data-group="m7-glogau" data-value="${o.id}">
+                <input type="radio" name="m7-glogau" value="${o.id}" class="hidden">
+                ${filename ? `<img src="${filename}" alt="Glogau ${o.id}" class="rounded-lg flex-shrink-0 border border-[#EDE1E7]" style="width:72px; height:90px; object-fit:cover;">` : ''}
+                <span class="text-sm" data-en="${escapeAttr(o.en)}" data-es="${escapeAttr(o.es)}">${o.en}</span>
+            </label>`;
+        }).join('');
+        container.querySelectorAll('.radio-card').forEach(card => {
+            card.addEventListener('click', () => {
+                container.querySelectorAll('.radio-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                card.querySelector('input').checked = true;
+            });
+        });
+        if (previousValue) setRadioValue('m7-glogau', 'm7-glogau', previousValue);
+        applyLanguage();
     }
 
     function setRadioValue(containerId, groupName, value) {
@@ -1142,13 +1210,46 @@
     }
 
     // ---------- NAVIGATION ----------
+    // Renders the 8-circle step tracker (done = filled with a check, current =
+    // outlined + ring, upcoming = greyed out) so the patient can see overall
+    // progress at a glance instead of just reading "Step 3 / 8" as plain text.
+    function renderStepper() {
+        const container = document.getElementById('stepper');
+        let html = '';
+        for (let i = 1; i <= TOTAL_MODULES; i++) {
+            const done = i < currentModule;
+            const active = i === currentModule;
+            const circleClasses = done ? 'step-circle bg-[#B76E88] border-[#B76E88] text-white'
+                : active ? 'step-circle bg-white border-[#B76E88] text-[#B76E88] ring-2 ring-[#B76E88] ring-offset-1'
+                : 'step-circle bg-white border-[#EDE1E7] text-[#C9BAC2]';
+            html += `<div class="${circleClasses}">${done ? '✓' : i}</div>`;
+            if (i < TOTAL_MODULES) {
+                html += `<div class="flex-1 h-0.5 ${done ? 'bg-[#B76E88]' : 'bg-[#EDE1E7]'} mx-0.5 md:mx-1"></div>`;
+            }
+        }
+        container.innerHTML = html;
+    }
+
     function updateProgressUI() {
-        document.getElementById('progress-current').innerText = currentModule;
-        document.getElementById('progress-bar').style.width = (currentModule / TOTAL_MODULES * 100) + '%';
-        document.getElementById('progress-title').innerText = t(MODULE_TITLES[currentModule]);
+        renderStepper();
+        const stepLabel = currentLang === 'en' ? `Step ${currentModule} of ${TOTAL_MODULES} · ` : `Paso ${currentModule} de ${TOTAL_MODULES} · `;
+        document.getElementById('progress-title').innerText = stepLabel + t(MODULE_TITLES[currentModule]);
         document.getElementById('btn-prev').style.visibility = currentModule === 1 ? 'hidden' : 'visible';
         document.getElementById('btn-next').classList.toggle('hidden', currentModule === TOTAL_MODULES);
         document.getElementById('btn-submit').classList.toggle('hidden', currentModule !== TOTAL_MODULES);
+    }
+
+    // Briefly flashes a "Saved" confirmation after each successful autosave so
+    // the patient trusts their progress isn't lost if they close the tab —
+    // reinforces the beforeunload warning instead of leaving save success silent.
+    let savedIndicatorTimeout = null;
+    function flashSavedIndicator() {
+        const el = document.getElementById('progress-saved');
+        if (!el) return;
+        el.classList.remove('hidden');
+        el.style.opacity = '1';
+        clearTimeout(savedIndicatorTimeout);
+        savedIndicatorTimeout = setTimeout(() => { el.style.opacity = '0'; }, 2000);
     }
 
     function showModule(n) {
@@ -1160,66 +1261,178 @@
         window.scrollTo(0, 0);
     }
 
+    // ---------- INLINE FIELD VALIDATION ----------
+    // Marks a single input/select invalid with a red border and a short
+    // message right below it. Replaces the old single alert() that listed
+    // every missing field by name — patients had to memorize that list and
+    // then hunt for each field on their own instead of seeing exactly where
+    // the problem is.
+    function setInputError(el, invalid, messageObj) {
+        if (!el) return null;
+        el.classList.toggle('field-error', invalid);
+        let msg = el.nextElementSibling;
+        if (!msg || !msg.classList.contains('field-error-msg')) {
+            msg = document.createElement('p');
+            msg.className = 'field-error-msg hidden';
+            el.insertAdjacentElement('afterend', msg);
+        }
+        if (invalid) { msg.textContent = t(messageObj); msg.classList.remove('hidden'); }
+        else { msg.classList.add('hidden'); }
+        return invalid ? el : null;
+    }
+
+    // Same idea as setInputError, but for a whole option group (a grid/flex
+    // container of check-cards or radio-cards) — outlines the container since
+    // there's no single field to point at.
+    function setGroupError(containerEl, invalid, messageObj) {
+        if (!containerEl) return null;
+        containerEl.classList.toggle('field-error-group', invalid);
+        let msg = containerEl.nextElementSibling;
+        if (!msg || !msg.classList.contains('field-error-msg')) {
+            msg = document.createElement('p');
+            msg.className = 'field-error-msg hidden';
+            containerEl.insertAdjacentElement('afterend', msg);
+        }
+        if (invalid) { msg.textContent = t(messageObj); msg.classList.remove('hidden'); }
+        else { msg.classList.add('hidden'); }
+        return invalid ? containerEl : null;
+    }
+
+    function clearModuleErrors(moduleEl) {
+        moduleEl.querySelectorAll('.field-error').forEach(el => el.classList.remove('field-error'));
+        moduleEl.querySelectorAll('.field-error-group').forEach(el => el.classList.remove('field-error-group'));
+        moduleEl.querySelectorAll('.field-error-msg').forEach(el => el.classList.add('hidden'));
+    }
+
+    // As soon as the patient interacts with a flagged field/group, clear the
+    // red state immediately rather than waiting for the next "Next" click —
+    // every option here is a <label> wrapping its <input>, so a click on the
+    // card (even one styled with display:none on the input) still fires a
+    // native 'change' on that input via the browser's label-activation behavior.
+    document.addEventListener('change', clearErrorOnInteraction);
+    document.addEventListener('input', clearErrorOnInteraction);
+    function clearErrorOnInteraction(e) {
+        const el = e.target;
+        if (el.classList && el.classList.contains('field-error')) {
+            el.classList.remove('field-error');
+            const msg = el.nextElementSibling;
+            if (msg && msg.classList.contains('field-error-msg')) msg.classList.add('hidden');
+        }
+        const group = el.closest ? el.closest('.field-error-group') : null;
+        if (group) {
+            group.classList.remove('field-error-group');
+            const msg = group.nextElementSibling;
+            if (msg && msg.classList.contains('field-error-msg')) msg.classList.add('hidden');
+        }
+    }
+
     function validateCurrentModule() {
+        const moduleEl = document.getElementById('module-' + currentModule);
+        clearModuleErrors(moduleEl);
+        let firstInvalid = null;
+        const flag = (el) => { if (el && !firstInvalid) firstInvalid = el; };
+
         if (currentModule === 1) {
-            const missing = [];
             const dobActive = !document.getElementById('m1-dob-field').classList.contains('hidden');
-            if (dobActive && !document.getElementById('m1-dob-input').value) missing.push(currentLang === 'en' ? 'Date of Birth' : 'Fecha de Nacimiento');
+            if (dobActive) {
+                const el = document.getElementById('m1-dob-input');
+                flag(setInputError(el, !el.value, { en: 'Please enter your date of birth.', es: 'Por favor ingresa tu fecha de nacimiento.' }));
+            }
             const sexActive = !document.getElementById('m1-sex-field').classList.contains('hidden');
-            if (sexActive && !document.getElementById('m1-sex-input').value) missing.push(currentLang === 'en' ? 'Sex' : 'Sexo');
+            if (sexActive) {
+                const el = document.getElementById('m1-sex-input');
+                flag(setInputError(el, !el.value, { en: 'Please select your sex.', es: 'Por favor selecciona tu sexo.' }));
+            }
             const phoneActive = !document.getElementById('m1-phone-field').classList.contains('hidden');
-            const phoneVal = document.getElementById('m1-phone-input').value.trim();
-            if (phoneActive && !phoneVal) missing.push(currentLang === 'en' ? 'Phone' : 'Teléfono');
-            else if (phoneActive && !validatePhoneNumber('US', phoneVal)) missing.push(currentLang === 'en' ? 'Phone (invalid format)' : 'Teléfono (formato inválido)');
+            if (phoneActive) {
+                const el = document.getElementById('m1-phone-input');
+                const val = el.value.trim();
+                flag(setInputError(el, !val || !validatePhoneNumber('US', val), !val
+                    ? { en: 'Please enter your phone number.', es: 'Por favor ingresa tu número de teléfono.' }
+                    : { en: 'This phone number doesn’t look valid.', es: 'Este número de teléfono no parece válido.' }));
+            }
 
-            if (!document.getElementById('m1-addr1').value.trim()) missing.push(currentLang === 'en' ? 'Address Line 1' : 'Dirección 1');
-            if (!document.getElementById('m1-addr2').value.trim()) missing.push(currentLang === 'en' ? 'Address Line 2' : 'Dirección 2');
-            if (!document.getElementById('m1-city').value.trim()) missing.push(currentLang === 'en' ? 'City' : 'Ciudad');
-            if (!document.getElementById('m1-state').value) missing.push(currentLang === 'en' ? 'State' : 'Estado');
-            if (!document.getElementById('m1-zip').value.trim()) missing.push(currentLang === 'en' ? 'ZIP Code' : 'Código Postal');
+            flag(setInputError(document.getElementById('m1-addr1'), !document.getElementById('m1-addr1').value.trim(),
+                { en: 'Please enter your street address.', es: 'Por favor ingresa tu dirección.' }));
+            flag(setInputError(document.getElementById('m1-addr2'), !document.getElementById('m1-addr2').value.trim(),
+                { en: 'Please enter apt/suite, or write N/A.', es: 'Por favor ingresa apto/suite, o escribe N/A.' }));
+            flag(setInputError(document.getElementById('m1-city'), !document.getElementById('m1-city').value.trim(),
+                { en: 'Please enter your city.', es: 'Por favor ingresa tu ciudad.' }));
+            flag(setInputError(document.getElementById('m1-state'), !document.getElementById('m1-state').value,
+                { en: 'Please select your state.', es: 'Por favor selecciona tu estado.' }));
+            flag(setInputError(document.getElementById('m1-zip'), !document.getElementById('m1-zip').value.trim(),
+                { en: 'Please enter your ZIP code.', es: 'Por favor ingresa tu código postal.' }));
 
-            if (!document.getElementById('m1-ec-name').value.trim()) missing.push(currentLang === 'en' ? 'Emergency Contact Name' : 'Nombre de Contacto de Emergencia');
-            if (!document.getElementById('m1-ec-relationship').value.trim()) missing.push(currentLang === 'en' ? 'Emergency Contact Relationship' : 'Relación de Contacto de Emergencia');
+            flag(setInputError(document.getElementById('m1-ec-name'), !document.getElementById('m1-ec-name').value.trim(),
+                { en: 'Please enter a name.', es: 'Por favor ingresa un nombre.' }));
+            flag(setInputError(document.getElementById('m1-ec-relationship'), !document.getElementById('m1-ec-relationship').value.trim(),
+                { en: 'Please enter their relationship to you.', es: 'Por favor ingresa su relación contigo.' }));
+
             const ecCountryDial = document.getElementById('m1-ec-phone-country').value;
-            const ecNumber = document.getElementById('m1-ec-phone-number').value.trim();
+            const ecPhoneEl = document.getElementById('m1-ec-phone-number');
+            const ecNumber = ecPhoneEl.value.trim();
             const ecIso = (COUNTRY_CODES.find(c => c.dial === ecCountryDial) || {}).iso || DEFAULT_COUNTRY_ISO;
-            if (!ecNumber) missing.push(currentLang === 'en' ? 'Emergency Contact Phone' : 'Teléfono de Contacto de Emergencia');
-            else if (!validatePhoneNumber(ecIso, ecNumber)) missing.push(currentLang === 'en' ? 'Emergency Contact Phone (invalid format)' : 'Teléfono de Contacto de Emergencia (formato inválido)');
+            flag(setInputError(ecPhoneEl, !ecNumber || !validatePhoneNumber(ecIso, ecNumber), !ecNumber
+                ? { en: 'Please enter an emergency contact phone number.', es: 'Por favor ingresa un teléfono de contacto de emergencia.' }
+                : { en: 'This phone number doesn’t look valid.', es: 'Este número de teléfono no parece válido.' }));
 
-            if (!document.getElementById('m1-pregnancy-block').classList.contains('hidden') && !getRadioValue('m1-pregnancy')) {
-                missing.push(currentLang === 'en' ? 'Pregnancy/Nursing Question' : 'Pregunta de Embarazo/Lactancia');
+            if (!document.getElementById('m1-pregnancy-block').classList.contains('hidden')) {
+                flag(setGroupError(document.getElementById('m1-pregnancy-options'), !getRadioValue('m1-pregnancy'),
+                    { en: 'Please answer this question.', es: 'Por favor responde esta pregunta.' }));
             }
-
-            if (missing.length) {
-                alert((currentLang === 'en' ? 'Please complete: ' : 'Por favor completa: ') + missing.join(', '));
-                return false;
-            }
+        }
+        if (currentModule === 2) {
+            const hasConcern = getCheckedValues('concern-checkbox').length > 0 || getOtherValues('m2-other-container').length > 0;
+            flag(setGroupError(document.getElementById('m2-concerns'), !hasConcern,
+                { en: 'Please select at least one reason for your visit.', es: 'Por favor selecciona al menos un motivo de consulta.' }));
+        }
+        if (currentModule === 3) {
+            const hasCondition = getCheckedValues('medical-checkbox').length > 0 || getOtherValues('m3-other-container').length > 0;
+            flag(setGroupError(document.getElementById('m3-conditions'), !hasCondition,
+                { en: 'Please select at least one condition, or "None of the above".', es: 'Por favor selecciona al menos una condición, o "Ninguna de las anteriores".' }));
+        }
+        if (currentModule === 4) {
+            flag(setGroupError(document.getElementById('m4-blood-thinners'), !getCheckedValues('blood-thinner-checkbox').length,
+                { en: 'Please answer this question, or select "None of the above".', es: 'Por favor responde esta pregunta, o selecciona "Ninguna de las anteriores".' }));
+            flag(setGroupError(document.getElementById('m4-photomed-group'), !getCheckedValues('photomed-checkbox').length,
+                { en: 'Please answer this question, or select "None of the above".', es: 'Por favor responde esta pregunta, o selecciona "Ninguna de las anteriores".' }));
+            const hasAllergy = getCheckedValues('allergy-checkbox').length > 0 || getOtherValues('m4-other-container').length > 0;
+            flag(setGroupError(document.getElementById('m4-allergies'), !hasAllergy,
+                { en: 'Please answer this question, or select "No known allergies".', es: 'Por favor responde esta pregunta, o selecciona "Ninguna alergia conocida".' }));
+        }
+        if (currentModule === 5) {
+            flag(setGroupError(document.getElementById('m5-facial'), !getCheckedValues('surgical-facial-checkbox').length,
+                { en: 'Please answer this question, or select "None of the above".', es: 'Por favor responde esta pregunta, o selecciona "Ninguna de las anteriores".' }));
+            flag(setGroupError(document.getElementById('m5-general'), !getCheckedValues('surgical-general-checkbox').length,
+                { en: 'Please answer this question, or select "None of the above".', es: 'Por favor responde esta pregunta, o selecciona "Ninguna de las anteriores".' }));
         }
         if (currentModule === 7) {
-            const missing = [];
-            if (!getRadioValue('m7-fitzpatrick')) missing.push(currentLang === 'en' ? 'Fitzpatrick Skin Phototype' : 'Fototipo de Piel Fitzpatrick');
-            if (!getRadioValue('m7-skintype')) missing.push(currentLang === 'en' ? 'Skin Type' : 'Tipo de Piel');
-            if (!getRadioValue('m7-glogau')) missing.push(currentLang === 'en' ? 'Glogau Scale' : 'Escala de Glogau');
+            flag(setGroupError(document.getElementById('m7-fitzpatrick'), !getRadioValue('m7-fitzpatrick'),
+                { en: 'Please select an option.', es: 'Por favor selecciona una opción.' }));
+            flag(setGroupError(document.getElementById('m7-skintype'), !getRadioValue('m7-skintype'),
+                { en: 'Please select an option.', es: 'Por favor selecciona una opción.' }));
+            flag(setGroupError(document.getElementById('m7-glogau'), !getRadioValue('m7-glogau'),
+                { en: 'Please select an option.', es: 'Por favor selecciona una opción.' }));
             const merzValues = getMerzValues();
             MERZ_SCALES.forEach(scale => {
-                if (merzValues[scale.key] === undefined) missing.push(t(scale));
+                flag(setGroupError(document.getElementById('merz-' + scale.key), merzValues[scale.key] === undefined,
+                    { en: 'Please select a severity level.', es: 'Por favor selecciona un nivel de severidad.' }));
             });
-            if (missing.length) {
-                alert((currentLang === 'en' ? 'Please select an option for: ' : 'Por favor selecciona una opción para: ') + missing.join(', '));
-                return false;
-            }
         }
         if (currentModule === 8) {
-            const hipaa = document.getElementById('m8-hipaa').checked;
-            const photoRequired = document.getElementById('m8-photo-required').checked;
-            const accuracy = document.getElementById('m8-accuracy').checked;
-            const signatureName = document.getElementById('m8-signature-name').value.trim();
-            if (!hipaa || !photoRequired || !accuracy || !signatureName) {
-                alert(currentLang === 'en'
-                    ? 'Please accept the required consents and type your name as signature before submitting.'
-                    : 'Por favor acepta los consentimientos obligatorios y escribe tu nombre como firma antes de enviar.');
-                return false;
-            }
+            flag(setGroupError(document.getElementById('m8-hipaa-row'), !document.getElementById('m8-hipaa').checked,
+                { en: 'Please accept this to continue.', es: 'Por favor acepta esto para continuar.' }));
+            flag(setGroupError(document.getElementById('m8-photo-required-row'), !document.getElementById('m8-photo-required').checked,
+                { en: 'Please accept this to continue.', es: 'Por favor acepta esto para continuar.' }));
+            flag(setGroupError(document.getElementById('m8-accuracy-row'), !document.getElementById('m8-accuracy').checked,
+                { en: 'Please accept this to continue.', es: 'Por favor acepta esto para continuar.' }));
+            flag(setInputError(document.getElementById('m8-signature-name'), !document.getElementById('m8-signature-name').value.trim(),
+                { en: 'Please type your full name as signature.', es: 'Por favor escribe tu nombre completo como firma.' }));
+        }
+
+        if (firstInvalid) {
+            firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return false;
         }
         return true;
     }
@@ -1227,7 +1440,8 @@
     async function goNext() {
         if (!validateCurrentModule()) return;
         if (currentModule === 1) await updateProfileDemographics();
-        await saveProgress(false);
+        const ok = await saveProgress(false);
+        if (ok) flashSavedIndicator();
         if (currentModule < TOTAL_MODULES) showModule(currentModule + 1);
     }
     function goPrev() {
@@ -1353,7 +1567,7 @@
 
         if (data.fitzpatrick) setRadioValue('m7-fitzpatrick', 'm7-fitzpatrick', data.fitzpatrick);
         if (data.skin_type) setRadioValue('m7-skintype', 'm7-skintype', data.skin_type);
-        if (data.glogau) { setRadioValue('m7-glogau', 'm7-glogau', data.glogau); updateGlogauImage(); }
+        if (data.glogau) setRadioValue('m7-glogau', 'm7-glogau', data.glogau);
         setMerzValues({
             forehead_glabella: data.merz_forehead_glabella, under_eye: data.merz_under_eye,
             nasolabial: data.merz_nasolabial, hands: data.merz_hands,
@@ -1390,6 +1604,7 @@
         btn.innerText = currentLang === 'en' ? 'Submitting...' : 'Enviando...';
         const ok = await saveProgress(true);
         if (ok) {
+            allowUnload = true;
             window.location.href = 'dashboard.html';
         } else {
             btn.disabled = false;
@@ -1438,26 +1653,29 @@
 
     async function init() {
         const { data: { user }, error: authError } = await _supabase.auth.getUser();
-        if (authError || !user) { window.location.href = 'index.html'; return; }
+        if (authError || !user) { allowUnload = true; window.location.href = 'index.html'; return; }
         currentUser = user;
 
         renderCheckGroup('m2-concerns', CONCERN_OPTIONS, 'concern-checkbox');
         renderCheckGroup('m3-conditions', MEDICAL_CONDITIONS, 'medical-checkbox');
+        enforceNoneExclusivity('medical-checkbox', 'none_medical_conditions');
         renderCheckGroup('m4-blood-thinners', BLOOD_THINNERS, 'blood-thinner-checkbox');
         renderCheckGroup('m4-allergies', ALLERGY_OPTIONS, 'allergy-checkbox');
         enforceNoneExclusivity('blood-thinner-checkbox', 'none_blood_thinners');
         enforceNoneExclusivity('allergy-checkbox', 'none_allergies');
+        enforceNoneExclusivity('photomed-checkbox', 'none');
         renderCheckGroup('m5-facial', SURGICAL_FACIAL, 'surgical-facial-checkbox');
         renderCheckGroup('m5-general', SURGICAL_GENERAL, 'surgical-general-checkbox');
+        enforceNoneExclusivity('surgical-facial-checkbox', 'none_facial_surgery');
+        enforceNoneExclusivity('surgical-general-checkbox', 'none_general_surgery');
         renderAestheticCategoriesV2();
         renderRadioGroup('m7-fitzpatrick', FITZPATRICK_TYPES, 'm7-fitzpatrick', true);
         renderRadioGroup('m7-skintype', SKIN_TYPES, 'm7-skintype', false);
-        renderRadioGroup('m7-glogau', GLOGAU_TYPES, 'm7-glogau', false);
         renderMerzGroups();
         initSignaturePad();
 
         populateSelect(document.getElementById('m1-state'), US_STATES, { valueKey: 'code', placeholder: { en: 'Select State...', es: 'Selecciona Estado...' } });
-        populateSelect(document.getElementById('m1-ec-phone-country'), COUNTRY_CODES, { valueKey: 'dial' });
+        populateSelect(document.getElementById('m1-ec-phone-country'), COUNTRY_CODES, { valueKey: 'dial', labelFn: o => `${isoToFlagEmoji(o.iso)} ${o.dial}` });
         document.getElementById('m1-ec-phone-country').value = '+1';
 
         const { data: profile } = await _supabase.from('profiles').select('first_name, last_name, dob, sex, phone').eq('id', currentUser.id).maybeSingle();
@@ -1490,13 +1708,14 @@
         }
 
         updatePregnancyVisibility(profile?.sex || '');
+        renderGlogauGroup();
         document.getElementById('m1-dob-input').addEventListener('change', (e) => updateAgeDisplay(e.target.value, 'm1-age-input-display'));
-        document.getElementById('m1-sex-input').addEventListener('change', (e) => updatePregnancyVisibility(e.target.value));
+        document.getElementById('m1-sex-input').addEventListener('change', (e) => { updatePregnancyVisibility(e.target.value); renderGlogauGroup(); });
 
         const { data: existing } = await _supabase.from('admission_history').select('*').eq('patient_id', currentUser.id).maybeSingle();
         if (existing) {
             currentAdmissionId = existing.id;
-            if (existing.intake_completed_at) { window.location.href = 'dashboard.html'; return; }
+            if (existing.intake_completed_at) { allowUnload = true; window.location.href = 'dashboard.html'; return; }
             fillFormFromData(existing);
         }
 
