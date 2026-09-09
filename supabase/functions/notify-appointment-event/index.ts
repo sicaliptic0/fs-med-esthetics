@@ -86,8 +86,8 @@ function renderStatusEmail(input: {
   return `
     <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #333;">
       <!-- Header -->
-      <div style="background: #2A2330; padding: 28px 32px; text-align: center;">
-        <h1 style="margin:0; color:#B76E88; font-family: Georgia, serif; font-size:22px; letter-spacing:4px; text-transform:uppercase;">Piel Spa</h1>
+      <div style="background:#FDFBFC; padding: 24px 32px; text-align: center; border-bottom: 1px solid #EDE1E7;">
+        <img src="https://piel-spa.com/images/logo.png" alt="Piel Spa" style="max-width:220px; width:100%; height:auto; display:inline-block;">
       </div>
 
       <!-- Status banner -->
@@ -121,6 +121,7 @@ function renderStatusEmail(input: {
       <div style="background:#FBF0F3; padding:20px 32px; text-align:center; border-top:1px solid #EDE1E7;">
         <p style="margin:0; font-size:11px; color:#888; line-height:1.8;">
           Piel Spa LLC<br>
+          <a href="https://piel-spa.com" style="color:#B76E88; text-decoration:none;">www.piel-spa.com</a> &nbsp;·&nbsp;
           <a href="mailto:${input.contactEmail}" style="color:#B76E88; text-decoration:none;">${input.contactEmail}</a>
         </p>
       </div>
