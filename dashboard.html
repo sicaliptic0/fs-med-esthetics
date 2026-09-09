@@ -126,6 +126,14 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="bg-white p-6 rounded-xl border border-[#EDE1E7] shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="uppercase text-[10px] tracking-widest text-[#B76E88] font-bold" data-en="Recent Messages" data-es="Mensajes Recientes">Recent Messages</h3>
+                        <button onclick="goToMessages()" class="text-[10px] uppercase tracking-widest opacity-60 hover:opacity-100 font-semibold" data-en="View All" data-es="Ver Todos">View All</button>
+                    </div>
+                    <div id="dashboard-recent-messages" class="space-y-2 text-sm"></div>
+                </div>
             </div>
 
             <div id="messages-view" class="hidden max-w-3xl mx-auto">
@@ -576,6 +584,7 @@
 
             currentMessages = (!error && data) ? data : [];
             updateMessagesUnreadBadge();
+            renderRecentMessagesPreview();
 
             if (!currentMessages.length) {
                 listEl.innerHTML = '';
@@ -605,6 +614,32 @@
             } else {
                 badge.classList.add('hidden');
             }
+        }
+
+        // Small preview on the main dashboard landing page — just enough to
+        // notice something arrived (titles + unread dot) without leaving the
+        // page; clicking either jumps straight into the full Messages view.
+        function renderRecentMessagesPreview() {
+            const el = document.getElementById('dashboard-recent-messages');
+            if (!el) return;
+            if (!currentMessages.length) {
+                el.innerHTML = `<p class="opacity-50 text-sm">${currentLang === 'en' ? "You don't have any messages yet." : 'Aún no tienes mensajes.'}</p>`;
+                return;
+            }
+            el.innerHTML = currentMessages.slice(0, 3).map(msg => `
+                <div onclick="goToMessages()" class="flex items-center justify-between gap-3 p-3 bg-[#FDFBFC] border border-[#EDE1E7] rounded-lg cursor-pointer hover:border-[#B76E88] transition">
+                    <span class="flex items-center gap-2 min-w-0">
+                        ${!msg.read_at ? '<span class="w-2 h-2 rounded-full bg-[#B76E88] flex-shrink-0"></span>' : ''}
+                        <span class="truncate ${!msg.read_at ? 'font-semibold text-[#2A2330]' : 'opacity-70'}">${escapeHtmlMsg(msg.subject || (currentLang === 'en' ? 'Message' : 'Mensaje'))}</span>
+                    </span>
+                    <span class="text-[10px] uppercase tracking-widest opacity-40 whitespace-nowrap flex-shrink-0">${formatDate(String(msg.created_at || '').split('T')[0])}</span>
+                </div>
+            `).join('');
+        }
+
+        function goToMessages() {
+            const navEl = document.querySelector('.nav-item[onclick*="messages-view"]');
+            switchView('messages-view', navEl);
         }
 
         // Marks any currently-unread messages as read once the patient actually
