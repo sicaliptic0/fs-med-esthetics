@@ -988,9 +988,9 @@
             return `
             <div class="border border-[#EDE1E7] rounded-xl bg-white overflow-hidden">
                 <div class="p-4">
-                    <div class="flex items-center justify-between gap-3 flex-wrap">
-                        <span class="text-sm font-medium" data-en="${escapeAttr(cat.header.en)}" data-es="${escapeAttr(cat.header.es)}">${cat.header.en}</span>
-                        <div class="flex gap-2">
+                    <div id="m6-yesno-${cat.id}" class="flex items-start justify-between gap-3">
+                        <span class="text-sm font-medium flex-1 min-w-0" data-en="${escapeAttr(cat.header.en)}" data-es="${escapeAttr(cat.header.es)}">${cat.header.en}</span>
+                        <div class="flex gap-2 flex-shrink-0">
                             <label class="radio-card px-4 py-1.5 text-xs" data-group="m6-cat-${cat.id}" data-value="yes"><input type="radio" name="m6-cat-${cat.id}" value="yes" class="hidden"><span data-en="Yes" data-es="Sí">Yes</span></label>
                             <label class="radio-card px-4 py-1.5 text-xs" data-group="m6-cat-${cat.id}" data-value="no"><input type="radio" name="m6-cat-${cat.id}" value="no" class="hidden"><span data-en="No" data-es="No">No</span></label>
                         </div>
@@ -1112,10 +1112,10 @@
                 </div>
                 <div class="grid grid-cols-5 gap-2" id="merz-${scale.key}">
                     ${MERZ_LEVELS.map(l => `
-                        <label class="radio-card text-center py-2" data-group="merz-${scale.key}" data-value="${l.v}">
+                        <label class="radio-card text-center" style="padding:0.5rem 0.3rem;" data-group="merz-${scale.key}" data-value="${l.v}">
                             <input type="radio" name="merz-${scale.key}" value="${l.v}" class="hidden">
                             <div class="text-sm font-bold">${l.v}</div>
-                            <div class="text-[9px] uppercase tracking-widest opacity-60" data-en="${escapeAttr(l.en)}" data-es="${escapeAttr(l.es)}">${l.en}</div>
+                            <div class="text-[8px] leading-tight uppercase tracking-tight opacity-60 break-words" data-en="${escapeAttr(l.en)}" data-es="${escapeAttr(l.es)}">${l.en}</div>
                         </label>
                     `).join('')}
                 </div>
@@ -1405,6 +1405,12 @@
                 { en: 'Please answer this question, or select "None of the above".', es: 'Por favor responde esta pregunta, o selecciona "Ninguna de las anteriores".' }));
             flag(setGroupError(document.getElementById('m5-general'), !getCheckedValues('surgical-general-checkbox').length,
                 { en: 'Please answer this question, or select "None of the above".', es: 'Por favor responde esta pregunta, o selecciona "Ninguna de las anteriores".' }));
+        }
+        if (currentModule === 6) {
+            AESTHETIC_CATEGORIES_V2.forEach(cat => {
+                flag(setGroupError(document.getElementById('m6-yesno-' + cat.id), !getRadioValue('m6-cat-' + cat.id),
+                    { en: 'Please answer Yes or No.', es: 'Por favor responde Sí o No.' }));
+            });
         }
         if (currentModule === 7) {
             flag(setGroupError(document.getElementById('m7-fitzpatrick'), !getRadioValue('m7-fitzpatrick'),

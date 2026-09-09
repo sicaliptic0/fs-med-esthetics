@@ -170,7 +170,25 @@
                 </button>
                 <div id="admission-section" class="hidden border-t border-[#EDE1E7] p-4 space-y-4">
 
-                    <p class="text-[9px] uppercase tracking-widest opacity-40" id="adm-source-note">Cuestionario completado por el paciente. Puedes editar cualquier campo.</p>
+                    <!-- ===== RESUMEN (vista por defecto, solo lectura) ===== -->
+                    <div id="admission-summary-view" class="space-y-3">
+                        <div class="flex items-center justify-between gap-2 flex-wrap">
+                            <p class="text-[9px] uppercase tracking-widest opacity-40" id="adm-source-note">Cuestionario completado por el paciente.</p>
+                            <div class="flex gap-2 flex-shrink-0">
+                                <button type="button" onclick="copyAdmissionSummary(this)" class="text-[9px] uppercase tracking-widest font-bold text-[#2A2330] border border-[#EDE1E7] px-3 py-1.5 rounded-full hover:border-[#B76E88] transition">📋 Copiar</button>
+                                <button type="button" onclick="setAdmissionMode('edit')" class="text-[9px] uppercase tracking-widest font-bold text-white bg-[#B76E88] px-3 py-1.5 rounded-full hover:bg-[#9C5570] transition">✏️ Editar</button>
+                            </div>
+                        </div>
+                        <div id="adm-age-estimate" class="hidden bg-[#FBF0F3] border border-[#EDE1E7] rounded-lg px-4 py-3 text-xs leading-relaxed"></div>
+                        <div id="adm-summary-content" class="text-sm leading-relaxed whitespace-pre-wrap"></div>
+                    </div>
+
+                    <!-- ===== EDICIÓN (formulario completo, oculto por defecto) ===== -->
+                    <div id="admission-edit-view" class="hidden space-y-4">
+                        <div class="flex items-center justify-between gap-2">
+                            <p class="text-[9px] uppercase tracking-widest opacity-40">Editando historia de ingreso — puedes editar cualquier campo.</p>
+                            <button type="button" onclick="setAdmissionMode('summary')" class="text-[9px] uppercase tracking-widest font-bold text-[#2A2330] border border-[#EDE1E7] px-3 py-1.5 rounded-full hover:border-[#B76E88] transition flex-shrink-0">← Volver al resumen</button>
+                        </div>
 
                     <!-- Escalas -->
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -408,6 +426,7 @@
                     </details>
 
                     <button type="button" onclick="saveAdmissionHistory()" class="w-full bg-[#2A2330] text-white py-3 uppercase text-[10px] tracking-widest font-bold hover:bg-[#B76E88] transition shadow-md rounded-lg">Guardar Historia de Ingreso</button>
+                    </div>
                 </div>
             </div>
 
@@ -715,6 +734,8 @@
         let currentPatientId = null;
         let currentPatientClinic = [];
         let currentPatientSex = null;
+        let currentPatientDob = null;
+        let currentPatientName = '';
         let currentAdmissionId = null;
         let notesById = {};
         let admissionDirty = false;
@@ -1302,6 +1323,8 @@
         // --- CLINICAL HISTORY (SOAP) LOGIC ---
         async function openHistory(patientId, name, dob) {
             currentPatientId = patientId;
+            currentPatientDob = dob || null;
+            currentPatientName = name || '';
             admissionDirty = false;
             soapDirty = false;
             document.getElementById('history-patient-name').innerText = name;
@@ -1970,6 +1993,205 @@
             `;
         }
 
+        // ---------- ADMISSION SUMMARY (read-only, positives-only) ----------
+        // These age anchors are an internal, non-clinical heuristic — not a
+        // validated scale. Glogau contributes one data point; each answered
+        // Merz sub-area contributes one more, and estimateAestheticAge()
+        // averages whichever of the 5 were actually answered. Adjust the
+        // anchors below if the clinic's own judgment calls for different values.
+        const GLOGAU_AGE_ANCHOR = { I: 28, II: 40, III: 55, IV: 68 };
+        const MERZ_AGE_BASE = 25;  // severity 0 ("None") anchor
+        const MERZ_AGE_STEP = 10;  // per severity point: 0→25, 1→35, 2→45, 3→55, 4→65
+        const ADM_SKIN_TYPE_LABELS_MAP = { oily: 'Grasa', dry: 'Seca', combination: 'Mixta', normal: 'Normal', sensitive: 'Sensible' };
+
+        function estimateAestheticAge(data) {
+            if (!data) return null;
+            const points = [];
+            if (data.glogau && GLOGAU_AGE_ANCHOR[data.glogau] != null) points.push(GLOGAU_AGE_ANCHOR[data.glogau]);
+            ['merz_forehead_glabella', 'merz_under_eye', 'merz_nasolabial', 'merz_hands'].forEach(key => {
+                const raw = data[key];
+                if (raw === null || raw === undefined || raw === '') return;
+                const n = Number(raw);
+                if (!Number.isNaN(n)) points.push(MERZ_AGE_BASE + n * MERZ_AGE_STEP);
+            });
+            if (!points.length) return null;
+            return Math.round(points.reduce((a, b) => a + b, 0) / points.length);
+        }
+
+        function admLabel(options, id) {
+            const found = options.find(o => o.id === id);
+            return found ? found.label : id;
+        }
+        // "None of the above" / "No known allergies" markers are an explicit
+        // answer, not a clinical finding — excluded from the positives list.
+        function admLabelsExcludingNone(options, ids) {
+            return (Array.isArray(ids) ? ids : [])
+                .filter(id => !String(id).startsWith('none_'))
+                .map(id => admLabel(options, id));
+        }
+
+        function renderAdmissionSummary(data) {
+            const contentEl = document.getElementById('adm-summary-content');
+            const ageBox = document.getElementById('adm-age-estimate');
+            const sourceNote = document.getElementById('adm-source-note');
+            if (!contentEl) return;
+
+            if (!data) {
+                contentEl.innerHTML = '<p class="opacity-40 italic">El paciente todavía no ha completado el cuestionario de ingreso. Usa "Editar" para capturarlo manualmente.</p>';
+                if (ageBox) ageBox.classList.add('hidden');
+                if (sourceNote) sourceNote.innerText = 'Cuestionario no completado.';
+                return;
+            }
+            if (sourceNote) {
+                sourceNote.innerText = data.intake_completed_at
+                    ? 'Cuestionario completado el ' + new Date(data.intake_completed_at).toLocaleString() + '.'
+                    : 'Historia en progreso (cuestionario no finalizado por el paciente).';
+            }
+
+            const estAge = estimateAestheticAge(data);
+            if (ageBox) {
+                if (estAge !== null) {
+                    const rawChronoAge = currentPatientDob ? calcAge(currentPatientDob) : null;
+                    const chronoAge = rawChronoAge && rawChronoAge !== '-' ? rawChronoAge.replace(' yrs', ' años') : null;
+                    ageBox.classList.remove('hidden');
+                    ageBox.innerHTML = `<span class="uppercase tracking-widest font-bold text-[#B76E88]">Edad estética estimada:</span> ~${estAge} años`
+                        + (chronoAge ? ` <span class="opacity-50">(edad cronológica: ${chronoAge})</span>` : '')
+                        + `<div class="opacity-40 text-[10px] mt-1">Promedio de Glogau + escalas de Merz respondidas. Estimación orientativa interna, no un diagnóstico.</div>`;
+                } else {
+                    ageBox.classList.add('hidden');
+                }
+            }
+
+            const completed = !!data.intake_completed_at;
+            const lines = [];
+            const section = (title, bodyLines) => {
+                const clean = (bodyLines || []).filter(Boolean);
+                if (!clean.length) return;
+                lines.push(title.toUpperCase());
+                clean.forEach(l => lines.push(l));
+                lines.push('');
+            };
+
+            {
+                const reasons = admLabelsExcludingNone(ADM_CONCERN_OPTIONS, data.consultation_reasons);
+                const other = Array.isArray(data.consultation_reasons_other) ? data.consultation_reasons_other : [];
+                const body = [];
+                if (reasons.length || other.length) body.push('• ' + [...reasons, ...other].join(', '));
+                if (data.upcoming_event_flag) body.push(`• Evento próximo en ${data.upcoming_event_weeks || '?'} semanas.`);
+                section('Motivo de Consulta', body);
+            }
+
+            {
+                const conditions = admLabelsExcludingNone(ADM_MEDICAL_CONDITIONS, data.medical_conditions);
+                const other = Array.isArray(data.medical_conditions_other) ? data.medical_conditions_other : [];
+                const all = [...conditions, ...other];
+                const body = all.length ? ['• ' + all.join(', ')] : (completed ? ['• Ninguna condición médica reportada.'] : []);
+                section('Antecedentes Médicos', body);
+            }
+
+            {
+                const body = [];
+                const thinners = admLabelsExcludingNone(ADM_BLOOD_THINNERS, data.blood_thinners);
+                if (thinners.length) body.push('• Anticoagulantes/suplementos: ' + thinners.join(', '));
+                if (data.retinoid_isotretinoin_recent) body.push('• Isotretinoína oral en últimos 6–12 meses.');
+                if (data.retinoid_topical_recent) body.push('• Retinoides tópicos en últimos 7 días.');
+                if (data.photosensitizing_antibiotics) body.push('• Antibióticos fotosensibilizantes recientes.');
+                const allergies = admLabelsExcludingNone(ADM_ALLERGY_OPTIONS, data.allergies);
+                const allergiesOther = Array.isArray(data.allergies_other) ? data.allergies_other : [];
+                const allAllergies = [...allergies, ...allergiesOther];
+                if (allAllergies.length) body.push('• Alergias: ' + allAllergies.join(', '));
+                else if (completed) body.push('• Ninguna alergia conocida.');
+                section('Medicamentos y Alergias', body);
+            }
+
+            {
+                const facial = admLabelsExcludingNone(ADM_SURGICAL_FACIAL, data.surgical_history_facial);
+                const general = admLabelsExcludingNone(ADM_SURGICAL_GENERAL, data.surgical_history_general);
+                let surgicalOther = data.surgical_history_other;
+                if (typeof surgicalOther === 'string') { try { surgicalOther = JSON.parse(surgicalOther); } catch(_) { surgicalOther = []; } }
+                const otherNames = (Array.isArray(surgicalOther) ? surgicalOther : []).map(r => r.name).filter(Boolean);
+                const all = [...facial, ...general, ...otherNames];
+                const body = all.length ? ['• ' + all.join(', ')] : (completed ? ['• Ninguna cirugía reportada.'] : []);
+                section('Antecedentes Quirúrgicos', body);
+            }
+
+            {
+                let aesthetic = data.aesthetic_history;
+                if (typeof aesthetic === 'string') { try { aesthetic = JSON.parse(aesthetic); } catch(_) { aesthetic = []; } }
+                if (!Array.isArray(aesthetic)) aesthetic = [];
+                const body = aesthetic.map(row => {
+                    const parts = [row.item_label || row.item_id || row.brand_product || 'Procedimiento'];
+                    const details = [];
+                    if (row.times_performed) details.push(row.times_performed + ' vez(es)');
+                    if (row.treated_area) details.push('área: ' + row.treated_area);
+                    if (row.last_treatment_period) details.push(row.last_treatment_period);
+                    if (row.laser_type) details.push(row.laser_type);
+                    if (details.length) parts.push('(' + details.join(', ') + ')');
+                    if (row.had_complication) parts.push('— Complicación: ' + (row.complication_description || 'sí'));
+                    if (row.had_reaction) parts.push('— Reacción: ' + (row.adverse_reactions || 'sí'));
+                    return '• ' + parts.join(' ');
+                });
+                section('Antecedentes Estéticos', body);
+            }
+
+            {
+                const body = [];
+                if (data.fitzpatrick) body.push('• Fitzpatrick: ' + data.fitzpatrick);
+                if (data.skin_type) body.push('• Tipo de piel: ' + (ADM_SKIN_TYPE_LABELS_MAP[data.skin_type] || data.skin_type));
+                if (data.glogau) body.push('• Glogau: ' + data.glogau);
+                const merzParts = [];
+                const merzLabel = (label, v) => { if (v !== null && v !== undefined && v !== '') merzParts.push(label + ' ' + v); };
+                merzLabel('Frente/Entrecejo', data.merz_forehead_glabella);
+                merzLabel('Ojeras', data.merz_under_eye);
+                merzLabel('Nasolabial', data.merz_nasolabial);
+                merzLabel('Manos', data.merz_hands);
+                if (merzParts.length) body.push('• Merz: ' + merzParts.join(', '));
+                section('Clasificación Cutánea', body);
+            }
+
+            if (data.pregnancy_or_nursing === 'yes') {
+                section('Notas', ['• Paciente indica estar embarazada, buscando concebir o amamantando.']);
+            }
+
+            {
+                const body = [];
+                if (data.scars_spots) body.push('• Cicatrices/manchas: ' + data.scars_spots);
+                if (data.personal_history) body.push('• Notas adicionales: ' + data.personal_history);
+                section('Notas Clínicas', body);
+            }
+
+            if (!lines.length) {
+                contentEl.innerHTML = '<p class="opacity-40 italic">Sin hallazgos positivos registrados.</p>';
+                return;
+            }
+            contentEl.innerText = lines.join('\n').trim();
+        }
+
+        function copyAdmissionSummary(btn) {
+            const contentEl = document.getElementById('adm-summary-content');
+            const ageBox = document.getElementById('adm-age-estimate');
+            if (!contentEl) return;
+            const ageText = (ageBox && !ageBox.classList.contains('hidden')) ? ageBox.innerText + '\n\n' : '';
+            const text = ageText + contentEl.innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                if (btn) {
+                    const original = btn.innerText;
+                    btn.innerText = '✓ Copiado';
+                    setTimeout(() => { btn.innerText = original; }, 1500);
+                }
+            }).catch(() => {
+                alert('No se pudo copiar automáticamente. Selecciona el texto manualmente.');
+            });
+        }
+
+        function setAdmissionMode(mode) {
+            const summaryView = document.getElementById('admission-summary-view');
+            const editView = document.getElementById('admission-edit-view');
+            if (!summaryView || !editView) return;
+            summaryView.classList.toggle('hidden', mode === 'edit');
+            editView.classList.toggle('hidden', mode !== 'edit');
+        }
+
         function toggleAdmissionSection() {
             const section = document.getElementById('admission-section');
             const chevron = document.getElementById('adm-chevron');
@@ -2055,6 +2277,7 @@
 
         async function loadAdmissionHistory(patientId) {
             currentAdmissionId = null;
+            setAdmissionMode('summary');
             // Reset fields
             ['adm-fitzpatrick','adm-glogau','adm-skin-type','adm-merz','adm-merz-forehead-glabella','adm-merz-under-eye','adm-merz-nasolabial','adm-merz-hands','adm-merz-marionette','adm-merz-midface','adm-merz-brow','adm-pregnancy'].forEach(id => {
                 const el = document.getElementById(id); if (el) el.value = '';
@@ -2083,7 +2306,7 @@
                 .eq('patient_id', patientId)
                 .maybeSingle();
 
-            if (!data) return;
+            if (!data) { renderAdmissionSummary(null); return; }
             currentAdmissionId = data.id;
 
             // val === 0 is a real, valid Merz score ("No Alteration") — must not be
@@ -2161,6 +2384,7 @@
             }
 
             renderAdmConsentDisplay(data);
+            renderAdmissionSummary(data);
         }
 
         async function saveAdmissionHistory() {
@@ -2231,6 +2455,11 @@
                 admissionDirty = false;
                 const ind = document.getElementById('adm-save-indicator');
                 if (ind) { ind.classList.remove('hidden'); setTimeout(() => ind.classList.add('hidden'), 3000); }
+                // Re-fetch rather than render the local payload directly — the
+                // payload never carries intake_completed_at (only the patient
+                // flow sets that), so rendering it as-is would wrongly flip a
+                // previously-completed record to "en progreso".
+                await loadAdmissionHistory(currentPatientId);
                 return true;
             }
         }
