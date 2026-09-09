@@ -519,6 +519,14 @@
         // --- MESSAGES / BUZÓN ---
         let currentMessages = [];
 
+        // A recommendation sent from a specific encounter shows that visit's
+        // date (visit_date) rather than "today" (created_at) — it should read
+        // as "recommendations from your March 3rd visit," not from whenever
+        // the admin happened to click send.
+        function messageDisplayDate(msg) {
+            return formatDate(msg.visit_date || String(msg.created_at || '').split('T')[0]);
+        }
+
         function escapeHtmlMsg(value) {
             return String(value ?? '')
                 .replace(/&/g, '&amp;')
@@ -578,7 +586,7 @@
 
             const { data, error } = await _supabase
                 .from('patient_messages')
-                .select('id, subject, body, created_at, read_at')
+                .select('id, subject, body, created_at, read_at, visit_date, visit_time')
                 .eq('patient_id', user.id)
                 .order('created_at', { ascending: false });
 
@@ -597,7 +605,7 @@
                 <div class="bg-white border border-[#EDE1E7] rounded-xl shadow-sm p-6 ${!msg.read_at ? 'ring-2 ring-[#B76E88]' : ''}">
                     <div class="flex items-start justify-between gap-4 mb-2">
                         <h4 class="text-lg italic text-[#2A2330]">${escapeHtmlMsg(msg.subject || (currentLang === 'en' ? 'Message' : 'Mensaje'))}</h4>
-                        <span class="text-[10px] uppercase tracking-widest opacity-50 whitespace-nowrap">${formatDate(String(msg.created_at || '').split('T')[0])}</span>
+                        <span class="text-[10px] uppercase tracking-widest opacity-50 whitespace-nowrap">${messageDisplayDate(msg)}</span>
                     </div>
                     <div class="text-sm font-light opacity-80 leading-relaxed">${renderRecommendationBody(msg.body)}</div>
                 </div>
@@ -632,7 +640,7 @@
                         ${!msg.read_at ? '<span class="w-2 h-2 rounded-full bg-[#B76E88] flex-shrink-0"></span>' : ''}
                         <span class="truncate ${!msg.read_at ? 'font-semibold text-[#2A2330]' : 'opacity-70'}">${escapeHtmlMsg(msg.subject || (currentLang === 'en' ? 'Message' : 'Mensaje'))}</span>
                     </span>
-                    <span class="text-[10px] uppercase tracking-widest opacity-40 whitespace-nowrap flex-shrink-0">${formatDate(String(msg.created_at || '').split('T')[0])}</span>
+                    <span class="text-[10px] uppercase tracking-widest opacity-40 whitespace-nowrap flex-shrink-0">${messageDisplayDate(msg)}</span>
                 </div>
             `).join('');
         }

@@ -180,6 +180,7 @@
                 <h3 class="text-2xl italic">Enviar Recomendación</h3>
                 <button onclick="closeSendRecommendationModal()" class="text-2xl opacity-40 hover:opacity-100">&times;</button>
             </div>
+            <p id="send-recommendation-encounter-label" class="text-xs font-semibold text-[#B76E88] mb-1"></p>
             <p class="text-xs opacity-50 mb-4">Selecciona una o más — se guardarán en su portal y se le enviará un correo con todas juntas.</p>
             <div id="send-recommendation-list" class="space-y-2"></div>
             <p id="send-recommendation-empty" class="hidden text-center text-sm opacity-40 italic py-6">No hay recomendaciones creadas todavía. Ve a "Recommendations" en el menú para crear una.</p>
@@ -494,8 +495,8 @@
             <div class="flex flex-col relative z-10 flex-shrink-0">
                 <div class="flex justify-between items-center mb-6 gap-2 flex-wrap">
                     <button id="add-note-btn" onclick="toggleSoapForm(true)" class="bg-[#B76E88] text-white px-6 py-2 text-[10px] uppercase tracking-widest font-bold rounded-full shadow-sm hover:bg-[#9C5570] transition">Add New Encounter</button>
-                    <button onclick="openSendRecommendationModal()" class="bg-white border border-[#B76E88] text-[#B76E88] px-6 py-2 text-[10px] uppercase tracking-widest font-bold rounded-full shadow-sm hover:bg-[#B76E88] hover:text-white transition">✉️ Enviar Recomendación</button>
                 </div>
+                <p class="text-[10px] uppercase tracking-widest opacity-30 mb-2">Para enviar una recomendación, hazlo desde el encounter correspondiente abajo — así queda ligada a la fecha de esa visita.</p>
 
                 <div id="notes-container" class="pr-2 md:pr-4 space-y-6 pb-10"></div>
 
@@ -1255,6 +1256,7 @@
         // --- RECOMMENDATION TEMPLATES (admin-managed library) ---
         let recommendationTemplates = [];
         let editingRecommendationId = null;
+        let sendingForEncounterId = null;
 
         // Lightweight "Markdown-lite" convention, shared (independently, since
         // these are static files with no module system) with dashboard.html and
@@ -1372,8 +1374,16 @@
         }
 
         // --- SEND RECOMMENDATION TO PATIENT (from their Clinical History) ---
-        async function openSendRecommendationModal() {
-            if (!currentPatientId) return;
+        async function openSendRecommendationModal(encounterId) {
+            if (!currentPatientId || !encounterId) return;
+            sendingForEncounterId = encounterId;
+            const encounter = notesById[encounterId];
+            const encounterLabelEl = document.getElementById('send-recommendation-encounter-label');
+            if (encounterLabelEl) {
+                encounterLabelEl.innerText = encounter
+                    ? `Para el encounter del ${encounter.visit_date}${encounter.visit_time ? ' @ ' + String(encounter.visit_time).substring(0, 5) : ''}.`
+                    : '';
+            }
             if (!recommendationTemplates.length) {
                 await fetchRecommendationTemplates();
             }
@@ -1399,6 +1409,7 @@
         }
 
         function closeSendRecommendationModal() {
+            sendingForEncounterId = null;
             document.getElementById('send-recommendation-modal').classList.add('hidden');
             document.getElementById('send-recommendation-modal').classList.remove('flex');
         }
@@ -1406,12 +1417,18 @@
         async function sendSelectedRecommendations() {
             const checked = Array.from(document.querySelectorAll('.send-rec-checkbox:checked')).map(cb => cb.value);
             if (!checked.length) { alert('Selecciona al menos una recomendación.'); return; }
+            if (!sendingForEncounterId) { alert('No se identificó el encounter de origen. Cierra este panel y ábrelo de nuevo desde el encounter correspondiente.'); return; }
+            const encounter = notesById[sendingForEncounterId];
+            if (!encounter) { alert('No se encontró ese encounter — recarga la historia clínica e intenta de nuevo.'); return; }
             const selected = recommendationTemplates.filter(r => checked.includes(r.id));
 
             const rows = selected.map(rec => ({
                 patient_id: currentPatientId,
                 subject: rec.title,
                 body: rec.body,
+                encounter_id: encounter.id,
+                visit_date: encounter.visit_date,
+                visit_time: encounter.visit_time || null,
             }));
             const { error: insertError } = await _supabase.from('patient_messages').insert(rows);
             if (insertError) { alert('Error guardando el mensaje: ' + insertError.message); return; }
@@ -1420,6 +1437,8 @@
                 body: {
                     patient_id: currentPatientId,
                     patient_name: currentPatientName,
+                    visit_date: encounter.visit_date,
+                    visit_time: encounter.visit_time || null,
                     recommendations: selected.map(r => ({ title: r.title, body: r.body })),
                 },
             });
@@ -1718,6 +1737,7 @@
                             <span class="text-[10px] font-bold uppercase tracking-widest text-[#B76E88]">Encounter: ${escapeHtml(n.visit_date)} @ ${n.visit_time ? escapeHtml(String(n.visit_time).substring(0,5)) : 'N/A'}</span>
                         </div>
                         <div class="flex flex-col items-end gap-2">
+                            <button onclick='openSendRecommendationModal("${n.id}")' class="text-[9px] uppercase font-bold text-[#B76E88] hover:text-[#9C5570] underline transition">✉️ Enviar Recomendación</button>
                             <button onclick='editNoteById("${n.id}")' class="text-[9px] uppercase font-bold text-blue-500 hover:text-blue-700 underline transition">Modify</button>
                             <button onclick='deleteNote("${n.id}")' class="text-[9px] uppercase font-bold text-red-400 hover:text-red-600 underline transition">Delete</button>
                         </div>

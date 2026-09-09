@@ -78,7 +78,12 @@ function renderRecommendationsEmail(input: {
   patientName: string;
   recommendations: { title: string; body: string }[];
   contactEmail: string;
+  visitDate: string;
+  visitTime: string;
 }) {
+  const visitLine = input.visitDate
+    ? `<p style="font-size:13px; color:#888; margin:-8px 0 16px;">Recomendaciones de tu visita del <strong>${escapeHtml(input.visitDate)}</strong>${input.visitTime ? ` a las ${escapeHtml(input.visitTime.substring(0, 5))}` : ""}.</p>`
+    : "";
   const sections = input.recommendations.map((rec) => `
     <div style="margin-bottom:24px; padding-bottom:20px; border-bottom:1px solid #EDE1E7;">
       <h3 style="margin:0 0 8px; color:#B76E88; font-family: Georgia, serif; font-size:18px; font-style:italic;">${escapeHtml(rec.title)}</h3>
@@ -99,6 +104,7 @@ function renderRecommendationsEmail(input: {
       <div style="background:#fff; padding: 32px;">
         <p style="font-size:16px; margin-top:0;">Hola <strong>${escapeHtml(input.patientName)}</strong>,</p>
         <p style="font-size:14px; color:#666;">Tu proveedor te ha enviado las siguientes recomendaciones. También puedes verlas en tu portal de paciente, en la sección "Mensajes".</p>
+        ${visitLine}
         ${sections}
       </div>
       <div style="background:#FBF0F3; padding:20px 32px; text-align:center; border-top:1px solid #EDE1E7;">
@@ -133,6 +139,8 @@ Deno.serve(async (req) => {
     const patientId = String(body?.patient_id || "");
     const patientName = String(body?.patient_name || "Patient");
     const patientEmailFromBody = String(body?.patient_email || "").trim();
+    const visitDate = String(body?.visit_date || "").trim();
+    const visitTime = String(body?.visit_time || "").trim();
     const recommendations: { title: string; body: string }[] = Array.isArray(body?.recommendations)
       ? body.recommendations.filter((r: unknown) => r && typeof r === "object" && (r as { title?: unknown }).title)
       : [];
@@ -150,7 +158,7 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "Could not resolve patient email" }, 400);
     }
 
-    const html = renderRecommendationsEmail({ patientName, recommendations, contactEmail });
+    const html = renderRecommendationsEmail({ patientName, recommendations, contactEmail, visitDate, visitTime });
     const subject = recommendations.length === 1
       ? `Recomendación: ${recommendations[0].title} | Piel Spa`
       : `Nuevas Recomendaciones de tu Proveedor | Piel Spa`;
